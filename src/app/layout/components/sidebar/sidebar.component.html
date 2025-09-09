@@ -1,0 +1,66 @@
+<div class="d-flex align-items-center justify-content-between">
+  <app-branding></app-branding>
+
+  @if(showToggle) {
+  <a
+    href="javascript:void(0)"
+    (click)="toggleMobileNav.emit()"
+    class="d-flex justify-content-center ng-star-inserted icon-40 align-items-center mat-body-1"
+  >
+    <i-tabler name="x" class="icon-20 d-flex"></i-tabler>
+  </a>
+  }
+</div>
+
+<nav class="sidebar" [class.collapsed]="!isCollapsed">
+  <ng-template #tree let-nodes>
+    <ul class="nav flex-column m-0 p-0">
+      <ng-container *ngFor="let node of nodes; trackBy: trackById">
+
+        <li *ngIf="node.section; else nonSection" class="nav-item my-2">
+          <div class="section-title px-2 ms-1">{{ node.label }}</div>
+          <ng-container *ngIf="node.children?.length">
+            <ng-container *ngTemplateOutlet="tree; context: {$implicit: node.children}"></ng-container>
+          </ng-container>
+        </li>
+
+        <ng-template #nonSection>
+          <li *ngIf="hasChildren(node); else leaf" class="nav-item">
+            <a class="nav-link d-flex align-items-center justify-content-between px-2 py-2"
+               href="javascript:void(0)"
+               (click)="toggle(node)"
+               [attr.title]="!isCollapsed ? null : node.label">
+              <span class="d-inline-flex align-items-center gap-2 text-truncate">
+                <i class="bi bi-{{ node.icon || 'folder' }}"></i>
+                <span class="label text-truncate">{{ node.label }}</span>
+              </span>
+              <i class="bi caret"
+                 [ngClass]="isOpen(node) ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            </a>
+            <div class="submenu" [class.open]="isOpen(node)">
+              <ng-container *ngTemplateOutlet="tree; context: {$implicit: node.children}"></ng-container>
+            </div>
+          </li>
+
+          <ng-template #leaf>
+            <li class="nav-item">
+              <a class="nav-link leaf px-2 py-2"
+                 [routerLink]="node.path"
+                 routerLinkActive="active"
+                 [routerLinkActiveOptions]="{ exact: true }"
+                 [attr.title]="!isCollapsed ? null : node.label">
+                <span class="d-inline-flex align-items-center gap-2 text-truncate">
+                  <i class="bi bi-{{ node.icon || 'dot' }}"></i>
+                  <span class="label text-truncate">{{ node.label }}</span>
+                </span>
+              </a>
+            </li>
+          </ng-template>
+        </ng-template>
+
+      </ng-container>
+    </ul>
+  </ng-template>
+
+  <ng-container *ngTemplateOutlet="tree; context: {$implicit: filtered}"></ng-container>
+</nav>

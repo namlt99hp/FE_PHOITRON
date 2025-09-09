@@ -1,0 +1,33 @@
+<div class="page-header">
+  <h3 class="title">Phương pháp phối trộn</h3>
+  <div class="actions">
+    <button
+      class="mix-btn"
+      mat-flat-button
+      color="primary"
+      (click)="openMixDialog()"
+      matTooltip="Trộn quặng"
+    >
+      <mat-icon>science</mat-icon>
+      <span>Trộn quặng</span>
+    </button>
+  </div>
+</div>
+
+<app-table-common
+  [columns]="columns"
+  [tableTitle]="tableTitle"
+  [fetcher]="fetcher"
+  [pageSizeOptions]="[5, 10, 20, 50]"
+  [defaultPageSize]="10"
+  [enableActions]="true"
+  [showCreateAction]="false"
+  [showViewAction]="false"
+  [showEditAction]="true"
+  [showDeleteAction]="true"
+  [deleteHandler]="deleteHandler"
+  [enableSearch]="true"          
+  [searchPlaceholder]="'Tìm kiếm'" 
+  (selectEdit)="onEdit($event)"
+  (delete)="onDelete($event)"
+></app-table-common>

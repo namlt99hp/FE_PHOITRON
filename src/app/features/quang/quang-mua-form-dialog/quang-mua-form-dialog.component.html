@@ -1,0 +1,90 @@
+<h2 mat-dialog-title>{{ (mode==='MUA' ? 'Thêm quặng mua' : 'Thêm quặng trộn') }}</h2>
+
+<div mat-dialog-content class="dialog-body">
+  <!-- Header form -->
+  <div class="grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Mã quặng</mat-label>
+      <input matInput [formControl]="headerForm.controls.maQuang" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" >
+      <mat-label>Tên quặng</mat-label>
+      <input matInput [formControl]="headerForm.controls.tenQuang" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Giá: VNĐ</mat-label>
+      <input matInput type="number" min="0" [formControl]="headerForm.controls.gia" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Mất khi nung</mat-label>
+      <input matInput type="number" min="0" [formControl]="headerForm.controls.matKhiNung" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="span-4">
+      <mat-label>Ghi chú</mat-label>
+      <textarea matInput rows="2" [formControl]="headerForm.controls.ghiChu"></textarea>
+    </mat-form-field>
+  </div>
+
+  <!-- MUA -->
+  <ng-container>
+    <section class="section">
+    <div class="section-header">
+      <h3 class="section-title">Thành phần hoá học</h3>
+      <button mat-stroked-button color="primary" (click)="openSelectChems()">
+        <mat-icon>category</mat-icon>&nbsp;Chọn TPHH
+      </button>
+    </div>
+
+    <div class="constraints" *ngIf="selectedChems().length > 0">
+      <table class="constraints-table">
+        <thead>
+          <tr>
+            <th class="stub">TPHH</th>
+            <th
+              *ngFor="let c of selectedChems()"
+              class="chem-col"
+            >
+              <div class="th-wrap">
+                <span class="th-text" [title]="c.ten_TPHH">{{
+                  c.ten_TPHH
+                }}</span>
+                <button type="button" class="x-btn" (click)="removeChem(c.id)">×</button>
+              </div>
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <th class="stub">Tỷ lệ</th>
+            <td *ngFor="let c of selectedChems(); trackBy: trackByChem">
+              <ng-container *ngIf="tp_HoaHocs().get(c.id) as ctrl">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputmode="decimal"
+                  class="cell-input text-right"
+                  [formControl]="ctrl.phanTram"
+                />
+              </ng-container>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  </ng-container>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="onCancel()">Huỷ</button>
+  <button mat-flat-button color="primary"
+          (click)="onSave()">
+    Lưu
+  </button>
+</div>

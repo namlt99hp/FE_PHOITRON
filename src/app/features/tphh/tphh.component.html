@@ -1,0 +1,21 @@
+<div class="page-header">
+  <h3 class="title">Thành phần hóa học</h3>
+</div>
+
+<app-table-common
+  [columns]="columns"
+  [fetcher]="fetcher"
+  [pageSizeOptions]="[5, 10, 20, 50]"
+  [defaultPageSize]="10"
+  [enableActions]="true"
+  [showViewAction]="false"
+  [showEditAction]="true"
+  [showDeleteAction]="true"
+  [showCreateAction]="true"
+  [confirmDelete]="confirmDelete"
+  [deleteHandler]="deleteHandler"
+  [enableSearch]="true"          
+  [searchPlaceholder]="'Tìm kiếm'" 
+  (selectEdit)="onEdit($event)"
+  (create)="onCreate()"
+></app-table-common>

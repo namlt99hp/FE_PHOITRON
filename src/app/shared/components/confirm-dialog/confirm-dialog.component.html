@@ -1,0 +1,17 @@
+<!-- nội dung dialog -->
+<div class="modal-confirm">
+  <button class="close-btn" type="button" aria-label="Đóng" (click)="onCancel()">×</button>
+
+  <div class="icon-box" aria-hidden="true">
+    <span class="icon">✕</span>
+  </div>
+
+  <h4 class="modal-title">{{ title || 'Are you sure?' }}</h4>
+
+  <div class="modal-body" [innerHTML]="message || 'Do you really want to delete this record? This process cannot be undone.'"></div>
+
+  <div class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="onCancel()">Cancel</button>
+    <button class="btn btn-danger" type="button" (click)="onConfirm()">Delete</button>
+  </div>
+</div>

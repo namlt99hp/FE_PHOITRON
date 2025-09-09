@@ -1,0 +1,125 @@
+.table-header-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  .search-container {
+    .icon-search {
+      cursor: pointer;
+    }
+  }
+  .action-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+mat-card-title{
+  margin-bottom: 20px;
+  font-size: 26px;
+  text-transform: uppercase
+}
+.mat-mdc-header-row {
+  background: #efefef;
+  font-size: 16px;
+}
+.table-wrapper {
+  position: relative;
+  background-color: #fff;
+}
+.mat-mdc-table {
+  background-color: #fff;
+}
+mat-progress-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+table {
+  width: 100%;
+}
+
+th,
+td {
+  white-space: nowrap;
+}
+
+.align-center {
+  text-align: center;
+}
+.align-end {
+  text-align: right;
+}
+
+.actions-col {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 56px;
+}
+
+tr.empty td {
+  text-align: center;
+  padding: 16px 0;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.table-wrapper {
+  background: var(--mat-sys-surface, #fff);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.pretty-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.pretty-table th.mat-header-cell {
+  background: rgba(0, 0, 0, 0.03);
+  font-weight: 600;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.pretty-table td.mat-cell,
+.pretty-table td.mat-footer-cell {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.pretty-table tr.mat-row:hover td {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.pretty-table tr.mat-row:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.01);
+}
+
+/* cell paddings */
+.pretty-table th.mat-header-cell,
+.pretty-table td.mat-cell {
+  padding: 12px 16px;
+}
+
+/* actions column */
+.pretty-table td.actions-col {
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+.icon-btn mat-icon {
+  font-size: 20px;
+  line-height: 20px;
+}
+
+/* tinted icon buttons */
+mat-paginator {
+  background-color: #fff;
+}

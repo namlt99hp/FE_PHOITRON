@@ -1,0 +1,42 @@
+
+/* Overlay full-screen */
+.loading-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: saturate(140%) blur(1px);
+  display:flex; align-items:center; justify-content:center;
+  z-index: 9999;
+}
+
+/* Spinner box */
+.spinner-box{
+  width: 180px; height: 180px;
+  position: relative;
+  display:flex; align-items:center; justify-content:center;
+  background: transparent;
+}
+
+/* Base */
+.leo{
+  position: absolute;
+  display:flex; align-items:center; justify-content:center;
+  border-radius: 50%;
+}
+
+/* Animations */
+@keyframes spin3D{
+  from{ transform: rotate3d(1,1,1,0); }
+  to  { transform: rotate3d(1,1,1,360deg); }
+}
+
+/* Orbits */
+.blue-orbit { width:165px; height:165px; border:1px solid #91daffa5; animation:spin3D 3s linear .2s infinite; }
+.green-orbit{ width:120px; height:120px; border:1px solid #91ffbfa5; animation:spin3D 2s linear 0s infinite; }
+.red-orbit  { width: 90px; height: 90px; border:1px solid #ffca91a5; animation:spin3D 1s linear 0s infinite; }
+.white-orbit{ width: 60px; height: 60px; border:2px solid #fff;       animation:spin3D 10s linear 0s infinite; }
+
+/* Orientation tweaks */
+.w1{ transform: rotate3D(1, 1, 1, 90deg); }
+.w2{ transform: rotate3D(1, 2, .5, 90deg); }
+.w3{ transform: rotate3D(.5, 1, 2, 90deg); }

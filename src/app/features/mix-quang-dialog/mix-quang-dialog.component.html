@@ -1,0 +1,272 @@
+<h2 mat-dialog-title>Trộn quặng</h2>
+
+<mat-dialog-content class="content">
+  <!-- Header: Form quặng thành phẩm -->
+  <section class="section">
+    <h4 class="section-title">Thông tin quặng thành phẩm</h4>
+    <div class="grid">
+      <mat-form-field appearance="outline" class="dialog-input">
+        <mat-label>Mã quặng</mat-label>
+        <input matInput [formControl]="oreForm.controls.MaQuang" />
+        <mat-error *ngIf="oreForm.controls.MaQuang.invalid">Bắt buộc</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="dialog-input">
+        <mat-label>Tên quặng</mat-label>
+        <input matInput [formControl]="oreForm.controls.TenQuang" />
+        <mat-error *ngIf="oreForm.controls.TenQuang.invalid"
+          >Bắt buộc</mat-error
+        >
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="dialog-input">
+        <mat-label>Giá</mat-label>
+        <input type="number" matInput [formControl]="oreForm.controls.Gia" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="dialog-input">
+        <mat-label>Ghi chú</mat-label>
+        <textarea
+          matInput
+          rows="1"
+          [formControl]="oreForm.controls.GhiChu"
+        ></textarea>
+      </mat-form-field>
+    </div>
+  </section>
+
+  <!-- Form công thức -->
+  <section class="section">
+    <h3 class="section-title">Thông tin công thức phối</h3>
+    <div class="grid">
+      <mat-form-field appearance="outline" class="dialog-input">
+        <mat-label>Mã công thức</mat-label>
+        <input matInput [formControl]="formulaForm.controls.MaCongThuc" />
+        <mat-error *ngIf="formulaForm.controls.MaCongThuc.invalid"
+          >Bắt buộc</mat-error
+        >
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="dialog-input">
+        <mat-label>Tên công thức</mat-label>
+        <input matInput [formControl]="formulaForm.controls.TenCongThuc" />
+        <mat-error *ngIf="formulaForm.controls.TenCongThuc.invalid"
+          >Bắt buộc</mat-error
+        >
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="dialog-input">
+        <mat-label>ID quặng neo (tuỳ chọn)</mat-label>
+        <input
+          type="number"
+          matInput
+          [formControl]="formulaForm.controls.ID_QuangNeo"
+        />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="dialog-input">
+        <mat-label>Ghi chú</mat-label>
+        <textarea
+          matInput
+          rows="1"
+          [formControl]="formulaForm.controls.GhiChu"
+        ></textarea>
+      </mat-form-field>
+    </div>
+  </section>
+
+  <!-- Chọn TPHH + nhập min/max -->
+  <section class="section">
+    <div class="section-header">
+      <h3 class="section-title">Thành phần hoá học</h3>
+      <button mat-stroked-button color="primary" (click)="openSelectChems()">
+        <mat-icon>category</mat-icon>&nbsp;Chọn TPHH
+      </button>
+    </div>
+
+    <div class="constraints" *ngIf="selectedChems().length > 0">
+      <table class="constraints-table">
+        <thead>
+          <tr>
+            <th class="stub">Ràng buộc</th>
+            <th
+              *ngFor="let c of selectedChems(); trackBy: trackChem"
+              class="chem-col"
+            >
+              <div class="th-wrap">
+                <span class="th-text" [title]="c.ten_TPHH">{{
+                  c.ten_TPHH
+                }}</span>
+                <button type="button" class="x-btn" (click)="removeChem(c.id)">×</button>
+              </div>
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <th class="stub">Min (%)</th>
+            <td *ngFor="let c of selectedChems(); trackBy: trackChem">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                class="cell-input text-right"
+                [formControl]="constraints().get(c.id)!.minCtrl"
+              />
+            </td>
+          </tr>
+
+          <tr>
+            <th class="stub">Max (%)</th>
+            <td *ngFor="let c of selectedChems(); trackBy: trackChem">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                class="cell-input text-right"
+                [formControl]="constraints().get(c.id)!.maxCtrl"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Ràng buộc cho mất khi nung -->
+    <div class="matkhinung-constraints" *ngIf="selectedChems().length > 0">
+      <h4 class="constraints-title">Ràng buộc mất khi nung</h4>
+      <div class="constraints-row">
+        <div class="constraint-item">
+          <label>Min (%)</label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            class="constraint-input"
+            [formControl]="matKhiNungConstraints().minCtrl"
+            placeholder="Min"
+          />
+        </div>
+        <div class="constraint-item">
+          <label>Max (%)</label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            class="constraint-input"
+            [formControl]="matKhiNungConstraints().maxCtrl"
+            placeholder="Max"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Chọn quặng & Bảng phối -->
+  <section class="section">
+    <div class="section-header">
+      <h3 class="section-title">Chọn quặng nguồn & nhập tỉ lệ phối</h3>
+      <button
+        mat-stroked-button
+        color="primary"
+        (click)="openSelectOres()"
+        [disabled]="selectedChems().length === 0"
+      >
+        <mat-icon>inventory_2</mat-icon>&nbsp;Chọn quặng
+      </button>
+    </div>
+
+    <div
+      class="table-wrap"
+      *ngIf="rows().length > 0 && selectedChems().length > 0"
+    >
+      <table class="mix-table">
+        <thead>
+          <tr>
+            <th class="stub" rowspan="2">Quặng</th>
+            <th class="group" colspan="1">Cột nhập tỉ lệ phối</th>
+            <th class="group" colspan="1">Mất khi nung</th>
+            <th class="group" [attr.colspan]="displayedColumns().length - 4">
+              Các thành phần hóa học
+            </th>
+          </tr>
+          <tr>
+            <th class="ratio-col">Tỷ lệ, %</th>
+            <th class="matkhinung-col">Mất khi nung, %</th>
+            <th *ngFor="let c of selectedChems()">{{ c.ten_TPHH }}</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <!-- Hàng quặng nguồn -->
+          <tr *ngFor="let r of rows(); let i = index">
+            <th class="stub">
+              <div class="ore-cell">
+                <button 
+                  type="button" 
+                  class="remove-btn" 
+                  (click)="removeRow(r)"
+                  matTooltip="Xóa quặng này"
+                  matTooltipPosition="above">
+                  <mat-icon>close</mat-icon>
+                </button>
+                <div class="ore-name" [title]="r.tenQuang">{{ r.tenQuang }}</div>
+              </div>
+            </th>
+
+            <!-- tỷ lệ phối -->
+            <td class="ratio-cell">
+              <input
+                type="number"
+                min="0"
+                class="cell-input text-center"
+                [formControl]="r.ratioCtrl"
+              />
+            </td>
+
+            <!-- mất khi nung -->
+            <td class="matkhinung-cell">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                class="cell-input text-right"
+                [formControl]="r.matKhiNungCtrl"
+              />
+            </td>
+
+            <!-- các thành phần hoá học -->
+            <td *ngFor="let c of selectedChems()">
+              <input
+                type="number"
+                step="0.01"
+                class="cell-input text-right"
+                [formControl]="getChemCtrl(r, c.id)"
+              />
+            </td>
+          </tr>
+
+          <!-- Dòng tổng & kết quả sau tính -->
+          <tr class="total-row">
+            <th class="stub">Tổng</th>
+            <td class="text-center">{{ totalRatio() | number : "1.0-1" }}%</td>
+            <td class="text-right" [class.out-range]="isMatKhiNungOutOfRange()">
+              {{ resultMatKhiNung() | number : "1.0-2" }}%
+            </td>
+            <td *ngFor="let c of selectedChems()" class="text-right" [class.out-range]="isOutOfRange(c.id)">
+              {{ resultRow()[c.id] | number : "1.0-2" }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="cancel()">Huỷ</button>
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="submit()"
+    [disabled]="isSubmitDisabled()"
+    [matTooltip]="isSubmitDisabled() ? 'Vui lòng kiểm tra lại thông tin' : ''"
+  >
+    Xác nhận & Tạo quặng
+  </button>
+</mat-dialog-actions>

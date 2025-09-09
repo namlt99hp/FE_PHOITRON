@@ -1,1 +1,35 @@
 /* You can add global styles to this file, and also import other style files */
+// @import "bootstrap/dist/css/bootstrap.min.css";
+// @import "bootstrap-icons/font/bootstrap-icons.css";
+
+html, body { height: 100%; }
+body { margin: 0; font-family: "Plus Jakarta Sans",Roboto, "Helvetica Neue", sans-serif; }
+
+/* Success */
+.mat-mdc-snack-bar-container.snack-success {
+  --mdc-snackbar-container-color: #16a34a;      /* nền */
+  --mdc-snackbar-supporting-text-color: #fff;   /* chữ */
+}
+
+/* Error */
+.mat-mdc-snack-bar-container.snack-error {
+  --mdc-snackbar-container-color: #dc2626;
+  --mdc-snackbar-supporting-text-color: #fff;
+}
+
+/* Info */
+.mat-mdc-snack-bar-container.snack-info {
+  --mdc-snackbar-container-color: #1d4ed8;
+  --mdc-snackbar-supporting-text-color: #fff;
+}
+
+/* Tuỳ chọn: bo góc/đổ bóng/căn chữ */
+.mat-mdc-snack-bar-container.snack-success,
+.mat-mdc-snack-bar-container.snack-error,
+.mat-mdc-snack-bar-container.snack-info {
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(2,6,23,.2);
+}
+.mat-mdc-snack-bar-container .mdc-snackbar__label {
+  white-space: pre-line; /* xuống dòng nếu có \n */
+}

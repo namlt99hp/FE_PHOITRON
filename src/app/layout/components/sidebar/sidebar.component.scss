@@ -1,0 +1,149 @@
+:host{
+  --sb-w: 260px;
+  --sb-w-collapsed: 60px;
+  --dur: 220ms;
+  --ease: cubic-bezier(.25,.1,.25,1);
+  --c-text:#0f172a;       /* đen */
+  --c-muted:#64748b;      /* xám */
+  --c-border:#e2e8f0;     /* viền */
+  --c-accent:#1b5fd6;     /* xanh nhấn */
+  --c-accent-bg:#e9f1ff;  /* nền active */
+  --c-hover:#f1f5f9;      /* nền hover */
+}
+
+.sidebar{
+  width: var(--sb-w);
+  // border-right: 1px solid var(--c-border);
+  background: #fff;
+  transition: width var(--dur) var(--ease);
+  color: var(--c-text);
+  padding: .25rem .5rem .75rem;
+
+  /* tiêu đề nhóm */
+  .section-title{
+    font-size: 14px; font-weight: 800; color: var(--c-accent);
+    letter-spacing: .02em; text-transform: uppercase;
+    margin: 10px 0 6px;
+  }
+
+  /* link chung */
+  .nav-link{
+    color: var(--c-text);
+    border-radius: .5rem;
+    transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur);
+    padding-bottom: 1rem !important;
+    padding-top: 1rem !important;
+    i{ font-size: 1.1rem; }    /* icon size default */
+    .label{ font-size: 14px; }
+
+    /* HOVER rõ ràng */
+    &:hover{
+      background: var(--c-hover);
+      color: var(--c-accent);
+      .caret{ color: var(--c-accent); }
+    }
+
+    /* ACTIVE rõ ràng (routerLinkActive) */
+    &.active{
+      background: var(--c-accent-bg);
+      color: var(--c-accent);
+      font-weight: 600;
+      box-shadow: inset 3px 0 0 var(--c-accent); /* vạch trái */
+      .caret{ color: var(--c-accent); }
+    }
+  }
+
+  /* caret ở bên phải */
+  .caret{
+    color: var(--c-muted);
+    transition: transform var(--dur) var(--ease), color var(--dur) var(--ease), opacity var(--dur);
+  }
+
+  /* submenu mượt + thụt vào */
+  .submenu{
+    margin-left: .5rem; padding-left: .75rem;
+    border-left: 1px dashed var(--c-border);
+    overflow: hidden; max-height: 0; opacity: 0;
+    transition: max-height 280ms var(--ease), opacity 180ms var(--ease);
+    &.open{ max-height: 1200px; opacity: 1; }
+
+    .nav-link i{ font-size: 1rem; }   /* icon nhỏ hơn ở cấp sâu */
+    .nav-link .label{ font-size: 13px; }
+  }
+
+  /* LEAF có chấm tròn gợi ý cấp */
+  .leaf{ position: relative; padding-left: 1.25rem !important; }
+  .leaf .label::before{
+    content: ""; position: absolute; left: .75rem; top: 50%;
+    transform: translateY(-50%); width: 4px; height: 4px; border-radius: 50%;
+    background: var(--c-muted);
+  }
+
+  /* trạng thái THU GỌN: chỉ 1 cột icon to, căn giữa */
+  &.collapsed{
+    width: var(--sb-w-collapsed);
+
+    .section-title{ display: none; }
+    .submenu{ max-height: 0 !important; opacity: 0 !important; border-left: 0; margin: 0; padding: 0; }
+    .nav{ align-items: center; }     /* hàng icon thẳng cột giữa */
+
+    .nav-item{ text-align: center; width: 100%; height: 50px;}
+    .nav-link{
+      justify-content: center;
+      padding: .75rem 0 !important;
+
+      /* icon to khi collapsed */
+      i{ font-size: 1.6rem; }
+      .label{ display: none; }
+
+      /* hover/active vẫn highlight để người dùng thấy */
+      &:hover{
+        background: var(--c-hover);
+        color: var(--c-accent);
+      }
+      &.active{
+        background: var(--c-accent-bg);
+        color: var(--c-accent);
+        box-shadow: inset 0 -3px 0 var(--c-accent); /* vạch dưới thay vì vạch trái */
+      }
+    }
+    .caret{ display: none; }
+  }
+}
+
+/* giảm animation cho user muốn */
+@media (prefers-reduced-motion: reduce){
+  .sidebar *{ transition: none !important; }
+}
+/* đảm bảo link phủ trọn hàng và nhận hover */
+.sidebar .nav-link{
+  display: flex;          /* quan trọng */
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;            /* quan trọng */
+  cursor: pointer;
+}
+
+/* HOVER rõ ràng, thắng được Bootstrap */
+.sidebar .nav-link:hover,
+.sidebar .nav-link:focus,
+.sidebar .nav-link:focus-visible{
+  background: var(--c-hover) !important;
+  color: var(--c-accent) !important;
+}
+
+/* ACTIVE (routerLinkActive) */
+.sidebar .nav-link.active{
+  background: var(--c-accent-bg) !important;
+  color: var(--c-accent) !important;
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--c-accent);
+  .text-truncate{
+    color: #1b5fd6 !important;
+  }
+}
+
+/* collapsed vẫn giữ highlight */
+.sidebar.collapsed .nav-link.active{
+  box-shadow: inset 0 -3px 0 var(--c-accent);
+}

@@ -1,0 +1,27 @@
+/* Header container to align the primary action to the right */
+/* Page header extracted from table */
+
+
+
+/* Beautiful primary button */
+.mix-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-transform: none;
+    font-weight: 600;
+  }
+  
+  .mix-btn .mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+  
+  /* Optional subtle elevation on hover */
+  .mix-btn:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  }
+  

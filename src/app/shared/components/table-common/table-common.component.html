@@ -1,0 +1,130 @@
+<mat-card class="cardWithShadow">
+  <mat-card-content>
+
+    <div class="table-header-container">
+      <div class="search-container" *ngIf="enableSearch">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ searchPlaceholder }}</mat-label>
+          <input
+            matInput
+            [formControl]="searchCtrl"
+            placeholder="..."
+            (keyup.enter)="triggerSearch()" />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="triggerSearch()"
+            [disabled]="isLoading()"
+            matTooltip="Tìm kiếm">
+            <mat-icon>search</mat-icon>
+          </button>
+        </mat-form-field>
+      </div>
+
+      <div class="action-container" *ngIf="showCreateAction">
+        <button
+          mat-flat-button
+          color="primary"
+          target="_blank"
+          class="d-flex justify-content-center"
+          (click)="onCreate()">
+          Thêm mới
+        </button>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table mat-table [dataSource]="data()" matSort class="w-100">
+
+        <!-- ======================= STT COLUMN (luôn đứng đầu) ======================= -->
+        <ng-container matColumnDef="__stt">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            class="f-w-600 mat-subtitle-1 f-s-14 align-center">
+            STT
+          </th>
+          <td
+            mat-cell
+            *matCellDef="let row; let i = index"
+            class="mat-body-1 align-center">
+            {{ calcStt(i) }}
+          </td>
+        </ng-container>
+
+        <!-- ======================= DYNAMIC COLUMNS (ẩn 'id') ======================= -->
+        <ng-container *ngFor="let col of columns">
+          <ng-container *ngIf="col.key !== 'id'" [matColumnDef]="col.key">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              [disabled]="!col.sortable"
+              [style.width]="col.width"
+              [class.align-center]="col.align === 'center'"
+              [class.align-end]="col.align === 'end'"
+              class="f-w-600 mat-subtitle-1 f-s-14">
+              {{ col.header }}
+            </th>
+
+            <td
+              mat-cell
+              *matCellDef="let row"
+              [class.align-center]="col.align === 'center'"
+              [class.align-end]="col.align === 'end'"
+              class="mat-body-1">
+              {{ getCell(row, col) }}
+            </td>
+          </ng-container>
+        </ng-container>
+
+        <!-- ======================= ACTIONS COLUMN (tùy chọn) ======================= -->
+        <ng-container *ngIf="enableActions" matColumnDef="__actions">
+          <th mat-header-cell *matHeaderCellDef class="f-w-600 mat-subtitle-1 f-s-14">
+            Actions
+          </th>
+          <td mat-cell *matCellDef="let row" class="mat-body-1">
+            <button
+              mat-icon-button
+              [matMenuTriggerFor]="menu"
+              aria-label="Row actions">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button *ngIf="showViewAction" mat-menu-item (click)="onView(row)">
+                <mat-icon>visibility</mat-icon>
+                <span>View</span>
+              </button>
+              <button *ngIf="showEditAction" mat-menu-item (click)="onEdit(row)">
+                <mat-icon>edit</mat-icon>
+                <span>Edit</span>
+              </button>
+              <button *ngIf="showDeleteAction" mat-menu-item (click)="onDelete(row)">
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <!-- HEADER & ROWS -->
+        <tr mat-header-row *matHeaderRowDef="displayedColumns(); sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
+
+        <!-- EMPTY STATE -->
+        <tr class="empty" *ngIf="!isLoading() && data().length === 0">
+          <td [attr.colspan]="displayedColumns().length">Không có dữ liệu</td>
+        </tr>
+      </table>
+
+      <mat-paginator
+        [length]="total()"
+        [pageSize]="defaultPageSize"
+        [pageSizeOptions]="pageSizeOptions">
+      </mat-paginator>
+
+      <div class="error" *ngIf="errorMsg()">{{ errorMsg() }}</div>
+    </div>
+  </mat-card-content>
+</mat-card>

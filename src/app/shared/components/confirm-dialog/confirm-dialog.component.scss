@@ -1,0 +1,58 @@
+:host {
+  /* nếu là MatDialog, có thể để width trong open() thay vì đây */
+  display: block;
+}
+
+.modal-confirm {
+  position: relative;
+  width: min(92vw, 420px);
+  margin: 0 auto;
+  color: #636363;
+  text-align: center;
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px 20px 24px;
+}
+
+.close-btn {
+  position: absolute;
+  top: 6px; right: 8px;
+  width: 36px; height: 36px;
+  border: 0; background: transparent;
+  color: #7a869a; font-size: 20px; line-height: 1;
+  border-radius: 50%; cursor: pointer;
+  &:hover { background: #f1f5f9; color: #0f172a; }
+}
+
+.icon-box {
+  width: 80px; height: 80px; margin: 6px auto 4px;
+  border: 3px solid #f15e5e; border-radius: 50%;
+  display: grid; place-items: center;
+  .icon { color: #f15e5e; font-size: 36px; margin-top: 2px; }
+}
+
+.modal-title {
+  font-size: 24px; font-weight: 700;
+  margin: 16px 0 6px; color: #111827;
+}
+
+.modal-body {
+  color: #6b7280; font-size: 14px; line-height: 1.6;
+  margin: 4px 0 2px;
+}
+
+.modal-footer {
+  margin-top: 16px;
+  display: flex; justify-content: center; gap: 10px;
+}
+
+.btn {
+  min-width: 120px; min-height: 40px;
+  padding: 0 16px; border: 0; border-radius: 6px;
+  color: #fff; cursor: pointer;
+  transition: background .2s ease, transform .02s ease;
+  &:active { transform: translateY(1px); }
+}
+
+.btn-secondary { background: #c1c1c1; &:hover { background: #a8a8a8; } }
+.btn-danger    { background: #f15e5e; &:hover { background: #ee3535; } }
