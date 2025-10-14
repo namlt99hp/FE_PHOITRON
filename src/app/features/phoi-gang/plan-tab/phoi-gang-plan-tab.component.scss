@@ -1,0 +1,182 @@
+.plan-tab {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: calc(100vh - 120px);
+  overflow: hidden;
+
+  .header {
+    display: flex; 
+    justify-content: space-between;
+    align-items: center; 
+    margin-bottom: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #fff;
+    padding-top: 4px;
+  }
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .title { margin: 0; font-weight: 700; color: #111827; }
+  .meta { color: #6b7280; }
+  
+  .action-buttons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .pipeline { display: flex; align-items: center; gap: 8px; margin: 8px 0 16px; }
+  .pipeline .connector { flex: 1 1 auto; height: 2px; background: #e5e7eb; }
+  .pipeline .milestone { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 80px; }
+  .pipeline .milestone .dot { width: 14px; height: 14px; border-radius: 50%; background: #9ca3af; border: 2px solid #ffffff; box-shadow: 0 0 0 2px #e5e7eb; }
+  .pipeline .milestone .label { font-size: 12px; color: #6b7280; text-align: center; }
+  .pipeline .milestone.active .dot { background: #3b82f6; }
+  .pipeline .milestone.active .label { color: #111827; font-weight: 600; }
+  .pipeline .milestone.clickable, .pipeline-vertical .milestone-vertical.clickable { cursor: pointer; }
+
+  .layout { 
+    display: grid; grid-template-columns: 140px 1fr; gap: 12px; align-items: start;
+    height: 100%;
+    overflow: hidden;
+  }
+  .pipeline-vertical { 
+    border-right: 1px solid #e5e7eb; padding-right: 8px; 
+    height: 100%;
+    background: #fff;
+  }
+  .pipeline-title { font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 12px; }
+  .pipeline-flow { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .milestone-vertical { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .milestone-vertical .dot { width: 10px; height: 10px; border-radius: 50%; background: #9ca3af; border: 2px solid #ffffff; box-shadow: 0 0 0 2px #e5e7eb; }
+  .milestone-vertical .label { font-size: 11px; color: #6b7280; text-align: center; }
+  .milestone-vertical.active .dot { background: #3b82f6; }
+  .milestone-vertical.active .label { color: #111827; font-weight: 600; }
+  .connector-vertical { width: 2px; height: 20px; background: #e5e7eb; }
+
+  .mix-sections { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .mix-section { border: 1px solid #e5e7eb; border-radius: 8px; background: #ffffff; }
+  .mix-header { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #111827; }
+  .mix-body { color: #374151; }
+
+  .detail { 
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; 
+    height: 100%;
+    overflow: auto;
+  }
+  .detail-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; background: #fff; z-index: 1; }
+  .node-title { margin: 0; font-weight: 700; color: #111827; }
+
+  .table { width: 100%; border-collapse: collapse; }
+  .table th, .table td { padding: 8px 12px; border-bottom: 1px solid #f3f4f6; }
+  .table thead th { background: #f9fafb; font-weight: 600; color: #374151; }
+  .table .num { text-align: right; }
+
+  .summary { display: flex; gap: 16px; padding: 12px 16px; border-top: 1px solid #f3f4f6; background: #fafafa; }
+  .kpi { display: flex; gap: 8px; align-items: baseline; }
+  .kpi span { color: #6b7280; font-size: 12px; }
+  .kpi strong { font-size: 16px; color: #111827; }
+
+  /* Excel-like table demo */
+  .excel-table { overflow: auto; }
+  .excel-table table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
+  .excel-table th, .excel-table td { padding: 4px 6px; border: 1px solid #e5e7eb; vertical-align: middle; }
+  .excel-table thead th { background: #f3f4f6; color: #374151; font-weight: 600; position: sticky; top: 0; z-index: 1; text-align: center; }
+  .excel-table td.num, .excel-table th.num { text-align: right; }
+  .excel-table td.text, .excel-table th.text { text-align: left; }
+  .excel-table tbody tr:nth-child(odd) { background: #fafafa; }
+  .excel-table tbody tr:hover { background: #eef2ff; }
+  .excel-table .pos { color: #16a34a; }
+  .excel-table .neg { color: #dc2626; }
+  .excel-table .highlight { background: #fff7ed; font-weight: 600; }
+  .excel-table .total-row td { background: #fff7ed; font-weight: 700; }
+  .excel-table .result-row td { background: #f0fdf4; font-weight: 700; }
+  /* widen first column: Nguyên liệu */
+  .excel-table table th:first-child,
+  .excel-table table td:first-child {
+    width: 165px;
+    min-width: 200px;
+    text-align: left;
+  }
+
+  .mix-section {
+    margin-top: 24px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+  }
+  .mix-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+
+    .mix-title {
+      flex: 1;
+
+      h5 {
+        margin: 0 0 8px 0;
+        font-weight: 600;
+        color: #374151;
+        font-size: 16px;
+      }
+
+      .mix-meta {
+        margin: 0;
+        font-size: 12px;
+        color: #6b7280;
+      }
+    }
+
+    button {
+      margin-left: 16px;
+      flex-shrink: 0;
+    }
+  }
+  .mix-body {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .loading-message { text-align: center; padding: 40px; color: #6b7280; font-style: italic; }
+
+  // Table styling enhancements
+  .formula-table {
+    // Highlight mixed ore rows (loai_Quang = 1)
+    .mixed-ore-row {
+      background-color: #fff3e0 !important; // Light orange background
+      
+      td {
+        background-color: #fff3e0 !important;
+      }
+    }
+    
+    // Result row styling
+    .result-row {
+      background-color: #e8f5e8 !important; // Light green background
+      font-weight: 600;
+      
+      td {
+        background-color: #e8f5e8 !important;
+        border-top: 2px solid #4caf50;
+      }
+    }
+    
+    // Mixed ore badge styling
+    .mixed-ore-badge {
+      background-color: #ff9800;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-left: 4px;
+    }
+  }
+}
+
+

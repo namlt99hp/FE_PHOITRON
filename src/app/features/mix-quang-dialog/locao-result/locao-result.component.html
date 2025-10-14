@@ -1,0 +1,115 @@
+<div class="locao-result-container">
+  <!-- 2-column row: (Gang + Xỉ) = 7 | Thống kê = 5 -->
+  <div class="row g-2" *ngIf="gangData?.length || xiData?.length || planResults?.length">
+    <!-- Gang 3 parts -->
+    <div class="col-12 col-lg-3">
+      <p class="section-title">Gang</p>
+      <div class="table-container mb-2" *ngIf="gangData?.length">
+        <table class="stats-table compact">
+          <thead>
+            <tr>
+              <th class="center">Thành phần</th>
+              <th class="center">Khối lượng</th>
+              <th class="center">Phần trăm (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let element of gangData">
+              <td class="left">{{ element.element }}</td>
+              <td class="right">{{ element.mass | number:'1.2-2' }}</td>
+              <td class="right">
+                <ng-container *ngIf="element.isCalculated; else percentInput">
+                  {{ element.percentage | number:'1.2-2' }}
+                </ng-container>
+                <ng-template #percentInput>
+                  <input type="text" inputmode="decimal" pattern="^\\d*(\\.\\d*)?$" class="percent-input"
+                         [(ngModel)]="element.percentage" (ngModelChange)="onPercentageChange(element, $event)" />
+                </ng-template>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td class="left"><strong>Tổng</strong></td>
+              <td class="right">{{ getGangTotalMass() | number:'1.2-2' }}</td>
+              <td class="right">{{ getGangTotalPercentage() | number:'1.2-2' }}%</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    <!-- Xỉ 3 parts -->
+    <div class="col-12 col-lg-3">
+      <p class="section-title">Xỉ</p>
+      <div class="table-container" *ngIf="xiData?.length">
+        <table class="stats-table compact">
+          <thead>
+            <tr>
+              <th class="center">Thành phần</th>
+              <th class="center">Khối lượng</th>
+              <th class="center">Phần trăm (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let element of xiData">
+              <td class="left">{{ element.element }}</td>
+              <td class="right">{{ element.mass | number:'1.2-2' }}</td>
+              <td class="right">
+                <ng-container *ngIf="element.isCalculated; else xaPercentInput">
+                  {{ element.percentage | number:'1.2-2' }}
+                </ng-container>
+                <ng-template #xaPercentInput>
+                  <input type="text" inputmode="decimal" pattern="^\\d*(\\.\\d*)?$" class="percent-input"
+                         [(ngModel)]="element.percentage" (ngModelChange)="onPercentageChange(element, $event)" />
+                </ng-template>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td class="left"><strong>Tổng</strong></td>
+              <td class="right">{{ getXaTotalMass() | number:'1.2-2' }}</td>
+              <td class="right">{{ getXaTotalPercentage() | number:'1.2-2' }}%</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    <!-- Statistics 6 parts -->
+    <div class="col-12 col-lg-6">
+      <p class="section-title">Thống kê</p>
+      <form [formGroup]="statsForm" class="stats-table-wrap">
+        <table class="stats-table compact">
+          <thead>
+            <tr>
+              <th class="center">Các chỉ tiêu cơ bản</th>
+              <th class="center">ĐVT</th>
+              <th class="center">Giá trị</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of planResults" [class.hl-warning]="r.highlightClass==='hl-warning'" [class.hl-info]="r.highlightClass==='hl-info'">
+              <td class="left">{{ r.ten }}</td>
+              <td class="center">{{ r.donVi }}</td>
+              <td class="right">
+                <ng-container *ngIf="r.isAutoCalculated; else manualInput">
+                  <ng-container [ngSwitch]="r.donVi">
+                    <span *ngSwitchCase="'tấn/ngày'">{{ (statsForm.get(getResultKey(r))?.value) | number:'1.3-3' }}</span>
+                    <span *ngSwitchCase="'kg/tsp'">{{ (statsForm.get(getResultKey(r))?.value) | number:'1.2-2' }}</span>
+                    <span *ngSwitchCase="'g/tsp'">{{ (statsForm.get(getResultKey(r))?.value) | number:'1.0-0' }}</span>
+                    <span *ngSwitchCase="'%'">{{ (statsForm.get(getResultKey(r))?.value) | number:'1.2-2' }}</span>
+                    <span *ngSwitchCase="'Độ C'">{{ (statsForm.get(getResultKey(r))?.value) | number:'1.0-0' }}</span>
+                    <span *ngSwitchDefault>{{ statsForm.get(getResultKey(r))?.value }}</span>
+                  </ng-container>
+                </ng-container>
+                <ng-template #manualInput>
+                  <input type="text" inputmode="decimal" pattern="^\\d*(\\.\\d*)?$" class="percent-input" [formControlName]="getResultKey(r)" (input)="computeAndUpdateStatistics()" />
+                </ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </form>
+    </div>
+  </div>
+</div>

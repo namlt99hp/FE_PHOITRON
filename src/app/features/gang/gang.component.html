@@ -1,0 +1,21 @@
+<div class="page-header">
+  <h3 class="title">Gang</h3>
+</div>
+<app-table-common
+  [columns]="columns"
+  [fetcher]="fetcher"
+  [pageSizeOptions]="[5, 10, 20, 50]"
+  [defaultPageSize]="10"
+  [enableActions]="true"
+  [showCreateAction]="true"
+  [showViewAction]="true"
+  [showEditAction]="true"
+  [showDeleteAction]="true"
+  [confirmDelete]="confirmDelete"
+  [deleteHandler]="deleteHandler"
+  [enableSearch]="true"
+  [searchPlaceholder]="'Tìm kiếm'"
+  (create)="onCreate()"
+  (view)="onMix($event)"
+  (selectEdit)="onEdit($event)"
+></app-table-common>

@@ -1,3 +1,5 @@
+import { QuangResponse } from "./quang.model";
+
 export interface CongThucPhoiTableModel{
     id: number;
     maCongThuc: string;
@@ -46,10 +48,13 @@ export interface CongThucQuangResponse {
   id: number;
   maQuang: string;
   tenQuang: string | null;
+  matKhiNung: number | null;
+  tiLePhoi: number | null;
   tP_HoaHocs: TPHHOfQuangReponse[];
 }
 
 export interface CongThucPhoiDetailRespone {
+  quangNeo: QuangResponse;
   congThuc: CongThucPhoiResponse;
   tphHs: TPHHOfCongThucResponse[];
   quangs: CongThucQuangResponse[];
@@ -164,4 +169,42 @@ export interface NeoDashboardVm {
   MaQuangNeo?: string | null;
   TenQuangNeo?: string | null;
   Formulas: FormulaSummaryVm[];
+}
+
+// ====== BE-aligned DTOs/Responses for basic CRUD ======
+
+export interface Cong_Thuc_PhoiCreateDto {
+  id_Quang_DauRa: number;
+  ma_Cong_Thuc: string;
+  hieu_Luc_Tu: string; // ISO
+  ten_Cong_Thuc?: string | null;
+  he_So_Thu_Hoi: number; // decimal
+  chi_Phi_Cong_Doạn_1Tan: number; // decimal
+  phien_Ban?: number;
+  trang_Thai?: number;
+  hieu_Luc_Den?: string | null; // ISO
+  ghi_Chu?: string | null;
+}
+
+export interface Cong_Thuc_PhoiUpdateDto extends Cong_Thuc_PhoiCreateDto {
+  id: number;
+}
+
+export interface Cong_Thuc_PhoiUpsertDto {
+  id?: number | null;
+  cong_Thuc_Phoi: Cong_Thuc_PhoiCreateDto;
+}
+
+export interface Cong_Thuc_PhoiResponse {
+  id: number;
+  id_Quang_DauRa: number;
+  ma_Cong_Thuc: string;
+  ten_Cong_Thuc?: string | null;
+  he_So_Thu_Hoi: number;
+  chi_Phi_Cong_Doạn_1Tan: number;
+  phien_Ban: number;
+  trang_Thai: number;
+  hieu_Luc_Tu: string;
+  hieu_Luc_Den?: string | null;
+  ghi_Chu?: string | null;
 }

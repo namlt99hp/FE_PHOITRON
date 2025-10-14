@@ -46,8 +46,14 @@ export interface OreVm {
   id: number;
   maQuang: string;
   tenQuang: string;
-  gia?: number | null;
+  loaiQuang?: number; // Loại quặng: 0=Mua, 1=Tron, 2=Gang, 3=Khac
+  gia?: number | null; // legacy
+  giaUSD?: number | null;
+  tyGia?: number | null;
+  giaVND?: number | null;
+  ngayTyGia?: string | null;
   matKhiNung?: number;
+  tiLePhoi?: number; // tỷ lệ phối (khi load từ công thức)
 }
 
 @Component({
@@ -74,7 +80,7 @@ export class SelectQuangDialogComponent implements OnInit {
   private quangService = inject(QuangService);
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { preselectedIds?: number[] } | null
+    @Inject(MAT_DIALOG_DATA) public data: { preselectedIds?: number[]; multiple?: boolean } | null
   ) {}
 
   cols = ['sel', 'code', 'name', 'price'] as const;
@@ -144,6 +150,12 @@ export class SelectQuangDialogComponent implements OnInit {
   }
 
   toggle(row: OreVm) {
+    const multi = this.data?.multiple !== false; // default multi
+    if (!multi) {
+      this.selectedIds.clear();
+      this.selectedIds.add(row.id);
+      return;
+    }
     if (this.selectedIds.has(row.id)) this.selectedIds.delete(row.id);
     else this.selectedIds.add(row.id);
   }
@@ -161,14 +173,20 @@ export class SelectQuangDialogComponent implements OnInit {
     const missing = ids.filter((id) => !this.cache.has(id));
     if (missing.length === 0) {
       const out = ids.map((id) => this.cache.get(id)!);
-      this.dlgRef.close(out);
+      this.enrichWithCurrentPrice(out).then((enriched) => this.dlgRef.close(enriched));
+      console.log('out', out);
       return;
     }
     this.quangService.GetByListIds(missing).subscribe((list: QuangSelectItemModel[]) => {
       list.forEach((x: QuangSelectItemModel) => this.cache.set(x.id, x));
       const out = ids.map((id) => this.cache.get(id)!).filter(Boolean);
-      this.dlgRef.close(out);
+      this.enrichWithCurrentPrice(out).then((enriched) => this.dlgRef.close(enriched));
     });
+  }
+
+  private async enrichWithCurrentPrice(rows: OreVm[]): Promise<OreVm[]> {
+    // API search đã trả đầy đủ; không cần xử lý thêm
+    return rows;
   }
 
   trackById = (index: number, r: OreVm) => r?.id ?? index;

@@ -1,0 +1,257 @@
+<h2 mat-dialog-title>Cấu hình Tham số Quy trình</h2>
+<div mat-dialog-content>
+  <div class="plan-info" *ngIf="data.planName">
+    <mat-card>
+      <mat-card-content>
+        <strong>Phương án:</strong> {{ data.planName }}<br>
+        <strong>ID:</strong> {{ data.planId }}
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Search -->
+  <form [formGroup]="form">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Tìm kiếm tham số</mat-label>
+      <input matInput formControlName="search" placeholder="Tìm theo tên, mã hoặc đơn vị..." />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+  </form>
+
+  <div class="dialog-container">
+    <!-- Available Parameters -->
+    <div class="section">
+      <h3>Tham số có sẵn</h3>
+      <div class="params-grid" *ngIf="!loading">
+        <mat-card 
+          *ngFor="let param of filteredParams; trackBy: trackById" 
+          class="param-card"
+          [class.selected]="param.selected">
+          <mat-card-content>
+            <mat-checkbox 
+              [checked]="param.selected"
+              (change)="toggleParamSelection(param)">
+              <div class="param-info">
+                <div class="param-main">
+                  <strong>{{ param.ten }}</strong>
+                  <span class="param-code">({{ param.code }})</span>
+                </div>
+                <div class="param-details">
+                  <small>Đơn vị: {{ param.donVi }}</small>
+                  <span *ngIf="param.isCalculated" class="calculated-badge">Tự động tính</span>
+                </div>
+              </div>
+            </mat-checkbox>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      
+      <div *ngIf="loading" class="loading">
+        <mat-spinner diameter="30"></mat-spinner>
+        Đang tải...
+      </div>
+    </div>
+
+    <!-- Selected Parameters with Order -->
+    <div class="section">
+      <div class="section-header">
+        <h3>Tham số đã chọn</h3>
+        <button mat-button color="warn" (click)="clearAll()" [disabled]="selectedParams.length === 0">
+          <mat-icon>clear_all</mat-icon>
+          Xóa tất cả
+        </button>
+      </div>
+      
+      <div class="selected-list" *ngIf="selectedParams.length > 0">
+        <mat-card *ngFor="let param of selectedParams; trackBy: trackById" class="selected-card">
+          <mat-card-content>
+            <div class="param-row">
+              <div class="order-number">{{ param.thuTu }}</div>
+              <div class="param-info">
+                <div class="param-main">{{ param.ten }}</div>
+                <div class="param-code">{{ param.code }} - {{ param.donVi }}</div>
+              </div>
+              <div class="actions">
+                <button mat-icon-button (click)="moveUp(param)" [disabled]="param === selectedParams[0]">
+                  <mat-icon>keyboard_arrow_up</mat-icon>
+                </button>
+                <button mat-icon-button (click)="moveDown(param)" [disabled]="param === selectedParams[selectedParams.length - 1]">
+                  <mat-icon>keyboard_arrow_down</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="removeFromSelection(param)">
+                  <mat-icon>remove_circle</mat-icon>
+                </button>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      
+      <div *ngIf="selectedParams.length === 0" class="empty-state">
+        <mat-icon>info</mat-icon>
+        <p>Chưa có tham số nào được chọn</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Hủy</button>
+  <button mat-flat-button color="primary" (click)="confirm()" [disabled]="selectedParams.length === 0">
+    Lưu cấu hình
+  </button>
+</div>
+
+<style>
+.plan-info {
+  margin-bottom: 16px;
+}
+
+.search-field {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.dialog-container {
+  display: flex;
+  gap: 20px;
+  max-height: 500px;
+  overflow: hidden;
+}
+
+.section {
+  flex: 1;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.section-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.params-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.param-card {
+  transition: all 0.2s ease;
+}
+
+.param-card.selected {
+  border-color: #1976d2;
+  background-color: #f3f7ff;
+}
+
+.param-card mat-card-content {
+  padding: 8px 12px;
+}
+
+.param-info .param-main {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.param-code {
+  color: #666;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.param-details {
+  font-size: 12px;
+  color: #666;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.calculated-badge {
+  background: #4caf50;
+  color: white;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+.selected-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.selected-card {
+  background-color: #f8f9fa;
+  border-left: 4px solid #1976d2;
+}
+
+.param-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.order-number {
+  background: #1976d2;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.param-info {
+  flex: 1;
+}
+
+.param-info .param-main {
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.actions {
+  display: flex;
+  gap: 4px;
+}
+
+.empty-state {
+  text-align: center;
+  color: #666;
+  padding: 40px;
+}
+
+.empty-state mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  color: #ccc;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+}
+
+.loading mat-spinner {
+  margin-bottom: 12px;
+}
+</style>

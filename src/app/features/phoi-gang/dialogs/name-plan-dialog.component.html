@@ -1,0 +1,26 @@
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon>playlist_add</mat-icon>
+  {{ title }}
+</h2>
+<div mat-dialog-content>
+  <form [formGroup]="form" class="form">
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-label>Tên phương án</mat-label>
+      <input matInput formControlName="ten" />
+      <mat-error *ngIf="form.controls.ten.invalid && form.controls.ten.touched">Bắt buộc</mat-error>
+    </mat-form-field>
+  </form>
+  
+</div>
+<div mat-dialog-actions align="end" class="actions">
+  <button mat-stroked-button color="basic" mat-dialog-close class="btn">
+    <mat-icon>close</mat-icon>
+    Huỷ
+  </button>
+  <button mat-raised-button color="primary" class="btn" [disabled]="form.invalid" (click)="onOk()">
+    <mat-icon>check_circle</mat-icon>
+    Xác nhận
+  </button>
+</div>
+
+

@@ -1,0 +1,15 @@
+<div class="page-header">
+  <h1>Tham số Lò cao</h1>
+  <div class="header-actions">
+    <!-- Formula setup button removed - using hard-coded formulas -->
+  </div>
+</div>
+
+<app-table-common
+  [columns]="columns"
+  [fetcher]="fetcher"
+  [tableTitle]="''"
+  [enableActions]="true"
+  (create)="onCreate()"
+  (selectEdit)="onEdit($event)"
+></app-table-common>

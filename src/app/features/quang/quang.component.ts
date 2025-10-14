@@ -23,6 +23,7 @@ import {
 import { MatDialog } from '@angular/material/dialog';
 import { MixQuangDialogComponent } from '../mix-quang-dialog/mix-quang-dialog.component';
 import { QuangMuaFormDialogComponent } from './quang-mua-form-dialog/quang-mua-form-dialog.component';
+import { MilestoneEnum } from '../../core/enums/milestone.enum';
 
 @Component({
   selector: 'app-quang',
@@ -44,7 +45,9 @@ export class QuangComponent {
     { key: 'id', header: 'ID', width: '90px', sortable: true, align: 'start' },
     { key: 'maQuang', header: 'Mã quặng', sortable: true },
     { key: 'tenQuang', header: 'Tên quặng', sortable: true },
-    { key: 'gia', header: 'Giá', sortable: true, align: 'start' },
+    { key: 'gia', header: 'Giá', sortable: true, align: 'start',
+      cell: (r) => r.gia ? r.gia + ' ' + r.tien_Te : '',
+     },
     { key: 'ghiChu', header: 'Ghi chú', sortable: false, align: 'start' },
     {
       key: 'ngayTao',
@@ -58,7 +61,9 @@ export class QuangComponent {
   constructor(private dialog: MatDialog) {}
 
   fetcher = (q: TableQuery): Observable<TableResult<QuangTableModel>> =>
-    this.quangService.search(q);
+    this.quangService.search({
+      ...q,
+    }) as unknown as Observable<TableResult<QuangTableModel>>;
 
   // Xoá (tuỳ ý: truyền vào deleteHandler để component tự xoá & refresh)
   deleteHandler = (row: QuangTableModel) =>
@@ -67,13 +72,13 @@ export class QuangComponent {
   onEdit(row: QuangTableModel) {
     this.dialog
       .open(QuangMuaFormDialogComponent, {
-        width: '1200px',
+        width: '1500px',
         disableClose: true,
         data: { mode: 'EDIT', quang: row },
       })
       .afterClosed()
       .subscribe((res) => {
-        if (res) {
+        if (res && res.success) {
           this.table?.refresh();
         }
       });
@@ -84,7 +89,10 @@ export class QuangComponent {
       .open(MixQuangDialogComponent, {
         width: '1700px',
         disableClose: true,
-        data: { neoOreId, existingOreId },
+        data: { 
+          neoOreId, 
+          existingOreId,
+        },
       })
       .afterClosed()
       .subscribe((res) => {
@@ -97,13 +105,13 @@ export class QuangComponent {
   onCreate() {
     this.dialog
       .open(QuangMuaFormDialogComponent, {
-        width: '1200px',
+        width: '1500px',
         disableClose: true,
         data: { mode: 'MUA' },
       })
       .afterClosed()
       .subscribe((res) => {
-        if (res) {
+        if (res && res.success) {
           this.table?.refresh();
         }
       });

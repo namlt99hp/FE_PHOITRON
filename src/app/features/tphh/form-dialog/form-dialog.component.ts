@@ -18,12 +18,13 @@ import {
 } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { TPHHDto, TPHHTableModel } from '../../../core/models/tphh.model';
+import { TPHHCreateDto, TPHHTableModel, TPHHUpdateDto, TPHHUpsertDto } from '../../../core/models/tphh.model';
 import { ThanhPhanHoaHocService } from '../../../core/services/tphh.service';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { HttpResponseModel } from '../../../core/models/http-response.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-form-dialog',
@@ -46,6 +47,7 @@ export class FormDialogComponent {
   readonly data = inject<TPHHTableModel>(MAT_DIALOG_DATA);
   private tphhService = inject(ThanhPhanHoaHocService);
   private snack = inject(MatSnackBar);
+  private notify = inject(NotificationService);
 
   public formTitle: string = 'Tạo mới';
   public form: FormGroup;
@@ -55,7 +57,7 @@ export class FormDialogComponent {
     if (this.data) {
       this.formTitle = 'Chỉnh sửa';
       this.tphhService
-        .getDetail(this.data.id)
+        .getById(this.data.id)
         .subscribe((res: TPHHTableModel) => {
           if(res){
             this.patchFormValue(res);
@@ -76,24 +78,19 @@ export class FormDialogComponent {
       return;
     }
     const dto = this.getDto();
-    if(this.data){
-      this.tphhService.update(dto).subscribe((res: HttpResponseModel) => {
-        if(res.success){
-            this.form.reset();
-            this.cancel(true);
-            this.snack.open('Đã cập nhật thành công', 'OK', { duration: 1500, panelClass: ['snack-info']})
-          }
-      });
-    } else{
+    const upsertPayload: TPHHUpsertDto = this.data
+      ? { id: this.data.id, tp_HoaHoc: dto as TPHHCreateDto }
+      : { id: null, tp_HoaHoc: dto as TPHHCreateDto };
 
-      this.tphhService.create(dto).subscribe((res: any) => {
-        if(res){
-            this.form.reset();
-            this.cancel(true);
-            this.snack.open('Đã tạo mới thành công', 'OK', { duration: 1500, panelClass: ['snack-success'] })
-          }
-      });
-    }
+    this.tphhService.upsert(upsertPayload).subscribe((res: HttpResponseModel<{ id: number }>) => {
+      if (res?.success && res.statusCode >= 200 && res.statusCode < 300) {
+        this.form.reset();
+        this.cancel(true);
+        this.notify[this.data ? 'info' : 'success'](this.data ? 'Đã cập nhật thành công' : 'Đã tạo mới thành công');
+      } else {
+        this.notify.error(res?.message || 'Thao tác thất bại');
+      }
+    });
   }
 
   initForm(id?: number) {
@@ -101,12 +98,17 @@ export class FormDialogComponent {
       id: [id ?? null],
       ma_TPHH: [null, [Validators.required, Validators.minLength(1)]],
       ten_TPHH: [null, [Validators.required, Validators.minLength(1)]],
-      ghiChu: [null],
+      ghi_Chu: [null],
     });
   }
 
   patchFormValue(tphh: TPHHTableModel){
-    this.form.patchValue(tphh)
+    this.form.patchValue({
+      id: tphh.id,
+      ma_TPHH: tphh.ma_TPHH,
+      ten_TPHH: tphh.ten_TPHH,
+      ghi_Chu: tphh.ghi_Chu ?? null,
+    });
   }
 
   fc = (name: string) => this.form.get(name)!;
@@ -115,13 +117,15 @@ export class FormDialogComponent {
     this.fc(name).invalid && (this.fc(name).touched || this.fc(name).dirty || this.submitted);
   hasError = (name: string, key: string) => this.fc(name).hasError(key);
   
-  getDto() {
-    let dto: TPHHDto = {
-      id: this.form.controls['id'].value,
+  getDto(): TPHHCreateDto | TPHHUpdateDto {
+    const base = {
       ten_TPHH: this.form.controls['ten_TPHH'].value,
       ma_TPHH: this.form.controls['ma_TPHH'].value,
-      ghiChu: this.form.controls['ghiChu'].value,
-    };
-    return dto;
+      don_Vi: '%', // Mặc định là %
+      thu_Tu: null, // Không cần thiết
+      ghi_Chu: this.form.controls['ghi_Chu'].value,
+    } as any;
+    const id = this.form.controls['id'].value;
+    return id ? ({ id, ...base } as TPHHUpdateDto) : (base as TPHHCreateDto);
   }
 }

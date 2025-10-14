@@ -1,0 +1,113 @@
+<h2 mat-dialog-title>{{ data.loaiQuang === 4 ? (data.id ? 'Sửa xỉ' : 'Thêm xỉ') : (data.id ? 'Sửa gang' : 'Thêm gang') }}</h2>
+
+<div mat-dialog-content class="dialog-body">
+  <div class="grid">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ data.loaiQuang === 4 ? 'Mã xỉ' : 'Mã gang' }}</mat-label>
+      <input matInput [formControl]="form.controls.maGang" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ data.loaiQuang === 4 ? 'Tên xỉ' : 'Tên gang' }}</mat-label>
+      <input matInput [formControl]="form.controls.tenGang" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="span-2">
+      <mat-label>Ghi chú</mat-label>
+      <textarea matInput rows="2" [formControl]="form.controls.ghiChu"></textarea>
+    </mat-form-field>
+  </div>
+
+  <ng-container>
+    <section class="section">
+    <div class="section-header">
+      <h3 class="section-title">Thành phần hoá học</h3>
+      <button mat-stroked-button color="primary" (click)="openSelectChems()">
+        <mat-icon>category</mat-icon>&nbsp;Chọn TPHH
+      </button>
+    </div>
+  
+    <div class="constraints" *ngIf="selectedChems().length > 0">
+      <table class="constraints-table">
+        <thead>
+          <tr>
+            <th class="stub">TPHH</th>
+            <th
+              *ngFor="let c of selectedChems()"
+              class="chem-col"
+            >
+              <div class="th-wrap">
+                <span class="th-text" [title]="c.ten_TPHH">{{
+                  c.ma_TPHH
+                }}</span>
+                <button 
+                  type="button" 
+                  class="remove-btn" 
+                  (click)="removeChem(c.id)"
+                  matTooltip="Xóa quặng này"
+                  matTooltipPosition="above">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </th>
+          </tr>
+        </thead>
+  
+        <tbody>
+          <tr>
+            <th class="stub">Hàm lượng</th>
+            <td *ngFor="let c of selectedChems(); trackBy: trackByChem">
+              <ng-container *ngIf="tp_HoaHocs().get(c.id) as ctrl">
+                <div class="input-with-formula">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                    class="cell-input text-right"
+                    [formControl]="ctrl.phanTram"
+                    [readonly]="ctrl.isCalculated"
+                  />
+                  <button 
+                    type="button" 
+                    class="formula-btn" 
+                    (click)="openFormulaCalculator(c)"
+                    matTooltip="Thiết lập công thức tính toán"
+                    matTooltipPosition="above">
+                    <mat-icon>calculate</mat-icon>
+                  </button>
+                </div>
+              </ng-container>
+            </td>
+          </tr>
+          <tr class="formula-row">
+            <th class="stub">Công thức</th>
+            <td *ngFor="let c of selectedChems(); trackBy: trackByChem">
+              <ng-container *ngIf="tp_HoaHocs().get(c.id) as ctrl">
+                <div *ngIf="ctrl.calcFormula" class="formula-display">
+                  <small>{{ ctrl.displayFormula || ctrl.calcFormula }}</small>
+                </div>
+                <div *ngIf="!ctrl.calcFormula" class="formula-empty">
+                  <small>-</small>
+                </div>
+              </ng-container>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  </ng-container>
+</div>
+
+
+<div mat-dialog-actions align="end">
+  <button mat-stroked-button color="warn" class="push-start" *ngIf="data.loaiQuang === 4 && data.id" (click)="onDeleteSlag()">
+    <mat-icon>delete</mat-icon>&nbsp;Xoá xỉ
+  </button>
+  <button mat-stroked-button (click)="onCancel()">Huỷ</button>
+  <button mat-flat-button color="primary" (click)="onSave()" [disabled]="form.invalid">Lưu</button>
+  
+</div>
+
+

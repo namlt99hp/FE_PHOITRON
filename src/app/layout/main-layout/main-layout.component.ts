@@ -58,13 +58,13 @@ export class MainLayoutComponent implements OnDestroy {
           icon: 'house',
           roles: ['admin', 'user'],
         },
-        {
-          id: 'congthucphoi',
-          label: 'Phương pháp phối trộn',
-          path: '/phuong-phap-phoi-tron',
-          icon: 'person',
-          roles: ['admin'],
-        },
+        // {
+        //   id: 'congthucphoi',
+        //   label: 'Phương pháp phối trộn',
+        //   path: '/phuong-phap-phoi-tron',
+        //   icon: 'person',
+        //   roles: ['admin'],
+        // },
         {
           id: 'quang',
           label: 'Quặng',
@@ -79,63 +79,64 @@ export class MainLayoutComponent implements OnDestroy {
           icon: 'clock-history',
           roles: ['admin'],
         },
-        // {
-        //   id: 'org',
-        //   label: 'Thông tin BP/NM',
-        //   icon: 'buildings',
-        //   children: [
-        //     {
-        //       id: 'dept',
-        //       label: 'Phòng ban',
-        //       path: '/management/departments',
-        //       icon: 'diagram-3',
-        //     },
-        //     {
-        //       id: 'work',
-        //       label: 'Phân xưởng',
-        //       path: '/management/workshops',
-        //       icon: 'hammer',
-        //     },
-        //     {
-        //       id: 'title',
-        //       label: 'Chức vụ',
-        //       path: '/management/positions',
-        //       icon: 'person-badge',
-        //     },
-        //     {
-        //       id: 'shift',
-        //       label: 'Ca/Kíp làm việc',
-        //       path: '/management/shifts',
-        //       icon: 'clock-history',
-        //       children: [
-        //         {
-        //           id: 'dept',
-        //           label: 'Phòng ban',
-        //           path: '/management/departments',
-        //           icon: 'diagram-3',
-        //         },
-        //         {
-        //           id: 'work',
-        //           label: 'Phân xưởng',
-        //           path: '/management/workshops',
-        //           icon: 'hammer',
-        //         },
-        //         {
-        //           id: 'title',
-        //           label: 'Chức vụ',
-        //           path: '/management/positions',
-        //           icon: 'person-badge',
-        //         },
-        //         {
-        //           id: 'shift',
-        //           label: 'Ca/Kíp làm việc',
-        //           path: '/management/shifts',
-        //           icon: 'clock-history',
-        //         },
-        //       ],
-        //     },
-        //   ],
-        // },
+        {
+          id: 'quanggang',
+          label: 'Quặng gang',
+          path: '/quang-gang',
+          icon: 'diagram-3',
+          roles: ['admin'],
+        },
+        {
+          id: 'org',
+          label: 'Config chung',
+          icon: 'buildings',
+          children: [
+            {
+              id: 'dept',
+              label: 'Lò cao items',
+              path: '/locao-process-params',
+              icon: 'hammer',
+            },
+            {
+              id: 'dept',
+              label: 'Thống kê phương án',
+              path: '/thongke-phuongan',
+              icon: 'hammer',
+            },
+            {
+              id: 'shift',
+              label: 'Phân quyền',
+              path: '',
+              icon: 'clock-history',
+              children: [
+                {
+                  id: 'dept',
+                  label: 'Phòng ban',
+                  path: '/management/departments',
+                  icon: 'diagram-3',
+                },
+                {
+                  id: 'work',
+                  label: 'Phân xưởng',
+                  path: '/management/workshops',
+                  icon: 'hammer',
+                },
+                {
+                  id: 'title',
+                  label: 'Chức vụ',
+                  path: '/management/positions',
+                  icon: 'person-badge',
+                },
+                {
+                  id: 'shift',
+                  label: 'Ca/Kíp làm việc',
+                  path: '/management/shifts',
+                  icon: 'clock-history',
+                },
+              ],
+            },
+          ],
+        },
 
         // {
         //   id: 'assets',

@@ -17,12 +17,12 @@ export const routes: Routes = [
         // canActivate: [authGuard],
         data: { roles: ['admin'], title: 'TRANG CHỦ' }
       },
-      {
-        path: 'phuong-phap-phoi-tron',
-        loadChildren: () => import('./features/cong-thuc-phoi/cong-thuc-phoi.routes').then(m => m.CONGTHUCPHOI_ROUTES),
-        // canActivate: [authGuard],
-        data: { roles: ['admin'] ,title: 'CÔNG THỨC PHỐI TRỘN'}
-      },
+      // {
+      //   path: 'phuong-phap-phoi-tron',
+      //   loadChildren: () => import('./features/cong-thuc-phoi/cong-thuc-phoi.routes').then(m => m.CONGTHUCPHOI_ROUTES),
+      //   // canActivate: [authGuard],
+      //   data: { roles: ['admin'] ,title: 'CÔNG THỨC PHỐI TRỘN'}
+      // },
       {
         path: 'quang',
         loadChildren: () => import('./features/quang/quang.routes').then(m => m.QUANG_ROUTES),
@@ -35,7 +35,38 @@ export const routes: Routes = [
         // canActivate: [authGuard],
         data: { roles: ['admin'] , title: 'THÀNH PHẦN HÓA HỌC'}
       },
-      // { path: 'products', loadChildren: () => import('./features/products/products.routes').then(m => m.PRODUCT_ROUTES) },
+      {
+        path: 'quang-gang',
+        loadChildren: () => import('./features/gang/gang.routes').then(m => m.GANG_ROUTES),
+        // canActivate: [authGuard],
+        data: { roles: ['admin'] , title: 'QUẶNG GANG'}
+      },  
+      {
+        path: 'phoi-gang/:id',
+        loadComponent: () => import('./features/phoi-gang/phoi-gang.component').then(m => m.PhoiGangPageComponent),
+        data: { roles: ['admin'] , title: 'PHỐI QUẶNG GANG'}
+      },
+      {
+        path: 'phoi-gang/:id/compare',
+        loadComponent: () => import('./features/phoi-gang/compare/phoi-gang-compare.component').then(m => m.PhoiGangCompareComponent),
+        data: { roles: ['admin'] , title: 'SO SÁNH PHƯƠNG ÁN'}
+      },
+      {
+        path: 'phoi-gang/:id/summary',
+        loadComponent: () => import('./features/phoi-gang/summary/phoi-gang-summary.component').then(m => m.PhoiGangSummaryComponent),
+        data: { roles: ['admin'] , title: 'TỔNG HỢP PHƯƠNG ÁN'}
+      },
+      {
+        path: 'locao-process-params',
+        loadComponent: () => import('./features/locao-process-param/locao-process-param.page').then(m => m.LoCaoProcessParamPage),
+        data: { roles: ['admin'] , title: 'THAM SỐ LÒ CAO'}
+      },
+      {
+        path: 'thongke-phuongan',
+        loadChildren: () => import('./features/thongke-function/thongke-function.routes').then(m => m.thongkeFunctionRoutes),
+        data: { roles: ['admin'] , title: 'HÀM THỐNG KÊ'}
+      },
+      
     ]
   },
   {

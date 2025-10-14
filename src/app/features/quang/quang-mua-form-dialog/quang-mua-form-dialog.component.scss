@@ -1,5 +1,47 @@
 .dialog-body {
   padding-top: 10px !important;
+  position: relative;
+  
+  .loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    
+    .loading-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      color: #64748b;
+      
+      .spinning {
+        animation: spin 1s linear infinite;
+      }
+    }
+  }
+  
+  .error-message {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #dc2626;
+    margin-bottom: 16px;
+    
+    mat-icon {
+      color: #dc2626;
+    }
+  }
   .grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -7,6 +49,12 @@
     .span-2 { grid-column: span 2; }
     .span-3 { grid-column: span 3; }
     .span-4 { grid-column: span 4; }
+    .span-all { grid-column: 1 / -1; }
+    
+    // Layout theo tỷ lệ 1:1:2
+    .col-quang-code { grid-column: span 1; }
+    .col-quang-name { grid-column: span 1; }
+    .col-pricing { grid-column: span 2; }
   }
 
   .composer {
@@ -128,3 +176,230 @@ input.cell-input.ng-invalid.ng-touched {
   font-weight: 700; padding: 0;
 }
 .x-btn:hover { background: tomato; }
+
+.remove-btn {
+  width: 20px; height: 20px; line-height: 18px;
+  border: 1px solid #d0d5dd; border-radius: 4px;
+  background: #fff; cursor: pointer;
+  padding: 0; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0; // Không cho button bị co lại
+  
+  .mat-icon {
+    font-size: 14px; width: 14px; height: 14px;
+    color: #64748b;
+  }
+}
+.remove-btn:hover { 
+  background: #fee2e2; 
+  border-color: #fca5a5;
+  
+  .mat-icon { color: #dc2626; }
+}
+
+// Pricing section styling - horizontal layout
+.pricing-section {
+  border: 1px solid #e2b8f0;
+  border-radius: 8px;
+  padding: 16px;
+  
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  
+  .pricing-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    
+    .price-input {
+      flex: 0 0 250px; // Fixed width for price input
+      
+      // Make mat-form-field wider and align with other inputs
+      ::ng-deep .mat-mdc-form-field {
+        width: 100%;
+        
+        .mat-mdc-text-field-wrapper {
+          .mat-mdc-form-field-flex {
+            .mat-mdc-form-field-infix {
+              min-height: 48px; // Ensure consistent height
+              display: flex;
+              align-items: center;
+            }
+          }
+        }
+      }
+      
+      // Style error message to be inline
+      ::ng-deep .mat-mdc-form-field-error {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        margin-top: 4px;
+        font-size: 12px;
+        color: #dc2626;
+        background: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+      }
+    }
+    
+    .rate-info {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      height: 55px;
+      
+      .rate-header {
+        display: flex;
+        flex-direction: row;
+        width: 250px;
+        gap: 8px;
+        align-items: center;
+        height: 100%;
+        
+        .rate-label {
+          font-weight: 600;
+          font-size: 14px;
+          color: #374151;
+          width: 20%;
+        }
+        
+        .rate-date {
+          padding: 8px 12px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 13px;
+          background: white;
+          color: #374151;
+          width: 80%;
+          height: 100%;
+          
+          &:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+          }
+        }
+      }
+      
+      .rate-display {
+        flex: 1;
+        display: flex;
+        align-items: flex-start;
+        height: 100%;
+        .rate-source-display {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          width: 100%;
+        }
+        
+        .rate-value {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0,  .1);
+          width: 100%;
+          height: 100%; // Match input height
+          
+          .currency {
+            font-weight: 600;
+            color: #059669;
+            font-size: 14px;
+          }
+          
+          .equals {
+            color: #6b7280;
+            font-size: 14px;
+          }
+          
+          .amount {
+            font-weight: 700;
+            color: #1e40af;
+            font-size: 15px;
+          }
+        }
+        
+        .rate-loading {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: #6b7280;
+          font-size: 14px;
+          padding: 8px 12px;
+          background: #f9fafb;
+          border-radius: 6px;
+          width: 100%;
+          // Match input height
+          
+          .spinning {
+            animation: spin 1s linear infinite;
+          }
+        }
+        
+        .rate-error {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: #dc2626;
+          font-size: 14px;
+          padding: 8px 12px;
+          background: #fef2f2;
+          border: 1px solid #fecaca;
+          border-radius: 6px;
+          width: 100%;
+          min-height: 48px; // Match input height
+          
+          mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+          }
+        }
+      }
+    }
+    
+    .converted-price {
+      flex: 0 0 350px;
+      padding: 12px;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      align-items: center;
+      height: 100%;
+      
+      .label {
+        font-size: 13px;
+        color: #0369a1;
+        font-weight: 600;
+        text-align: center;
+      }
+      
+      .value {
+        font-size: 16px;
+        color: #0c4a6e;
+        font-weight: 700;
+        text-align: center;
+        padding: 8px;
+        background: white;
+        border-radius: 6px;
+        border: 1px solid #e0f2fe;
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

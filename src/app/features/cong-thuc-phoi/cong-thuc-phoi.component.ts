@@ -18,6 +18,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MixQuangDialogComponent } from '../mix-quang-dialog/mix-quang-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { MilestoneEnum } from '../../core/enums/milestone.enum';
 
 @Component({
   selector: 'app-cong-thuc-phoi',
@@ -49,7 +50,9 @@ export class CongThucPhoiComponent {
       key: 'tongPhanTram',
       header: 'Tổng phần trăm',
       sortable: true,
-      align: 'start',
+      align: 'center',
+      cell: (r) => r.tongPhanTram ? r.tongPhanTram + ' %' : '', 
+
     },
     { key: 'ghiChu', header: 'Ghi chú', sortable: true, align: 'start' },
     {
@@ -80,8 +83,21 @@ export class CongThucPhoiComponent {
   }
 
   onEdit(row: CongThucPhoiTableModel) {
-    // ví dụ: bật form edit bên cạnh
-    console.log('EDIT', row);
+    this.dialog
+      .open(MixQuangDialogComponent, {
+        width: '1700px',
+        disableClose: true,
+        data: { 
+          formulaId: row.id,
+          milestone: MilestoneEnum.ThieuKet // Default milestone
+        },
+      })
+      .afterClosed()
+      .subscribe((res) => {
+        if (res) {
+          this.table?.refresh();
+        }
+      });
   }
 
   onDelete(row: CongThucPhoiTableModel) {
@@ -94,7 +110,11 @@ export class CongThucPhoiComponent {
       .open(MixQuangDialogComponent, {
         width: '1700px',
         disableClose: true,
-        data: { neoOreId, existingOreId },
+        data: { 
+          neoOreId, 
+          existingOreId,
+          milestone: MilestoneEnum.ThieuKet // Default milestone
+        },
       })
       .afterClosed()
       .subscribe((res) => {

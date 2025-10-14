@@ -1,0 +1,176 @@
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  justify-content: space-between;
+}
+
+.tab-content {
+  padding: 16px;
+}
+
+.title { margin: 0; }
+.muted { color: #6b7280; font-weight: 400; font-size: 0.85em; }
+
+.actions { display: flex; align-items: center; gap: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; }
+
+.tab-label {
+  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 15px;
+}
+.tab-label-container {
+  display: grid;
+  grid-template-columns: 1fr auto; /* label takes free space, close fixed */
+  align-items: center;
+  width: 100%;
+  gap: 6px;
+}
+.tab-close {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af; /* gray-400 */
+}
+
+.tab-close:hover {
+  color: #dc2626; /* red-600 */
+  background: rgba(220, 38, 38, 0.08);
+  border-radius: 50%;
+}
+
+/* Menu item styling */
+::ng-deep .mat-mdc-menu-panel {
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06);
+}
+::ng-deep .icon-only-menu.mat-mdc-menu-panel {
+  min-width: auto !important;
+  width: auto !important;
+}
+::ng-deep .icon-only-menu .mat-mdc-menu-content {
+  padding: 4px;
+}
+::ng-deep .mat-mdc-menu-panel .mat-mdc-menu-content {
+  padding: 4px; /* tighter content padding since only icons */
+}
+::ng-deep .mat-mdc-menu-item.menu-item {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+::ng-deep .mat-mdc-menu-item.menu-item .mat-icon {
+  transition: color 120ms ease;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  margin: 0 auto;
+  line-height: 1;
+}
+/* Ensure internal primary text wrapper centers content */
+::ng-deep .mat-mdc-menu-item.menu-item .mdc-list-item__primary-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  width: 100%;
+}
+/* Subtle hover background for better hit feedback */
+::ng-deep .mat-mdc-menu-item.menu-item:hover {
+  background: #f3f4f6;
+  border-radius: 6px;
+}
+::ng-deep .mat-mdc-menu-item.menu-item.rename:hover .mat-icon {
+  color: #16a34a; /* green-600 */
+}
+::ng-deep .mat-mdc-menu-item.menu-item.delete:hover .mat-icon {
+  color: tomato;
+}
+::ng-deep .mat-mdc-menu-item.menu-item.delete-permanent:hover .mat-icon {
+  color: #dc2626; /* red-600 */
+}
+
+/* ----- Tabs theming (MDC) ----- */
+/* stylelint-disable selector-pseudo-element-no-unknown */
+::ng-deep .mat-mdc-tab-group .mat-mdc-tab-header {
+  border-bottom: 1px solid #e5e7eb; /* gray-200 */
+}
+
+::ng-deep .mat-mdc-tab-group .mdc-tab {
+  background: #f9fafb; /* gray-50 */
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  margin-right: 4px;
+  border-right: 1px solid #e5e7eb; /* separator between tabs */
+  transition: background-color 120ms ease, color 120ms ease;
+  padding-right: 2px; /* tighter right padding so close button is near edge */
+}
+
+::ng-deep .mat-mdc-tab-group .mdc-tab:hover {
+  background: #f3f4f6; /* gray-100 */
+}
+
+::ng-deep .mat-mdc-tab-group .mdc-tab--active {
+  background: #ffffff;
+  color: #111827; /* gray-900 */
+  box-shadow: inset 0 -2px 0 #ffffff; /* blend into header border */
+}
+
+::ng-deep .mat-mdc-tab-group .mdc-tab--active .mdc-tab__text-label {
+  font-weight: 700;
+}
+
+/* Make tab content stretch so label container can use full width */
+::ng-deep .mat-mdc-tab-group .mdc-tab .mdc-tab__content {
+  width: 100%;
+}
+
+.layout { display: grid; grid-template-columns: 260px 1fr; gap: 16px; }
+.tree { border-right: 1px solid #e5e7eb; padding-right: 12px; }
+.tree-title { font-weight: 600; margin-bottom: 8px; color: #374151; }
+.tree ul { list-style: none; padding: 0; margin: 0; }
+.tree li { padding: 6px 8px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+.tree li.active, .tree li:hover { background: #f3f4f6; }
+
+.detail { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; }
+.detail-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #e5e7eb; }
+.node-title { margin: 0; font-weight: 700; color: #111827; }
+
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { padding: 8px 12px; border-bottom: 1px solid #f3f4f6; }
+.table thead th { background: #f9fafb; font-weight: 600; color: #374151; }
+.table .num { text-align: right; }
+
+.summary { display: flex; gap: 16px; padding: 12px 16px; border-top: 1px solid #f3f4f6; background: #fafafa; }
+.kpi { display: flex; gap: 8px; align-items: baseline; }
+.kpi span { color: #6b7280; font-size: 12px; }
+.kpi strong { font-size: 16px; color: #111827; }
+
+:host .empty-state { padding: 24px; }
+:host .empty-box { display: inline-flex; align-items: center; gap: 8px; background: #f9fafb; border: 1px dashed #e5e7eb; color: #6b7280; padding: 12px 16px; border-radius: 8px; }
+
+/* Collapse auto-inserted text span in icon-only menu items */
+:host ::ng-deep .mat-mdc-menu-panel.icon-only-menu .mat-mdc-menu-item .mat-mdc-menu-item-text {
+  display: none !important;
+  width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Fallback: tighten panel width only for this menu */
+:host ::ng-deep .mat-mdc-menu-panel.icon-only-menu {
+  min-width: auto !important;
+  width: auto !important;
+}

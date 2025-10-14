@@ -1,0 +1,115 @@
+<div class="dialog-header">
+  <h2 mat-dialog-title>{{ isEdit ? 'Sửa hàm thống kê' : 'Thêm hàm thống kê' }}</h2>
+</div>
+
+<div mat-dialog-content>
+  <form [formGroup]="form" class="form-container">
+    <!-- Function Mapping Selection -->
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Chọn hàm tính toán *</mat-label>
+        <mat-select formControlName="functionMappingId" (selectionChange)="onMappingChange($event.value)">
+          <mat-option [value]="null">-- Chọn hàm tính toán --</mat-option>
+          <mat-option *ngFor="let mapping of availableMappings" 
+                      [value]="mapping.id"
+                      [disabled]="isMappingDisabled(mapping)">
+            {{ mapping.ten }} ({{ mapping.functionCode }})
+            <span *ngIf="isMappingDisabled(mapping)" class="disabled-text"> - Đã được sử dụng</span>
+          </mat-option>
+        </mat-select>
+        <mat-error *ngIf="form.get('functionMappingId')?.hasError('required')">
+          Vui lòng chọn hàm tính toán
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <!-- Selected Mapping Details -->
+    <div *ngIf="selectedMapping" class="mapping-details">
+      <h4>Thông tin hàm được chọn:</h4>
+      <div class="detail-item">
+        <strong>Phương thức:</strong> {{ selectedMapping.methodName }}
+      </div>
+      <div class="detail-item">
+        <strong>Mô tả:</strong> {{ selectedMapping.description }}
+      </div>
+      <div class="detail-item">
+        <strong>Tham số:</strong> {{ selectedMapping.parameters.join(', ') }}
+      </div>
+      <div class="detail-item">
+        <strong>Kiểu trả về:</strong> {{ selectedMapping.returnType }}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Mã hàm *</mat-label>
+        <input matInput formControlName="code" placeholder="VD: GANG_OUTPUT" [readonly]="isCodeLocked">
+        <mat-error *ngIf="form.get('code')?.hasError('required')">
+          Mã hàm là bắt buộc
+        </mat-error>
+        <mat-error *ngIf="form.get('code')?.hasError('maxlength')">
+          Mã hàm không được vượt quá 50 ký tự
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Tên hàm *</mat-label>
+        <input matInput formControlName="ten" placeholder="VD: Sản lượng Gang">
+        <mat-error *ngIf="form.get('ten')?.hasError('required')">
+          Tên hàm là bắt buộc
+        </mat-error>
+        <mat-error *ngIf="form.get('ten')?.hasError('maxlength')">
+          Tên hàm không được vượt quá 255 ký tự
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Mô tả</mat-label>
+        <textarea matInput formControlName="moTa" rows="3" placeholder="Mô tả chi tiết về hàm thống kê"></textarea>
+        <mat-error *ngIf="form.get('moTa')?.hasError('maxlength')">
+          Mô tả không được vượt quá 1000 ký tự
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Đơn vị *</mat-label>
+        <input matInput formControlName="donVi" placeholder="VD: tấn/ngày, kg/tấn Gang">
+        <mat-error *ngIf="form.get('donVi')?.hasError('required')">
+          Đơn vị là bắt buộc
+        </mat-error>
+        <mat-error *ngIf="form.get('donVi')?.hasError('maxlength')">
+          Đơn vị không được vượt quá 50 ký tự
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <div class="checkbox-container">
+        <mat-checkbox formControlName="isActive">
+          Đang hoạt động
+        </mat-checkbox>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="checkbox-container">
+        <mat-checkbox formControlName="isAutoCalculated">
+          Tự động tính toán
+        </mat-checkbox>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div mat-dialog-actions class="dialog-actions">
+  <button mat-button (click)="onCancel()">Hủy</button>
+  <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="form.invalid">
+    {{ isEdit ? 'Cập nhật' : 'Tạo mới' }}
+  </button>
+</div>

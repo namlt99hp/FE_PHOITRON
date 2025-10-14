@@ -1,0 +1,116 @@
+.dialog-body {
+  padding-top: 10px !important;
+  position: relative;
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    .span-2 { grid-column: span 2; }
+  }
+}
+.section { margin-top: 12px; }
+.section-title { margin: 0 0 8px; font-weight: 700; font-size: 18px; }
+.section-header { display: flex; align-items: center; justify-content: space-between; }
+
+.constraints-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  th, td {
+    border: 1px solid #d0d5dd;
+    padding: 6px 8px;
+    vertical-align: middle;
+  }
+  thead th { font-weight: 700; text-align: center; background: #fafafa; }
+  .stub { width: 100px; text-align: left; font-weight: 600; background: #f8f9fb; }
+  .chem-col { text-align: center; }
+  .th-wrap { display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .th-text { display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cell-input { width: 100%; border: 0; padding: 4px 6px; background: transparent; text-align: right; outline: 0; }
+  .cell-input:focus { outline: 2px solid #1b5fd6; outline-offset: -2px; border-radius: 2px; }
+  .text-right { text-align: right; }
+}
+
+.remove-btn {
+  width: 20px; height: 20px; line-height: 18px;
+  border: 1px solid #d0d5dd; border-radius: 4px;
+  background: #fff; cursor: pointer;
+  padding: 0; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s ease; flex-shrink: 0;
+  .mat-icon { font-size: 14px; width: 14px; height: 14px; color: #64748b; }
+}
+.remove-btn:hover { background: #fee2e2; border-color: #fca5a5; .mat-icon { color: #dc2626; } }
+
+.push-start {
+  margin-right: auto;
+}
+
+.input-with-formula {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  
+  .cell-input {
+    flex: 1;
+  }
+  
+  .formula-btn {
+    min-width: 28px;
+    height: 28px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: #666;
+    }
+    
+    &:hover {
+      background: #e0e0e0;
+      border-color: #999;
+    }
+  }
+}
+
+.formula-row {
+  background-color: #fafafa;
+  
+  th {
+    background-color: #f0f0f0;
+    font-weight: 500;
+    color: #555;
+  }
+}
+
+.formula-display {
+  padding: 4px 6px;
+  background-color: #e8f5e8;
+  border-radius: 4px;
+  font-family: monospace;
+  border: 1px solid #c8e6c9;
+  
+  small {
+    color: #2e7d32;
+    font-size: 11px;
+    font-weight: 500;
+  }
+}
+
+.formula-empty {
+  padding: 4px 6px;
+  text-align: center;
+  
+  small {
+    color: #999;
+    font-size: 11px;
+    font-style: italic;
+  }
+}

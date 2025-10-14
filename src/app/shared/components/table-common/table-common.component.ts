@@ -26,17 +26,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { HttpClient, HttpClientModule, HttpParams } from '@angular/common/http';
-import {
-  catchError,
-  debounceTime,
-  EMPTY,
-  finalize,
-  merge,
-  of,
-  startWith,
-  switchMap,
-  tap,
-} from 'rxjs';
+import { catchError, debounceTime, EMPTY, finalize, merge, of, startWith, switchMap, tap, map } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   DataFetcher,
@@ -181,7 +171,8 @@ export class TableCommonComponent<T = any> implements OnInit, AfterViewInit {
               params = params.set(k, String(v));
           });
         }
-        return this.http.get<TableResult<T>>(this.apiUrl!, { params });
+        // Interceptor will normalize API response. Still, map to TableResult here.
+        return this.http.get<any>(this.apiUrl!, { params }).pipe(map((body: any) => this.normalizeToTableResult(body)));
       };
     }
   }
@@ -241,16 +232,17 @@ export class TableCommonComponent<T = any> implements OnInit, AfterViewInit {
 
     this.fetcher(q)
       .pipe(
+        map((res: any) => this.normalizeToTableResult(res)),
         catchError((err) => {
           this.errorMsg.set('Không tải được dữ liệu.');
           return of({ data: [], total: 0 } as TableResult<T>);
         }),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe((res) => {
-        this.data.set(res.data ?? []);
-        this.total.set(res.total ?? 0);
-        this.loaded.emit(res);
+      .subscribe((res: TableResult<T>) => {
+        this.data.set(res?.data ?? []);
+        this.total.set(res?.total ?? 0);
+        this.loaded.emit(res as TableResult<T>);
         this.isLoading.set(false);
       });
   }
@@ -265,6 +257,22 @@ export class TableCommonComponent<T = any> implements OnInit, AfterViewInit {
 
   private readByPath(obj: any, path: string) {
     return path.split('.').reduce((acc, k) => (acc ? acc[k] : undefined), obj);
+  }
+
+  private normalizeToTableResult(input: any): TableResult<T> {
+    // If already TableResult
+    if (input && Array.isArray(input.data) && typeof input.total === 'number' && input.statusCode === undefined) {
+      return input as TableResult<T>;
+    }
+    // If ApiResponse wrapping PagedResult
+    if (input && typeof input.success === 'boolean' && input.data) {
+      const paged = input.data;
+      if (paged && Array.isArray(paged.data) && typeof paged.total === 'number') {
+        return { data: paged.data, total: paged.total } as TableResult<T>;
+      }
+    }
+    // Fallback: no data
+    return { data: [], total: 0 } as TableResult<T>;
   }
 
   // ===== Actions =====

@@ -1,0 +1,102 @@
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.linked-ore {
+  grid-column: 1 / span 2;
+  display: flex;
+  align-items: center;
+}
+
+.calculated-checkbox {
+  grid-column: 1 / span 2;
+}
+
+.self-referencing-checkbox {
+  grid-column: 1 / span 2;
+  margin-top: 8px;
+  color: #666;
+  font-size: 14px;
+}
+
+.formula-section {
+  grid-column: 1 / span 2;
+}
+
+.formula-display {
+  background: #f5f5f5;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.formula-label {
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.formula-content {
+  font-family: monospace;
+  font-size: 14px;
+  color: #333;
+}
+
+.param-select {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.selected-params {
+  margin-bottom: 16px;
+}
+
+.param-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.operator-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.operator-buttons button {
+  min-width: 44px;
+}
+
+.formula-input {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.calculator-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ml-2 {
+  margin-left: 8px;
+}
+
+mat-dialog-actions {
+  padding: 16px 24px;
+}
+
+mat-dialog-content {
+  padding: 16px 24px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+mat-dialog-title {
+  padding: 16px 24px 0 24px;
+  margin-bottom: 0;
+}

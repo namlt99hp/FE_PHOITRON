@@ -53,12 +53,12 @@ export class TphhComponent {
     { key: 'id', header: 'ID', width: '90px', sortable: true, align: 'start' },
     { key: 'ma_TPHH', header: 'Mã hóa học', sortable: true, align: 'start' },
     { key: 'ten_TPHH', header: 'Tên hóa học', sortable: true },
-    { key: 'ghiChu', header: 'Ghi chú', sortable: false, align: 'start' },
+    { key: 'ghi_Chu', header: 'Ghi chú', sortable: false, align: 'start' },
     {
-      key: 'ngayTao',
+      key: 'ngay_Tao',
       header: 'Tạo lúc',
       sortable: true,
-      cell: (r) => this.vnTime.transform(r.ngayTao, 'dd/MM/yyyy HH:mm:ss'),
+      cell: (r) => this.vnTime.transform(r.ngay_Tao, 'dd/MM/yyyy HH:mm:ss'),
     },
   ];
 

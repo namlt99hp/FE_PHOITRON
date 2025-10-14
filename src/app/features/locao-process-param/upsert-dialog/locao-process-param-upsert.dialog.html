@@ -1,0 +1,69 @@
+<h2 mat-dialog-title>{{ (form.value.id ?? 0) > 0 ? 'Sửa' : 'Thêm mới' }} tham số Lò cao</h2>
+<div mat-dialog-content>
+  <form [formGroup]="form" class="form-grid">
+    
+    <mat-form-field appearance="fill">
+      <mat-label>Mã</mat-label>
+      <input matInput formControlName="code" />
+    </mat-form-field>
+    
+    <mat-form-field appearance="fill">
+      <mat-label>Tên</mat-label>
+      <input matInput formControlName="ten" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Đơn vị</mat-label>
+      <input matInput formControlName="donVi" />
+    </mat-form-field>
+    
+    <mat-form-field appearance="fill">
+      <mat-label>Thứ tự</mat-label>
+      <input matInput type="number" formControlName="thuTu" />
+    </mat-form-field>
+    <mat-form-field appearance="fill">
+      <mat-label>Phạm vi áp dụng</mat-label>
+      <mat-select formControlName="scope">
+        <mat-option [value]="0">Theo quặng liên kết</mat-option>
+        <mat-option [value]="1">Tất cả quặng (trừ loại 3 - coke, than phun)</mat-option>
+        <mat-option [value]="2">Chỉ dùng trong công thức</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <div class="linked-ore" *ngIf="form.value.scope === 0">
+      <button mat-stroked-button type="button" (click)="selectLinkedOre()">
+        Chọn quặng liên kết
+      </button>
+      <button *ngIf="form.value.id_Quang_LienKet" mat-icon-button color="warn" type="button" (click)="clearLinkedOre()" title="Xóa liên kết">
+        <mat-icon>close</mat-icon>
+      </button>
+      <div *ngIf="linkedOre as ore" class="ml-2">
+        Đã liên kết: <b>{{ ore.ma }}</b> - {{ ore.ten }} (ID: {{ ore.id }})
+      </div>
+    </div>
+
+    <mat-checkbox formControlName="isCalculated" class="calculated-checkbox" *ngIf="form.value.scope === 0">
+      Tự động tính toán
+    </mat-checkbox>
+
+    <div class="formula-section" *ngIf="form.value.isCalculated">
+      <mat-form-field appearance="fill" class="formula-input">
+        <mat-label>Công thức tính toán</mat-label>
+        <input matInput formControlName="calcFormula" readonly placeholder="Lưu trữ bằng ID: ID_1/ID_2" />
+        <mat-hint><strong>Hiển thị:</strong> {{ getDisplayFormula() || 'Chưa có công thức' }}</mat-hint>
+      </mat-form-field>
+      
+      <button mat-stroked-button type="button" (click)="openFormulaCalculator()" class="calculator-btn">
+        <mat-icon>calculate</mat-icon>
+        Tạo công thức từ công cụ
+      </button>
+     
+      <mat-error *ngIf="form.value.isCalculated && !form.get('calcFormula')?.value">
+        Vui lòng tạo công thức từ công cụ khi checkbox "Tự động tính" được chọn
+      </mat-error>
+    </div>
+  </form>
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Đóng</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="form.invalid">Lưu</button>
+</div>

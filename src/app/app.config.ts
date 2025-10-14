@@ -15,6 +15,7 @@ import { provideClientHydration } from '@angular/platform-browser';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { HTTP_LOADING_INTERCEPTOR_PROVIDER } from './core/interceptors/http-loading.interceptor';
+import { API_RESPONSE_INTERCEPTOR_PROVIDER } from './core/interceptors';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -27,6 +28,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideHttpClient(withInterceptorsFromDi()),
     HTTP_LOADING_INTERCEPTOR_PROVIDER,
+    API_RESPONSE_INTERCEPTOR_PROVIDER,
     provideClientHydration(),
     provideAnimationsAsync(),
     importProvidersFrom(

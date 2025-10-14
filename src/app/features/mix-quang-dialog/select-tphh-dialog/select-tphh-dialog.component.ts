@@ -33,7 +33,8 @@ import {
 } from 'rxjs';
 import { MixOreService } from '../../../core/services/mix-quang.service';
 import { ThanhPhanHoaHocService } from '../../../core/services/tphh.service';
-import { TPHHSelectItemModel, TPHHTableModel } from '../../../core/models/tphh.model';
+import { TPHHTableModel } from '../../../core/models/tphh.model';
+import { ApiResponse } from '../../../core/models/http-response.model';
 import {
   TableQuery,
   TableResult,
@@ -102,12 +103,21 @@ export class SelectTphhDialogComponent {
         search: q
       }
       return this.tphhService.search(this.searchPayload).pipe(
-        tap(res => this.total.set(res.total)),
-        map(res => res.data),
+        tap((res: TableResult<TPHHTableModel>) => {
+          this.total.set(res.total);
+        }),
+        map((res: TableResult<TPHHTableModel>) => {
+          return res.data.map(item => ({
+            id: item.id,
+            ma_TPHH: item.ma_TPHH,
+            ten_TPHH: item.ten_TPHH || '',
+            phanTram: 0 // Default value for new selections
+          }));
+        }),
         catchError(() => of([] as ChemVm[])),
       )
     }),
-    tap(list => { list.forEach((x: any) => this.cache.set(x.id, x)); }),
+    tap(list => { list.forEach((x: ChemVm) => this.cache.set(x.id, x)); }),
     tap(() => this.loading.set(false))
   );
 
@@ -155,8 +165,21 @@ export class SelectTphhDialogComponent {
       return;
     }
 
-    this.tphhService.GetByListIds(missing).subscribe((list: TPHHSelectItemModel[]) => {
-      list.forEach((x: TPHHSelectItemModel) => this.cache.set(x.id, x));
+    // Fetch missing items by calling getById for each missing ID
+    const missingRequests = missing.map(id => this.tphhService.getById(id));
+    
+    // Use combineLatest to wait for all requests to complete
+    combineLatest(missingRequests).subscribe((results: TPHHTableModel[]) => {
+      results.forEach((item: TPHHTableModel) => {
+        const chemVm: ChemVm = {
+          id: item.id,
+          ma_TPHH: item.ma_TPHH,
+          ten_TPHH: item.ten_TPHH || '',
+          phanTram: 0
+        };
+        this.cache.set(item.id, chemVm);
+      });
+      
       const out = ids.map(id => this.cache.get(id)!).filter(Boolean);
       this.dlgRef.close(out);
     });

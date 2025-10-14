@@ -1,29 +1,77 @@
-<h2 mat-dialog-title>{{ (mode==='MUA' ? 'Thêm quặng mua' : 'Thêm quặng trộn') }}</h2>
+<h2 mat-dialog-title>{{ (mode==='MUA' ? 'Thêm quặng mua' : 'Sửa quặng') }}</h2>
 
 <div mat-dialog-content class="dialog-body">
+  <!-- Loading state for data fetching -->
+  <div class="loading-overlay" *ngIf="loading()">
+    <div class="loading-content">
+      <mat-icon class="spinning">refresh</mat-icon>
+      <span>Đang tải dữ liệu...</span>
+    </div>
+  </div>
+  
+  <!-- Error state -->
+  <div class="error-message" *ngIf="error() && !loading()">
+    <mat-icon>error</mat-icon>
+    <span>{{ error() }}</span>
+  </div>
   <!-- Header form -->
   <div class="grid">
-    <mat-form-field appearance="outline">
+    <mat-form-field appearance="outline" class="span-2">
       <mat-label>Mã quặng</mat-label>
       <input matInput [formControl]="headerForm.controls.maQuang" />
     </mat-form-field>
 
-    <mat-form-field appearance="outline" >
+    <mat-form-field appearance="outline" class="span-2">
       <mat-label>Tên quặng</mat-label>
       <input matInput [formControl]="headerForm.controls.tenQuang" />
     </mat-form-field>
+    
+    <!-- Pricing Section riêng 1 hàng -->
+    <div class="pricing-section span-4">
+      <div class="pricing-content">
+        <mat-form-field appearance="outline" class="price-input">
+          <mat-label>Giá USD/tấn</mat-label>
+          <input matInput type="number" min="0" step="0.01" [formControl]="headerForm.controls.giaUSD" />
+          <mat-error *ngIf="headerForm.controls.giaUSD.invalid && headerForm.controls.giaUSD.touched">
+            Giá USD là bắt buộc và phải lớn hơn 0
+          </mat-error>
+        </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Giá: VNĐ</mat-label>
-      <input matInput type="number" min="0" [formControl]="headerForm.controls.gia" />
-    </mat-form-field>
+        <div class="rate-info">
+          <div class="rate-header">
+            <span class="rate-label">Tỷ giá</span>
+            <input type="date" class="rate-date" [formControl]="dateCtrl" [attr.max]="maxDate" />
+          </div>
+          
+          <div class="rate-display">
+            <div class="rate-value" *ngIf="rate() !== null && !loading()">
+              <span class="currency">1 USD</span>
+              <span class="equals">=</span>
+              <span class="amount">{{ rate()! | currency:'VND':'symbol':'1.2-2':'vi-VN' }}</span>
+            </div>
+            
+            <div class="rate-loading" *ngIf="loading()">
+              <mat-icon class="spinning">refresh</mat-icon>
+              <span>Đang tải...</span>
+            </div>
+            
+            <div class="rate-error" *ngIf="error()">
+              <mat-icon>error</mat-icon>
+              <span>{{ error() }}</span>
+            </div>
+          </div>
+          
+          <div class="converted-price" *ngIf="(valueConvertToVnd() !== null) && !loading()">
+            <span class="label">Giá VND:</span>
+            <span class="value">{{ (valueConvertToVnd()) | currency:'VND':'symbol':'1.2-2':'vi-VN' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Mất khi nung</mat-label>
-      <input matInput type="number" min="0" [formControl]="headerForm.controls.matKhiNung" />
-    </mat-form-field>
+    
 
-    <mat-form-field appearance="outline" class="span-4">
+    <mat-form-field appearance="outline" class="span-all">
       <mat-label>Ghi chú</mat-label>
       <textarea matInput rows="2" [formControl]="headerForm.controls.ghiChu"></textarea>
     </mat-form-field>
@@ -50,9 +98,16 @@
             >
               <div class="th-wrap">
                 <span class="th-text" [title]="c.ten_TPHH">{{
-                  c.ten_TPHH
+                  c.ma_TPHH
                 }}</span>
-                <button type="button" class="x-btn" (click)="removeChem(c.id)">×</button>
+                <button 
+                  type="button" 
+                  class="remove-btn" 
+                  (click)="removeChem(c.id)"
+                  matTooltip="Xóa quặng này"
+                  matTooltipPosition="above">
+                  <mat-icon>close</mat-icon>
+                </button>
               </div>
             </th>
           </tr>
@@ -60,7 +115,7 @@
 
         <tbody>
           <tr>
-            <th class="stub">Tỷ lệ</th>
+            <th class="stub">Hàm lượng</th>
             <td *ngFor="let c of selectedChems(); trackBy: trackByChem">
               <ng-container *ngIf="tp_HoaHocs().get(c.id) as ctrl">
                 <input

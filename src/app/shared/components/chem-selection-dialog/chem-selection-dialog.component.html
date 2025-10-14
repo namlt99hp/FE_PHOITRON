@@ -1,0 +1,59 @@
+<div class="chem-selection-dialog">
+  <div class="dialog-header">
+    <h2 mat-dialog-title>
+      <mat-icon>science</mat-icon>
+      Chọn thành phần hóa học
+    </h2>
+    <p class="subtitle">Cho quặng: {{ data.rowName }}</p>
+  </div>
+
+  <mat-dialog-content class="dialog-content">
+    <div class="chem-list">
+      <mat-selection-list>
+        <mat-list-option 
+          *ngFor="let chem of data.chems" 
+          [value]="chem"
+          [selected]="isSelected(chem)"
+          (click)="toggleChem(chem)"
+          checkboxPosition="before">
+          
+          <div class="chem-item">
+            <div class="chem-info">
+              <span class="chem-name">{{ chem.name }}</span>
+              <span class="chem-id">ID: {{ chem.id }}</span>
+            </div>
+            <div class="chem-value">
+              {{ chem.value | number:'1.2-2' }}%
+            </div>
+          </div>
+        </mat-list-option>
+      </mat-selection-list>
+    </div>
+
+    <div class="selection-summary" *ngIf="selectedChems.length > 0">
+      <h4>Đã chọn {{ getSelectedCount() }} thành phần:</h4>
+      <div class="selected-items">
+        <span *ngFor="let chem of selectedChems" class="selected-chem">
+          {{ chem.name }} ({{ chem.value | number:'1.2-2' }}%)
+        </span>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="dialog-actions">
+    <button mat-button (click)="onCancel()" class="cancel-btn">
+      <mat-icon>close</mat-icon>
+      Hủy
+    </button>
+    <button mat-raised-button 
+            color="primary" 
+            (click)="onConfirm()" 
+            [disabled]="selectedChems.length === 0"
+            class="confirm-btn">
+      <mat-icon>check</mat-icon>
+      Xác nhận ({{ getSelectedCount() }})
+    </button>
+  </mat-dialog-actions>
+</div>
+
+

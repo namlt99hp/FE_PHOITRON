@@ -1,0 +1,134 @@
+<div class="calculator-container">
+  <h3>{{ dialogData.title || 'Công cụ tạo công thức' }}</h3>
+  
+  <!-- Formula Display -->
+  <mat-form-field appearance="outline" class="formula-display">
+    <mat-label>Công thức</mat-label>
+    <input matInput [value]="currentDisplayFormula" readonly />
+    <mat-hint>Hiển thị bằng mã/tên cho dễ hiểu, lưu trữ bằng ID</mat-hint>
+  </mat-form-field>
+
+  <!-- Main Layout: 2 Columns -->
+  <div class="main-layout">
+    
+    <!-- Left Column: Components -->
+    <div class="left-column">
+      <!-- Components Section -->
+      <div class="components-section">
+        <!-- Checkbox for Ore context -->
+        <div *ngIf="isOreContext" class="checkbox-row">
+          <mat-checkbox [checked]="calculationMode === 'formula'" 
+                        (change)="onIsCalculatedChange($event)">
+            Tự động tính tỷ lệ
+          </mat-checkbox>
+        </div>
+
+        <!-- Components Title -->
+        <div class="components-title">các thành phần</div>
+
+        <!-- Components Buttons -->
+        <div class="components-buttons">
+          <!-- ProcessParam: Available Parameters -->
+          <div *ngIf="isProcessParamContext" class="param-buttons">
+            <button *ngFor="let param of availableParams" 
+                    mat-stroked-button 
+                    class="component-btn"
+                    (click)="addParam(param.id, param.code)">
+              {{ param.code }}
+            </button>
+          </div>
+
+          <!-- Ore: Gang Components -->
+          <div *ngIf="isOreContext && dialogData.gangData?.length" class="param-buttons">
+            <button *ngFor="let item of dialogData.gangData" 
+                    mat-stroked-button 
+                    class="component-btn"
+                    (click)="addGangComponentReference(item)">
+              {{ item.element }}
+            </button>
+            
+            <!-- Tỷ lệ nhập option (render giống các thành phần khác) -->
+            <button *ngIf="calculationMode === 'manual'" 
+                    mat-stroked-button 
+                    class="component-btn ty-le-btn"
+                    (click)="addCurrentComponentPercentage()">
+              Tỷ Lệ Nhập
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Search + Calculator -->
+    <div class="right-column">
+      <!-- Search Section -->
+      <div class="search-section">
+        <span class="search-hint">
+          {{ isOreContext ? 'Tìm kiếm thành phần hóa học bên ngoài' : 'Tìm kiếm tham số quy trình' }}
+        </span>
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Search</mat-label>
+          <input matInput 
+                 [formControl]="searchControl"
+                 [matAutocomplete]="auto"
+                 placeholder="Nhập mã...">
+          <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
+            <mat-option *ngFor="let param of filteredParams$ | async" 
+                       [value]="param" 
+                       (onSelectionChange)="isOreContext ? addArrayReference(param) : addParam(param.id, param.code)">
+              <div class="param-option">
+                <span class="param-code">{{ param.code }}</span>
+              </div>
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+      </div>
+
+      <!-- Calculator Keypad -->
+      <div class="calculator-section">
+        <div class="calculator-grid">
+          <!-- Row 1: Functions -->
+          <button mat-mini-fab class="func-btn" (click)="addOperator('(')">(</button>
+          <button mat-mini-fab class="func-btn" (click)="addOperator(')')">)</button>
+          <button mat-mini-fab class="func-btn" (click)="addSumFunction()">SUM</button>
+          <button mat-mini-fab class="func-btn" (click)="addSemicolon()">;</button>
+          
+          <!-- Row 2: Clear + Numbers + Operators -->
+          <button mat-mini-fab class="func-btn clear-btn" (click)="clearFormula()">AC</button>
+          <button mat-mini-fab class="num-btn" (click)="addNumber('7')">7</button>
+          <button mat-mini-fab class="num-btn" (click)="addNumber('8')">8</button>
+          <button mat-mini-fab class="num-btn" (click)="addNumber('9')">9</button>
+          
+          <!-- Row 3: Numbers + Operators -->
+          <button mat-mini-fab class="op-btn" (click)="addOperator('/')">÷</button>
+          <button mat-mini-fab class="num-btn" (click)="addNumber('4')">4</button>
+          <button mat-mini-fab class="num-btn" (click)="addNumber('5')">5</button>
+          <button mat-mini-fab class="num-btn" (click)="addNumber('6')">6</button>
+          
+          <!-- Row 4: Numbers + Operators -->
+          <button mat-mini-fab class="op-btn" (click)="addOperator('*')">×</button>
+          <button mat-mini-fab class="num-btn" (click)="addNumber('1')">1</button>
+          <button mat-mini-fab class="num-btn" (click)="addNumber('2')">2</button>
+          <button mat-mini-fab class="num-btn" (click)="addNumber('3')">3</button>
+          
+          <!-- Row 5: Numbers + Operators -->
+          <button mat-mini-fab class="op-btn" (click)="addOperator('-')">-</button>
+          <button mat-mini-fab class="num-btn" (click)="addNumber('0')">0</button>
+          <button mat-mini-fab class="num-btn" (click)="addDecimal()">.</button>
+          <button mat-mini-fab class="op-btn" (click)="addOperator('+')">+</button>
+          
+          <!-- Row 6: Backspace -->
+          <button mat-mini-fab class="func-btn backspace-btn" (click)="removeLastChar()">⌫</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Điều khiển - Góc dưới phải -->
+  <div class="controls-section">
+    <button mat-flat-button color="primary" (click)="validateAndConfirm()" [disabled]="!currentDisplayFormula">
+      Xác nhận công thức
+    </button>
+    <button mat-button (click)="cancel()">Đóng</button>
+  </div>
+</div>

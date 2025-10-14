@@ -1,0 +1,222 @@
+.stats-table-wrap {
+  overflow-x: auto;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  // font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  table-layout: fixed;
+  // color: black;
+}
+
+.stats-table th,
+.stats-table td {
+  border: 1px solid #d0d5dd; /* match mix table grid */
+  padding: 6px 8px;
+  vertical-align: middle;
+}
+
+.stats-table thead th {
+  background: #fafafa; /* match mix table header */
+  font-weight: 700;
+  text-align: center;
+}
+
+.stats-table tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+.stats-table .hl-warning td {
+  background: #fff59d; /* light yellow */
+  font-weight: 600;
+}
+
+.stats-table .hl-info td {
+  background: #b3e5fc; /* light blue */
+  font-weight: 600;
+}
+.locao-result-container {
+  padding: 8px;
+  margin: 0 auto;
+}
+
+.section-title {
+  margin: 0 0 6px 0;
+  font-weight: 700;
+  font-size: 16px;
+  color: #1976d2;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  
+  h2 {
+    margin: 0;
+    color: #1976d2;
+    font-weight: 500;
+  }
+  
+  .action-buttons {
+    display: flex;
+    gap: 12px;
+    
+    button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+}
+
+/* Removed unused statistics grid styles */
+
+/* Dropped mat-card wrappers; keep spacing minimal */
+
+.composition-row {
+  display: block;
+}
+
+.composition-row.three-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+/* Excel-like table styling */
+.gang-table, .xa-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.gang-table th, .gang-table td,
+.xa-table th, .xa-table td {
+  border: 1px solid #e0e0e0;
+}
+
+.gang-table th, .xa-table th, .stats-table th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+.gang-table tr:nth-child(even), .xa-table tr:nth-child(even) {
+  background: #fcfcfc;
+}
+
+.percent-input { width: 100%; border: none; outline: none; background: transparent; text-align: right; }
+
+/* Emphasize editable inputs in result tables */
+.stats-table .percent-input {
+  border: 1px solid #e9d5ff; /* light purple */
+  background: #faf5ff; /* very light purple */
+  border-radius: 6px;
+  padding: 4px 6px;
+  color: #111827;
+}
+
+.stats-table .percent-input:focus {
+  border-color: #a855f7; /* purple-500 */
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+  outline: none;
+  background: #fff;
+}
+
+.table-container {
+  overflow-x: auto;
+  
+  table { width: 100%; min-width: 300px; }
+  th { background: #f5f5f5; font-weight: 600; color: #424242; border-bottom: 2px solid #e0e0e0; text-align: center; }
+  td { border-bottom: 1px solid #e0e0e0; padding: 6px 8px; }
+  tr:hover { background: #f9f9f9; }
+}
+
+.stats-table { border: 1px solid #e5e7eb; }
+.stats-table td, .stats-table th { border-color: #e5e7eb; }
+.stats-table tfoot td { background: #fafafa; font-weight: 600; }
+
+// Alignments
+.left { text-align: left; }
+.right { text-align: right; }
+.center { text-align: center; }
+
+// Compact mode
+.compact table { font-size: 12px; }
+.compact td, .compact th { padding: 6px 8px !important; }
+.fullwidth { width: 100% !important; }
+
+.gang-table {
+  .element-symbol {
+    font-weight: 600;
+    color: #1976d2;
+    font-size: 1.1em;
+  }
+}
+
+.xa-table {
+  .element-symbol {
+    font-weight: 600;
+    color: #ff9800;
+    font-size: 1.1em;
+  }
+}
+
+// Print styles
+@media print {
+  .locao-result-container {
+    padding: 0;
+    max-width: none;
+  }
+  
+  .result-header {
+    .action-buttons {
+      display: none;
+    }
+  }
+  
+  .statistics-card,
+  .gang-card,
+  .xa-card {
+    break-inside: avoid;
+    margin-bottom: 16px;
+  }
+  
+  table {
+    font-size: 12px;
+    
+    th, td {
+      padding: 8px 12px;
+    }
+  }
+}
+.section-title{
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #1976d2;
+}
+// Responsive design
+@media (max-width: 768px) {
+  .result-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+    
+    .action-buttons {
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+  }
+  
+  .statistics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .table-container {
+    font-size: 14px;
+  }
+}

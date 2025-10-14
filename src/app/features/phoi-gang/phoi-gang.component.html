@@ -1,0 +1,65 @@
+<div class="page-header">
+  <h3 class="title">Phối quặng gang: {{ maGang() }} <span class="muted">(ID: {{ id() }})</span></h3>
+  <div class="actions">
+    <button mat-raised-button color="primary" class="btn" (click)="onAddPlan()">
+      <mat-icon>add_circle</mat-icon>
+      Thêm phương án
+    </button>
+    <button mat-raised-button color="primary" class="btn" (click)="onCompare()">
+      <mat-icon>compare</mat-icon>
+      So sánh
+    </button>
+    <button mat-raised-button color="primary" class="btn" (click)="onSummary()">
+      <mat-icon>summarize</mat-icon>
+      Tổng hợp 
+    </button>
+  </div>
+</div>
+
+<div *ngIf="plans().length === 0" class="empty-state">
+  <div class="empty-box">
+    <mat-icon>info</mat-icon>
+    <div>Chưa thiết lập phương án phối cho quặng gang này.</div>
+  </div>
+</div>
+
+<mat-tab-group *ngIf="plans().length > 0" [selectedIndex]="selectedIndex()">
+  <mat-tab *ngFor="let p of plans(); let i = index">
+    <ng-template mat-tab-label>
+      <div class="tab-label-container">
+        <span class="tab-label">{{ p.ten }}</span>
+      <button mat-icon-button [matMenuTriggerFor]="planMenu" (menuOpened)="setMenuContext(p.id, i)" [matMenuTriggerData]="{ id: p.id, index: i }" class="tab-close" matTooltip="Tuỳ chọn">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+      </div>
+    </ng-template>
+
+    <ng-template matTabContent>
+      <div class="tab-content">
+        <app-phoi-gang-plan-tab
+          [plan]="p"
+          [gangId]="id()"
+          [maGang]="maGang()"
+          (requestRename)="onRenamePlan(i)"
+          (requestRemove)="onRemovePlan(i)"></app-phoi-gang-plan-tab>
+      </div>
+    </ng-template>
+  </mat-tab>
+</mat-tab-group>
+
+<mat-menu #planMenu="matMenu" class="icon-only-menu">
+  <ng-template matMenuContent let-data="matMenuTriggerData">
+  <button mat-menu-item class="menu-item rename" matTooltip="Đổi tên" (click)="onRenamePlanById(data?.id, data?.index)">
+    <mat-icon>edit</mat-icon>
+  </button>
+  <button mat-menu-item class="menu-item clone" matTooltip="Nhân bản" (click)="onClonePlan(data?.id, data?.index)">
+    <mat-icon>content_copy</mat-icon>
+  </button>
+  <!-- <button mat-menu-item class="menu-item delete" matTooltip="Xoá phương án" (click)="onRemovePlanById(data?.id, data?.index, $event)">
+    <mat-icon>delete</mat-icon>
+  </button> -->
+  <button mat-menu-item class="menu-item delete-permanent" matTooltip="Xoá vĩnh viễn" (click)="onDeletePlanById(data?.id, data?.index, $event)">
+    <mat-icon>delete_forever</mat-icon>
+  </button>
+  </ng-template>
+</mat-menu>

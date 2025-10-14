@@ -1,0 +1,217 @@
+<div class="page-header">
+  <div class="header-content">
+    <button mat-icon-button (click)="onBack()" matTooltip="Quay lại">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h3 class="title">Tổng hợp phương án phối: {{ maGang() }} <span class="muted">(ID: {{ id() }})</span></h3>
+  </div>
+</div>
+
+<div class="content">
+  <div *ngIf="loading()" class="loading-state">
+    <mat-icon>hourglass_empty</mat-icon>
+    <div>Đang tải dữ liệu...</div>
+  </div>
+
+  <div *ngIf="!loading() && plans().length === 0" class="empty-state">
+    <div class="empty-box">
+      <mat-icon>info</mat-icon>
+      <div>Chưa có phương án phối để tổng hợp.</div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading() && plans().length > 0" class="summary-content">
+    <!-- Overall Summary Cards -->
+    <div class="overview-cards">
+      <mat-card class="overview-card">
+        <mat-card-header>
+          <mat-card-title>Tổng quan</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="overview-metrics">
+            <div class="metric">
+              <span class="metric-value">{{ getOverallSummary().totalPlans }}</span>
+              <span class="metric-label">Phương án</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">{{ getOverallSummary().totalCost | number:'1.0-0' }}</span>
+              <span class="metric-label">Tổng chi phí (VND)</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">{{ getOverallSummary().averageEfficiency | number:'1.1-1' }}%</span>
+              <span class="metric-label">Hiệu quả TB</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Detailed Summary Tabs -->
+    <mat-tab-group [selectedIndex]="selectedTabIndex()" (selectedIndexChange)="onTabChange($event)">
+      <!-- Cost Analysis Tab -->
+      <mat-tab label="Phân tích chi phí">
+        <ng-template matTabContent>
+          <div class="tab-content">
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Bảng tổng hợp chi phí</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="table-container">
+                  <table mat-table [dataSource]="getCostSummary()" class="summary-table">
+                    <ng-container matColumnDef="plan">
+                      <th mat-header-cell *matHeaderCellDef>Phương án</th>
+                      <td mat-cell *matCellDef="let element">{{ element.plan || '--' }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="totalCost">
+                      <th mat-header-cell *matHeaderCellDef>Tổng chi phí</th>
+                      <td mat-cell *matCellDef="let element">{{ element.totalCost || '--' }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="unitCost">
+                      <th mat-header-cell *matHeaderCellDef>Chi phí đơn vị</th>
+                      <td mat-cell *matCellDef="let element">{{ element.unitCost || '--' }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="costBreakdown">
+                      <th mat-header-cell *matHeaderCellDef>Phân tích chi phí</th>
+                      <td mat-cell *matCellDef="let element">{{ element.costBreakdown || '--' }}</td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="['plan', 'totalCost', 'unitCost', 'costBreakdown']"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['plan', 'totalCost', 'unitCost', 'costBreakdown']"></tr>
+                  </table>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </ng-template>
+      </mat-tab>
+
+      <!-- Efficiency Analysis Tab -->
+      <mat-tab label="Phân tích hiệu quả">
+        <ng-template matTabContent>
+          <div class="tab-content">
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Bảng tổng hợp hiệu quả</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="table-container">
+                  <table mat-table [dataSource]="getEfficiencySummary()" class="summary-table">
+                    <ng-container matColumnDef="plan">
+                      <th mat-header-cell *matHeaderCellDef>Phương án</th>
+                      <td mat-cell *matCellDef="let element">{{ element.plan || '--' }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="efficiency">
+                      <th mat-header-cell *matHeaderCellDef>Hiệu quả</th>
+                      <td mat-cell *matCellDef="let element">{{ element.efficiency || '--' }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="quality">
+                      <th mat-header-cell *matHeaderCellDef>Chất lượng</th>
+                      <td mat-cell *matCellDef="let element">{{ element.quality || '--' }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="performance">
+                      <th mat-header-cell *matHeaderCellDef>Hiệu suất</th>
+                      <td mat-cell *matCellDef="let element">{{ element.performance || '--' }}</td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="['plan', 'efficiency', 'quality', 'performance']"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['plan', 'efficiency', 'quality', 'performance']"></tr>
+                  </table>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </ng-template>
+      </mat-tab>
+
+      <!-- Material Usage Tab -->
+      <mat-tab label="Sử dụng vật liệu">
+        <ng-template matTabContent>
+          <div class="tab-content">
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Bảng tổng hợp vật liệu</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="table-container">
+                  <table mat-table [dataSource]="getMaterialUsageSummary()" class="summary-table">
+                    <ng-container matColumnDef="material">
+                      <th mat-header-cell *matHeaderCellDef>Vật liệu</th>
+                      <td mat-cell *matCellDef="let element">{{ element.material || '--' }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="totalUsage">
+                      <th mat-header-cell *matHeaderCellDef>Tổng sử dụng</th>
+                      <td mat-cell *matCellDef="let element">{{ element.totalUsage || '--' }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="averageUsage">
+                      <th mat-header-cell *matHeaderCellDef>Sử dụng TB</th>
+                      <td mat-cell *matCellDef="let element">{{ element.averageUsage || '--' }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="costImpact">
+                      <th mat-header-cell *matHeaderCellDef>Tác động chi phí</th>
+                      <td mat-cell *matCellDef="let element">{{ element.costImpact || '--' }}</td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="['material', 'totalUsage', 'averageUsage', 'costImpact']"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['material', 'totalUsage', 'averageUsage', 'costImpact']"></tr>
+                  </table>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </ng-template>
+      </mat-tab>
+
+      <!-- Trend Analysis Tab -->
+      <mat-tab label="Phân tích xu hướng">
+        <ng-template matTabContent>
+          <div class="tab-content">
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Phân tích xu hướng và khuyến nghị</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="trend-analysis">
+                  <div class="trend-item">
+                    <mat-icon class="trend-icon">trending_up</mat-icon>
+                    <div class="trend-content">
+                      <div class="trend-title">Xu hướng chi phí</div>
+                      <div class="trend-value">{{ getTrendAnalysis().costTrend }}</div>
+                    </div>
+                  </div>
+
+                  <div class="trend-item">
+                    <mat-icon class="trend-icon">trending_up</mat-icon>
+                    <div class="trend-content">
+                      <div class="trend-title">Xu hướng hiệu quả</div>
+                      <div class="trend-value">{{ getTrendAnalysis().efficiencyTrend }}</div>
+                    </div>
+                  </div>
+
+                  <div class="recommendations-section">
+                    <h4>Khuyến nghị</h4>
+                    <div class="recommendations">
+                      <div class="recommendation-item" *ngFor="let rec of getTrendAnalysis().recommendations">
+                        <mat-icon class="recommendation-icon">lightbulb</mat-icon>
+                        <div class="recommendation-text">{{ rec }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </ng-template>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>

@@ -1,0 +1,15 @@
+<div class="page-header">
+  <h1>Quản lý hàm thống kê</h1>
+  <div class="header-actions">
+    <!-- Future actions can be added here -->
+  </div>
+</div>
+
+<app-table-common
+  [columns]="columns"
+  [fetcher]="fetcher"
+  [tableTitle]="''"
+  [enableActions]="true"
+  (create)="onCreate()"
+  (selectEdit)="onEdit($event)"
+></app-table-common>

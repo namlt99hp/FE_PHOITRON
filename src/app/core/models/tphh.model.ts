@@ -1,19 +1,29 @@
 export interface TPHHTableModel{
     id: number;
     ma_TPHH: string;
-    ten_TPHH: string
-    ghiChu?: string
-    ngayTao: string;
-    iD_NguoiTao?: number;
-    ngaySua?: string; 
-    iD_NguoiSua?: number;
+    ten_TPHH: string;
+    don_Vi?: string | null;
+    thu_Tu?: number | null;
+    ghi_Chu?: string | null;
+    ngay_Tao?: string;
+    da_Xoa?: boolean;
 }
 
-export interface TPHHDto{
-    id?: number;
+export interface TPHHCreateDto{
     ma_TPHH: string;
-    ten_TPHH: string
-    ghiChu?: string;
+    ten_TPHH: string;
+    don_Vi?: string | null;
+    thu_Tu?: number | null;
+    ghi_Chu?: string | null;
+}
+
+export interface TPHHUpdateDto extends TPHHCreateDto{
+    id: number;
+}
+
+export interface TPHHUpsertDto {
+    id?: number | null;
+    tp_HoaHoc: TPHHCreateDto;
 }
 
 export interface TPHHSelectItemModel{

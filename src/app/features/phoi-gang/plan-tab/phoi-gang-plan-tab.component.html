@@ -1,0 +1,111 @@
+<div class="plan-tab">
+  <div class="header">
+    <div class="header-left">
+      <h4 class="title">{{ plan.ten }}</h4>
+      <div class="meta">Gang: <b>{{ maGang }}</b> (ID: {{ gangId }})</div>
+    </div>
+    <div class="action-buttons">
+      <button mat-raised-button color="accent" (click)="onCreateGang()">
+        <mat-icon>build</mat-icon>
+        {{ gangKetQuaId ? 'Sửa gang' : 'Tạo gang' }}
+      </button>
+      <button mat-raised-button color="accent" (click)="onCreateSlag()">
+        <mat-icon>science</mat-icon>
+        {{ slagId ? 'Sửa xỉ' : 'Tạo xỉ' }}
+      </button>
+      <button mat-raised-button color="accent" (click)="openProcessParamConfig()">
+        <mat-icon>settings</mat-icon>
+        Cấu hình Tham số
+      </button>
+      <button mat-raised-button color="accent" (click)="openStatisticsConfig()">
+        <mat-icon>analytics</mat-icon>
+        Cấu hình Thống kê
+      </button>
+      <button mat-flat-button color="primary" (click)="openMixDialog()">Phối trộn</button>
+    </div>
+  </div>
+
+  <!-- Pipeline milestones -->
+  <div class="layout">
+    <aside class="pipeline-vertical">
+      <div class="pipeline-title">Luồng phối</div>
+      <div class="pipeline-flow">
+        <ng-container *ngFor="let m of mixes()">
+          <div class="connector-vertical"></div>
+          <div class="milestone-vertical clickable" (click)="scrollToMix(m.id)" [title]="m.ten">
+            <div class="dot"></div>
+            <div class="label">{{ m.ten }}</div>
+          </div>
+        </ng-container>
+      </div>
+    </aside>
+    <section class="detail">
+      <div class="detail-header">
+        <h4 class="node-title">Danh sách công thức phối</h4>
+      </div>
+
+      <div class="mix-sections">
+        <div *ngIf="isLoading()" class="loading-message">
+          Đang tải danh sách công thức phối...
+        </div>
+        
+        <div *ngFor="let detail of congThucDetails()" class="mix-section" [attr.id]="mixAnchorId(detail.id)" [ngClass]="getMilestoneClass(detail.milestone)">
+          <div class="mix-header">
+            <div class="mix-title">
+              <h5>{{ detail.ten_Cong_Thuc || detail.ma_Cong_Thuc }}</h5>
+              <p class="mix-meta">
+                Mã: {{ detail.ma_Cong_Thuc }} | 
+                Quặng đầu ra: {{ detail.quangDauRa['ten_Quang'] }} | 
+                Milestone: <span class="milestone-badge">{{ getMilestoneDisplayName(detail.milestone) }}</span>
+              </p>
+            </div>
+            <button mat-flat-button color="primary" (click)="editCongThuc(detail)">
+              <mat-icon>edit</mat-icon> Edit
+            </button>
+          </div>
+          
+          <div class="mix-body">
+            <div class="excel-table">
+              <table class="formula-table">
+                <thead>
+                  <tr>
+                    <th rowspan="2" class="ore-header">Quặng</th>
+                    <th rowspan="2" class="ratio-header">Tỷ lệ, %</th>
+                    <th [attr.colspan]="getChemHeadersSorted(detail.id).length" class="chem-header">Các thành phần hóa học</th>
+                  </tr>
+                  <tr>
+                    <!-- <th class="ratio-sub-header">Tỷ lệ, %</th> -->
+                    <ng-container *ngFor="let h of getChemHeadersSorted(detail.id)">
+                      <th class="chem-sub-header">{{ h.ma }}</th>
+                    </ng-container>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let r of getChemRows(detail.id)" [ngClass]="{'mixed-ore-row': isMixedOre(r)}">
+                    <td class="ore-name">
+                      {{ r.oreName }}
+                      <span *ngIf="isMixedOre(r)" class="mixed-ore-badge">Phối</span>
+                    </td>
+                    <td class="ratio-value">{{ r.ratio | number:'1.1-1' }}</td>
+                    <ng-container *ngFor="let h of getChemHeadersSorted(detail.id)">
+                      <td class="chem-value">{{ getValue(detail.id, r, h.id) | number:'1.2-2' }}</td>
+                    </ng-container>
+                  </tr>
+                  <tr class="result-row">
+                    <td class="result-ore-name">{{ getOutName(detail.id) }}</td>
+                    <td class="result-ratio">100,0</td>
+                    <ng-container *ngFor="let h of getChemHeadersSorted(detail.id)">
+                      <td class="result-chem-value">{{ getOutValue(detail.id, h.id) | number:'1.2-2' }}</td>
+                    </ng-container>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+

@@ -1,0 +1,139 @@
+<div class="plan-results-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Cấu hình thống kê - {{ planName }}</mat-card-title>
+      <mat-card-subtitle>Phương án ID: {{ planId }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="selection-layout">
+        <!-- Left side: Available Functions -->
+        <div class="available-functions">
+          <h3>Danh sách chỉ số thống kê</h3>
+          
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Tìm kiếm</mat-label>
+            <input matInput [formControl]="searchControl" placeholder="Tên / mã chỉ số" />
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+
+          <div class="table-container">
+            <table mat-table [dataSource]="availableFunctions" class="functions-table">
+              <!-- Selection Column -->
+              <ng-container matColumnDef="select">
+                <th mat-header-cell *matHeaderCellDef style="width: 56px;"></th>
+                <td mat-cell *matCellDef="let function">
+                  <mat-checkbox 
+                    [checked]="isSelected(function.id)" 
+                    (change)="onAvailableToggle(function, $event.checked)">
+                  </mat-checkbox>
+                </td>
+              </ng-container>
+             
+              <!-- Description Column (left) -->
+              <ng-container matColumnDef="description">
+                <th mat-header-cell *matHeaderCellDef>Tham số có sẵn</th>
+                <td mat-cell *matCellDef="let function">
+                  <div class="item-card available">
+                    <div class="title-row">
+                      <div class="name">{{ function.moTa  }}</div>
+                      <span *ngIf="function.isAutoCalculated" class="badge auto">Tự động tính</span>
+                    </div>
+                    <div class="subtitle">{{ function.code }}</div>
+                    <div class="desc">{{function.ten }}</div>
+                  </div>
+                </td>
+              </ng-container>
+              
+              <!-- Unit Column -->
+              <ng-container matColumnDef="unit">
+                <th mat-header-cell *matHeaderCellDef>Đơn vị</th>
+                <td mat-cell *matCellDef="let function">{{ function.donVi }}</td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="availableColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: availableColumns;"></tr>
+            </table>
+
+            <div *ngIf="availableFunctions.length === 0" class="no-data">
+              <p>Không tìm thấy chỉ số thống kê nào.</p>
+            </div>
+          </div>
+
+          <mat-paginator
+            [length]="totalCount"
+            [pageIndex]="currentPage"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="[10, 15, 25, 50]"
+            (page)="onPageChange($event)">
+          </mat-paginator>
+        </div>
+
+        <!-- Right side: Selected Functions -->
+        <div class="selected-functions">
+          <h3>Chỉ số đã chọn ({{ selectedResults.length }})</h3>
+          
+          <div class="table-container">
+            <table mat-table [dataSource]="selectedResults" class="selected-table">
+              <!-- Description Column -->
+              <ng-container matColumnDef="description">
+                <th mat-header-cell *matHeaderCellDef>Tham số đã chọn</th>
+                <td mat-cell *matCellDef="let result">
+                  <div class="item-card selected">
+                    <div class="num-badge">{{ (selectedResults.indexOf(result) + 1) }}</div>
+                    <div class="content">
+                      <div class="name">{{ result.description || ''}}</div>
+                      <div class="subtitle">{{  result.functionCode }}</div>
+                      <div class="desc">{{ result.ten }}</div>
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Unit Column -->
+              <ng-container matColumnDef="unit">
+                <th mat-header-cell *matHeaderCellDef>Đơn vị</th>
+                <td mat-cell *matCellDef="let result"><span class="unit-chip">{{ result.donVi }}</span></td>
+              </ng-container>
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Thao tác</th>
+                <td mat-cell *matCellDef="let result" class="actions-cell">
+                  <div class="actions-group">
+                    <button mat-icon-button class="ghost" (click)="moveUp(result)" matTooltip="Di chuyển lên">
+                      <mat-icon>expand_less</mat-icon>
+                    </button>
+                    <button mat-icon-button class="ghost" (click)="moveDown(result)" matTooltip="Di chuyển xuống">
+                      <mat-icon>expand_more</mat-icon>
+                    </button>
+                    <button mat-icon-button 
+                            color="warn" 
+                            (click)="removeFromSelection(result)"
+                            matTooltip="Xóa khỏi danh sách">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="selectedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: selectedColumns;"></tr>
+            </table>
+
+            <div *ngIf="selectedResults.length === 0" class="no-data">
+              <p>Chưa chọn chỉ số thống kê nào.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+
+    <mat-card-actions align="end">
+      <button mat-button (click)="onCancel()">Hủy</button>
+      <button mat-raised-button color="primary" (click)="saveResults()">
+        <mat-icon>save</mat-icon>
+        Lưu cấu hình
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>
