@@ -191,7 +191,8 @@ export class PlanResultsComponent implements OnInit, OnDestroy {
   }
 
   moveUp(result: ThongKeResultResponse): void {
-    const idx = this.selectedResults.findIndex(r => r.iD_ThongKe_Function === result.iD_ThongKe_Function);
+    const targetId = (result as any).iD_ThongKe_Function ?? (result as any).id_ThongKe_Function;
+    const idx = this.selectedResults.findIndex(r => ((r as any).iD_ThongKe_Function ?? (r as any).id_ThongKe_Function) === targetId);
     if (idx > 0) {
       [this.selectedResults[idx - 1], this.selectedResults[idx]] = [this.selectedResults[idx], this.selectedResults[idx - 1]];
       this.reindexThuTu();
@@ -199,7 +200,8 @@ export class PlanResultsComponent implements OnInit, OnDestroy {
   }
 
   moveDown(result: ThongKeResultResponse): void {
-    const idx = this.selectedResults.findIndex(r => r.iD_ThongKe_Function === result.iD_ThongKe_Function);
+    const targetId = (result as any).iD_ThongKe_Function ?? (result as any).id_ThongKe_Function;
+    const idx = this.selectedResults.findIndex(r => ((r as any).iD_ThongKe_Function ?? (r as any).id_ThongKe_Function) === targetId);
     if (idx >= 0 && idx < this.selectedResults.length - 1) {
       [this.selectedResults[idx + 1], this.selectedResults[idx]] = [this.selectedResults[idx], this.selectedResults[idx + 1]];
       this.reindexThuTu();

@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { 
   TableQuery,
   TableResult,
@@ -27,18 +27,20 @@ export class QuangService {
   baseApi = `${environment.apiBaseUrl}/Quang`;
   private http = inject(HttpClient);
 
-  search(q: TableQuery & { loaiQuang?: number | null }): Observable<TableResult<QuangTableModel>> {
+  search(q: TableQuery & { loaiQuang?: number[] | null; isGangTarget?: boolean | null }): Observable<TableResult<QuangTableModel>> {
     const api = `${this.baseApi}/Search`;
-    return this.http.get<ApiResponse<TableResult<QuangTableModel>>>(api, {
-      params: {
-        page: q.pageIndex,
-        pageSize: q.pageSize,
-        search: q.search ?? '',
-        sortBy: q.sortBy ?? '',
-        sortDir: q.sortDir ?? '',
-        loaiQuang: q.loaiQuang ?? '',
-      } as any,
-    }).pipe(
+    
+    const body: any = {
+      page: q.pageIndex,
+      pageSize: q.pageSize,
+      search: q.search ?? null,
+      sortBy: q.sortBy ?? null,
+      sortDir: q.sortDir ?? null,
+      loaiQuang: q.loaiQuang ?? null,
+      isGangTarget: q.isGangTarget ?? null,
+    };
+    
+    return this.http.post<ApiResponse<TableResult<QuangTableModel>>>(api, body).pipe(
       map((apiRes) => {
         if (apiRes.success && apiRes.data) {
           return {

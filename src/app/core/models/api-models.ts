@@ -174,6 +174,14 @@ export interface CongThucPhoiDetailResponse {
   chiTietQuang: ChiTietQuangChem[];
   rangBuocTPHH: RangBuocTPHHValue[];
   milestone?: number;
+  bangChiPhi?: Array<{
+    iD_CongThucPhoi: number;
+    iD_Quang: number | null;
+    lineType: string;
+    tieuhao: number | null;
+    donGiaVND: number | null;
+    donGiaUSD: number;
+  }>;
 }
 
 // ===== Get Formulas By Plan API Models =====

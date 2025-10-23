@@ -93,7 +93,7 @@ export class MainLayoutComponent implements OnDestroy {
           children: [
             {
               id: 'dept',
-              label: 'Lò cao items',
+              label: 'Phụ liệu lò cao',
               path: '/locao-process-params',
               icon: 'hammer',
             },

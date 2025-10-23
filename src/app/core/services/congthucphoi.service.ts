@@ -91,4 +91,9 @@ export class CongThucPhoiService {
     const api = `${this.baseApi}/UpsertAndConfirm`;
     return this.http.post<UpsertAndConfirmResult>(api, payload);
   }
+
+  deleteCongThucPhoi(id: number): Observable<any> {
+    const api = `${this.baseApi}/DeleteCongThucPhoi/${id}`;
+    return this.http.delete<any>(api);
+  }
 }

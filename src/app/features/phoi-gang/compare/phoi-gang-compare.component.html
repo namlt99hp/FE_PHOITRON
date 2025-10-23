@@ -5,7 +5,40 @@
     </button>
     <h3 class="title">So sánh phương án phối: {{ maGang() }} <span class="muted">(ID: {{ id() }})</span></h3>
   </div>
-  <!-- Milestone selector removed; both sections displayed below -->
+  <div class="header-actions">
+    <div class="calculation-parameters">
+      <div class="parameter-row">
+        <mat-form-field appearance="outline" class="parameter-field">
+          <mat-label>Tỷ lệ TFe (%)</mat-label>
+          <input matInput type="number" [formControl]="tyleTFE" placeholder="0">
+        </mat-form-field>
+        
+        <mat-form-field appearance="outline" class="parameter-field">
+          <mat-label>Tỷ lệ Tổng</mat-label>
+          <input matInput type="number" [formControl]="tyleTong" placeholder="0">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="parameter-field">
+          <mat-label>Tiêu hao tăng TFe (%)</mat-label>
+          <input matInput type="number" [formControl]="tieuhaoTangTFE" placeholder="0">
+        </mat-form-field>
+        
+        <mat-form-field appearance="outline" class="parameter-field">
+          <mat-label>Tiêu hao tăng Tổng</mat-label>
+          <input matInput type="number" [formControl]="tieuhaoTangTong" placeholder="0">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="parameter-field">
+          <mat-label>Sản lượng giảm TFe (%)</mat-label>
+          <input matInput type="number" [formControl]="sanluongGiamTFE" placeholder="0">
+        </mat-form-field>
+        
+        <mat-form-field appearance="outline" class="parameter-field">
+          <mat-label>Sản lượng giảm Tổng (%)</mat-label>
+          <input matInput type="number" [formControl]="sanluongGiamTong" placeholder="0">
+        </mat-form-field>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="content">
@@ -21,98 +54,37 @@
     </div>
   </div>
 
-  <div *ngIf="!loading() && plans().length > 0" class="compare-content">
-    <!-- Plan Summary Cards removed -->
-
-    <!-- One long comparison matrix (Thiêu Kết + Lò Cao) -->
-    <mat-card class="comparison-matrix-card">
-      <mat-card-header>
-        <mat-card-title>Ma trận so sánh tỷ lệ (Thiêu Kết + Lò Cao)</mat-card-title>
-        <mat-card-subtitle>Tỷ lệ phối (%) và một số chỉ tiêu theo từng phương án</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="table-container">
-          <table class="comparison-matrix">
-            <thead>
-              <tr>
-                <th class="ore-column">Hạng mục</th>
-                <th class="unit-column">Đơn vị</th>
-                <th *ngFor="let plan of plans()" class="plan-column">{{ plan.ten_Phuong_An }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Section: Thiêu Kết -->
-              <tr class="section-header">
-                <td class="ore-cell" [attr.colspan]="2 + plans().length">1. THIÊU KẾT</td>
-              </tr>
-              <tr *ngFor="let row of getComparisonDataThieuKet()" class="ore-row">
-                <td class="ore-cell">{{ row.ore }}</td>
-                <td class="unit-cell">{{ getUnitFor(row.ore) }}</td>
-                <td *ngFor="let plan of plans()" class="ratio-cell" 
-                    [class.has-value]="getOreRatio(row, plan.ten_Phuong_An) > 0">
-                  {{ formatRatio(getOreRatio(row, plan.ten_Phuong_An)) }}
-                </td>
-              </tr>
-
-              <!-- Section: Lò Cao -->
-              <tr class="section-header">
-                <td class="ore-cell" [attr.colspan]="2 + plans().length">2. LÒ CAO</td>
-              </tr>
-              <tr *ngFor="let row of getComparisonDataLoCao()" class="ore-row">
-                <td class="ore-cell">{{ row.ore }}</td>
-                <td class="unit-cell">{{ getUnitFor(row.ore) }}</td>
-                <td *ngFor="let plan of plans()" class="ratio-cell" 
-                    [class.has-value]="getOreRatio(row, plan.ten_Phuong_An) > 0">
-                  {{ formatRatio(getOreRatio(row, plan.ten_Phuong_An)) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <!-- Cost Comparison (Placeholder) -->
-    <mat-card class="cost-comparison-card">
-      <mat-card-header>
-        <mat-card-title>So sánh chi phí</mat-card-title>
-        <mat-card-subtitle>Chi phí sản xuất theo từng phương án</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="cost-summary">
-          <div class="cost-item" *ngFor="let plan of plans()">
-            <div class="cost-plan-name">{{ plan.ten_Phuong_An }}</div>
-            <div class="cost-value">{{ getMockCost(plan.ten_Phuong_An) | number:'1.0-0' }} VND/tấn</div>
-          </div>
-        </div>
-        <div class="cost-note">
-          <mat-icon>info</mat-icon>
-          <span>Chi phí sẽ được tính toán dựa trên giá quặng và tỷ lệ phối</span>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <!-- Recommendations -->
-    <mat-card class="recommendations-card">
-      <mat-card-header>
-        <mat-card-title>Khuyến nghị</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="recommendations">
-          <div class="recommendation-item">
-            <mat-icon class="recommendation-icon">star</mat-icon>
-            <div class="recommendation-text">
-              <strong>Phương án tối ưu:</strong> Cần tính toán chi phí để đánh giá
-            </div>
-          </div>
-          <div class="recommendation-item">
-            <mat-icon class="recommendation-icon">info</mat-icon>
-            <div class="recommendation-text">
-              <strong>Ghi chú:</strong> Ma trận hiển thị tỷ lệ phối của {{ getComparisonDataThieuKet().length }} loại quặng qua {{ plans().length }} phương án
-            </div>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
+  <div *ngIf="!loading() && plans().length > 0" class="excel-table-container">
+    <div class="excel-table-wrapper">
+      <table class="excel-table">
+        <thead>
+          <tr>
+            <th class="excel-header-cell">PA</th>
+            <th class="excel-header-cell">Đơn vị</th>
+            <th *ngFor="let plan of getPlanColumns()" class="excel-header-cell">{{ plan }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of getExcelData()" 
+              [class.section-header-row]="row.isSectionHeader"
+              [class.bold-row]="row.isBold"
+              [class.yellow-row]="row.isYellow"
+              [style.background-color]="row.backgroundColor">
+            <td class="excel-cell name-cell" 
+                [class.section-header-cell]="row.isSectionHeader"
+                [class.bold-text]="row.isBold">
+              {{ row.name }}
+            </td>
+            <td class="excel-cell unit-cell">{{ row.unit || '' }}</td>
+            <td *ngFor="let plan of getPlanColumns()" 
+                class="excel-cell value-cell"
+                [class.bold-text]="row.isBold"
+                [class.has-value]="formatValue(row.values[plan], row.unit) !== ''">
+              {{ formatValue(row.values[plan], row.unit) }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>

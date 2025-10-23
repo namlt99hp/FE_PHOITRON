@@ -77,6 +77,7 @@ import { HideZeroInputDirective } from '../../core/directives/hide-zero-input.di
 import { ThongKeFunctionService } from '../../core/services/thongke-function.service';
 import { ORE_TYPE_CODES } from '../../core/constants/ore-type-codes.constant';
 import { MixRowData, ProcessParamData } from '../../core/models/mix-row-data.model';
+import { LINE_TYPE_CHIPHI } from '../../core/constants/line-type-chiphi.constant';
 
 type RatioRow = {
   idQuang: number;
@@ -370,6 +371,9 @@ export class MixQuangDialogComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Khởi tạo _formulaByOutputOre để tránh undefined
+    (this as any)._formulaByOutputOre = new Map<number, any[]>();
+    
      // Lấy tên phương án (nếu được truyền qua) và mã gang
      this.planName.set(this.data?.planName ?? (`PA-${this.data?.planId ?? ''}`));
      this.gangName.set(this.data?.maGang ?? '');
@@ -478,6 +482,30 @@ export class MixQuangDialogComponent implements OnInit {
           // Dùng syncSelections để dựng cột/row/controls với dữ liệu đã lưu (không refetch)
           this.syncSelections({ ores, chems: rbHeaders, refetch: false });
 
+          // Set milestone from backend data if available
+          if (d.milestone !== undefined && d.milestone !== null) {
+            this.milestone.set(d.milestone);
+          }
+
+          // Load BangChiPhi data for non-ore cost items (các dòng khác không có iD_Quang)
+          if (d.bangChiPhi?.length) {
+            for (const item of d.bangChiPhi) {
+              // Chỉ load các dòng không có iD_Quang (chi phí khác)
+              if (item.iD_Quang === null) {
+                if (item.lineType === LINE_TYPE_CHIPHI.CHI_PHI_KHAC && d.milestone === MilestoneEnum.ThieuKet) {
+                  this.otherCost = item.donGiaVND || 0;
+                } else if (item.lineType === LINE_TYPE_CHIPHI.CHI_PHI_SX_GANG_LONG && d.milestone === MilestoneEnum.LoCao) {
+                  this.otherCostLoCao = item.donGiaVND || 0;
+                } else if (item.lineType === LINE_TYPE_CHIPHI.QUANG_HOI && d.milestone === MilestoneEnum.LoCao) {
+                  this.recycleCostVnd = item.donGiaVND || 0;
+                }
+              }
+            }
+          }
+
+          // Trigger change detection to update cost table with loaded BangChiPhi data
+          this.cdr.markForCheck();
+
           // Apply milestone-specific values into row controls
           queueMicrotask(() => {
             const currentRows = this.rows();
@@ -495,6 +523,8 @@ export class MixQuangDialogComponent implements OnInit {
               }
             }
             this.rows.set([...currentRows]);
+            
+            // Trigger change detection to update cost table with loaded BangChiPhi data
             this.cdr.markForCheck();
           });
 
@@ -518,6 +548,9 @@ export class MixQuangDialogComponent implements OnInit {
                 for (const r of responses) dict.set(r.outputOreId, r.items);
                 (this as any)._formulaByOutputOre = dict;
               });
+            } else {
+              // Không có quặng loại 1, khởi tạo empty map
+              (this as any)._formulaByOutputOre = new Map<number, any[]>();
             }
           }
         }
@@ -610,7 +643,8 @@ export class MixQuangDialogComponent implements OnInit {
       if (this.milestone() === MilestoneEnum.LoCao) {
         this.initializeLocaoControls();
       }
-      
+
+
       // Nếu milestone Thiêu Kết: tải công thức của các quặng loại 1 (quặng phối)
       if (this.milestone() === MilestoneEnum.ThieuKet) {
         const outputOreIds = list.filter(o => (o as any).loaiQuang === 1).map(o => o.id);
@@ -623,23 +657,28 @@ export class MixQuangDialogComponent implements OnInit {
             for (const r of responses) dict.set(r.outputOreId, r.items);
             (this as any)._formulaByOutputOre = dict;
           });
+        } else {
+          // Không có quặng loại 1, khởi tạo empty map
+          (this as any)._formulaByOutputOre = new Map<number, any[]>();
         }
       }
     });
   }
 
-  // Data source cho bảng chi phí: lấy trực tiếp từ cột "Tiêu hao" ThieuKet
-  getCostTableItems(): Array<{ ten: string; consumption: number; unitVnd: number; unitUsd: number; isParent: boolean; parentId?: number; }> {
-    const out: Array<{ ten: string; consumption: number; unitVnd: number; unitUsd: number; isParent: boolean; parentId?: number; }> = [];
+  getCostTableItems(): Array<{ id: number, ten: string; consumption: number; unitVnd: number; unitUsd: number; isParent: boolean; parentId?: number; }> {
+    const out: Array<{ id: number, ten: string; consumption: number; unitVnd: number; unitUsd: number; isParent: boolean; parentId?: number; }> = [];
     const formulaMap: Map<number, any[]> | undefined = (this as any)._formulaByOutputOre;
+    
+    // Add ore items
     for (const r of this.rows()) {
       // Lấy trực tiếp giá trị từ cột "Tiêu hao" ThieuKet (dùng getThieuKetKhauHaoPercentage)
       const baseCons = this.getThieuKetKhauHaoPercentage(r);
 
       // Nếu r là quặng phối (loại 1) và có công thức: liệt kê từng thành phần
+
       const parts = formulaMap?.get(r.idQuang);
+      
       if (parts?.length) {
-        // Thêm các quặng thành phần - tính dựa vào tỷ lệ phần trăm trên số liệu khấu hao
         for (const p of parts) {
           const safeTyGia = this.getSafeTyGia();
           const pUnitVnd = p.gia_VND_1Tan ?? ((p.gia_USD_1Tan || 0) * (p.ty_Gia_USD_VND || safeTyGia || 0));
@@ -651,6 +690,7 @@ export class MixQuangDialogComponent implements OnInit {
           const unitPriceVnd = (pUnitVnd || 0) * (pRatio / 100);
           const unitPriceUsd = (pUnitUsd || 0) * (pRatio / 100);
           out.push({ 
+            id: p.id,
             ten: p.ten_Quang, 
             consumption: Number(cons.toFixed(3)), 
             unitVnd: Number(unitPriceVnd.toFixed(2)),
@@ -661,6 +701,7 @@ export class MixQuangDialogComponent implements OnInit {
         }
         // Thêm chính quặng phối để highlight
         out.push({ 
+          id: r.idQuang,
           ten: r.tenQuang, 
           consumption: Number(baseCons.toFixed(3)), 
           unitVnd: this.getUnitPriceVND(r),
@@ -675,7 +716,8 @@ export class MixQuangDialogComponent implements OnInit {
         const unitPriceVnd = totalRatio > 0 ? this.getUnitPriceVND(r) * (ratio / totalRatio) : 0;
         const unitPriceUsd = totalRatio > 0 ? this.getUnitPriceUSD(r) * (ratio / totalRatio) : 0;
         
-        out.push({ 
+        out.push({  
+          id: r.idQuang,
           ten: r.tenQuang, 
           consumption: Number(baseCons.toFixed(3)), 
           unitVnd: Number(unitPriceVnd.toFixed(2)),
@@ -693,6 +735,8 @@ export class MixQuangDialogComponent implements OnInit {
 
   // ===== Bảng chi phí - tính toán tổng =====
   otherCost: number = 0;
+  otherCostGangLong: number = 0;
+  recycleCostVnd: number = 0; // Chi phí cho dòng QUẶNG HỒI (nếu cần nhập)
 
   getTotalConsumption(): number {
     return this.getCostTableItems().reduce((sum, item) => sum + (item.consumption || 0), 0);
@@ -726,6 +770,11 @@ export class MixQuangDialogComponent implements OnInit {
   onOtherCostChange(): void {
     // Trigger change detection để cập nhật tổng
   }
+
+  onOtherCostGangLongChange(): void {
+    // Trigger change detection để cập nhật tổng
+  }
+
   getConstraintCtrl(chemId: number, type: 'min' | 'max'): FormControl<number | null> {
     const constraint = this.constraints().get(chemId);
     if (!constraint) {
@@ -801,7 +850,8 @@ export class MixQuangDialogComponent implements OnInit {
       return sum + (consumption * unitPrice);
     }, 0);
     
-    return Number((oreCost + this.otherCostLoCao).toFixed(2));
+    // Tổng bao gồm chi phí SX gang lỏng và có thể cộng chi phí quặng hồi nếu dùng nhập tay
+    return Number((oreCost + this.otherCostLoCao + (this.recycleCostVnd || 0)).toFixed(2));
   }
 
   getTotalLoCaoCostUSD(): number {
@@ -812,7 +862,8 @@ export class MixQuangDialogComponent implements OnInit {
     }, 0);
     const tyGia = this.getSafeTyGia();
     const otherCostUSD = tyGia > 0 ? this.otherCostLoCao / tyGia : 0;
-    return Number((oreCost + otherCostUSD).toFixed(2));
+    const recycleUSD = tyGia > 0 ? (this.recycleCostVnd || 0) / tyGia : 0;
+    return Number((oreCost + otherCostUSD + recycleUSD).toFixed(2));
   }
 
   // Lò cao: Chi phí sản xuất khác (nhập tay)
@@ -822,46 +873,45 @@ export class MixQuangDialogComponent implements OnInit {
   }
 
   // Save output ore prices to database (for all milestones)
-  private saveOutputOrePrices(): void {
-    if (!this.data?.planId) return;
+  // private saveOutputOrePrices(): void {
+  //   if (!this.data?.planId) return;
 
-    let outputOreData: any;
+  //   let outputOreData: any;
 
-    if (this.milestone() === MilestoneEnum.LoCao) {
-      // Lò cao: Gang và Xỉ
-      outputOreData = {
-        gangPrice: {
-          giaVND: this.getTotalLoCaoCost(),
-          giaUSD: this.getTotalLoCaoCostUSD(),
-          tyGia: this.rows()[0]?.tyGia ?? 1
-        },
-        xaPrice: {
-          giaVND: 0, // Xỉ không có giá trị thương mại
-          giaUSD: 0,
-          tyGia: this.rows()[0]?.tyGia ?? 1
-        }
-      };
-    } else if (this.milestone() === MilestoneEnum.ThieuKet) {
-      // Thiêu kết: Quặng phối đầu ra
-      outputOreData = {
-        outputOrePrice: {
-          giaVND: this.getTotalAllCosts(),
-          giaUSD: this.getTotalAllCostsUSD(),
-          tyGia: this.rows()[0]?.tyGia ?? 1
-        }
-      };
-    } else {
-      // Milestone khác: Tính theo tỷ lệ
-      outputOreData = {
-        outputOrePrice: {
-          giaVND: this.getTotalCostByRatioVND(),
-          giaUSD: this.getTotalCostByRatioVND() / (this.rows()[0]?.tyGia ?? 1),
-          tyGia: this.rows()[0]?.tyGia ?? 1
-        }
-      };
-    }
-    console.log('Output ore prices to save:', outputOreData);
-  }
+  //   if (this.milestone() === MilestoneEnum.LoCao) {
+  //     // Lò cao: Gang và Xỉ
+  //     outputOreData = {
+  //       gangPrice: {
+  //         giaVND: this.getTotalLoCaoCost(),
+  //         giaUSD: this.getTotalLoCaoCostUSD(),
+  //         tyGia: this.rows()[0]?.tyGia ?? 1
+  //       },
+  //       xaPrice: {
+  //         giaVND: 0, // Xỉ không có giá trị thương mại
+  //         giaUSD: 0,
+  //         tyGia: this.rows()[0]?.tyGia ?? 1
+  //       }
+  //     };
+  //   } else if (this.milestone() === MilestoneEnum.ThieuKet) {
+  //     // Thiêu kết: Quặng phối đầu ra
+  //     outputOreData = {
+  //       outputOrePrice: {
+  //         giaVND: this.getTotalAllCosts(),
+  //         giaUSD: this.getTotalAllCostsUSD(),
+  //         tyGia: this.rows()[0]?.tyGia ?? 1
+  //       }
+  //     };
+  //   } else {
+  //     // Milestone khác: Tính theo tỷ lệ
+  //     outputOreData = {
+  //       outputOrePrice: {
+  //         giaVND: this.getTotalCostByRatioVND(),
+  //         giaUSD: this.getTotalCostByRatioVND() / (this.rows()[0]?.tyGia ?? 1),
+  //         tyGia: this.rows()[0]?.tyGia ?? 1
+  //       }
+  //     };
+  //   }
+  // }
 
   // Lò cao: Quặng hồi - tiêu hao = 100 * (SUM(KL nhận non-type-3) - SUM(KL vào lò non-type-3)) / Tổng khối lượng Gang
   getLoCaoRecycleConsumption(): number {
@@ -986,7 +1036,7 @@ export class MixQuangDialogComponent implements OnInit {
   private attachOreCodeByRegex(row: MixRowData): MixRowData {
     // If already has code, check if it matches any ORE_TYPE_CODES
     if (row.code && row.code.trim().length > 0) {
-      const normalizedCode = row.code.toLowerCase();
+      const normalizedCode = row.code?.toLowerCase() || '';
       // Check if the existing code matches any of our standard codes
       if (Object.values(ORE_TYPE_CODES).includes(normalizedCode as any)) {
         return { ...row, code: normalizedCode };
@@ -994,7 +1044,7 @@ export class MixQuangDialogComponent implements OnInit {
     }
     
     // Use regex to determine code based on tenQuang
-    const name = (row.tenQuang || '').toLowerCase();
+    const name = row.tenQuang?.toLowerCase() || '';
     if (/(thiêu|thieu|sinter|qtk)/i.test(name)) return { ...row, code: ORE_TYPE_CODES.thieuKet };
     if (/(vê\s*viên|ve\s*vien|pellet|qvv|quặng\s*cỡ|quang\s*co)/i.test(name)) return { ...row, code: ORE_TYPE_CODES.veVien };
     if (/(25\s*[-_]\s*80|25\s*80|coke\s*25\s*[-_]\s*80|coke\s*2580)/i.test(name)) return { ...row, code: ORE_TYPE_CODES.mecoke2580 };
@@ -1422,38 +1472,17 @@ export class MixQuangDialogComponent implements OnInit {
           ThuTuTPHH: idx + 1
         })),
         Gia: this.getOutputOrePriceData()
-      }
+      },
+      // Gửi kèm bảng chi phí trong cùng payload để BE lưu trong MixAsync (1 API)
+      BangChiPhi: this.buildBangChiPhiPayload(this.data?.congThucPhoiId ?? 0)
     };
-
     // eslint-disable-next-line no-console
 
-    const call$ = this.data?.planId ? this.paService.mix(payload) : this.paService.mixStandalone(payload);
+    const call$ = this.data?.planId ? this.paService.mixWithCompleteData(this.buildCompletePayload()) : this.paService.mixStandalone(payload);
     call$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
-          // After mix succeeds, upsert current process param inputs to PA_ProcessParamValue for this plan (if in plan context)
-          if (this.data?.planId && this.locaoSection) {
-            const items = this.locaoSection.getCurrentParamInputs();
-            this.locaoParamService.upsertValuesForPlan(this.data.planId, items).subscribe();
-          }
-          
-          // Save Gang and Xỉ data to Quang_TP_PhanTich if milestone is LoCao
-          if (this.milestone() === MilestoneEnum.LoCao && this.data?.planId) {
-            this.saveGangAndXaData();
-          }
-          
-          // Save output ore prices for all milestones
-          if (this.data?.planId) {
-            this.saveOutputOrePrices();
-          }
-
-          // Save plan statistics (PA_ThongKe_Result)
-          if (this.data?.planId && this.locaoResult) {
-            const items = this.locaoResult.getUpsertPlanResults();
-            this.thongKeService.upsertResultsForPlan({ PlanId: this.data.planId, Items: items }).subscribe();
-          }
-          
           this.dlgRef.close(res?.data);
           const msg = this.data?.planId ? 'Tạo quặng phối theo phương án thành công' : 'Tạo quặng phối độc lập thành công';
           this.snack.open(msg, 'Đóng', { duration: 1500, panelClass: ['snack-success']  });
@@ -1462,6 +1491,204 @@ export class MixQuangDialogComponent implements OnInit {
           // Handle error silently
         },
       });
+  }
+
+  // ===== Build complete payload với tất cả dữ liệu liên quan =====
+  private buildCompletePayload() {
+    const chems = this.selectedChems();
+    const rows = this.rows();
+
+    // Base payload như cũ
+    const basePayload = {
+      CongThucPhoi: {
+        ID: this.data?.congThucPhoiId ?? null,
+        ID_Phuong_An: this.data?.planId!,
+        Ma_Cong_Thuc: this.maCongThucCtrl.value ?? '',
+        Ten_Cong_Thuc: this.tenCongThucCtrl.value ?? '',
+        Ghi_Chu: this.oreForm.value.GhiChu ?? null,
+        Ngay_Tao: this.oreForm.value.NgayTao ? new Date(this.oreForm.value.NgayTao).toISOString() : new Date().toISOString(),
+      },
+      Milestone: this.data?.planId ? this.milestone() : null,
+      ChiTietQuang: rows.map((r) => ({ 
+        ID_Quang: r.idQuang, 
+        Ti_Le_PhanTram: r.ratioCtrl.value ?? 0,
+        // Milestone-specific mapping
+        ...(this.milestone() === MilestoneEnum.ThieuKet ? {
+          Khau_Hao: this.getThieuKetKhauHaoValue(r),
+          Ti_Le_KhaoHao: this.getThieuKetKhauHaoPercentage(r),
+        } : {}),
+        ...(this.milestone() === MilestoneEnum.LoCao ? {
+          KL_VaoLo: r.klVaoLoCtrl?.value ?? null,
+          Ti_Le_HoiQuang: r.tyLeHoiQuangCtrl?.value ?? null,
+          KL_Nhan: r.klNhanCtrl?.value ?? null,
+        } : {}),
+        TP_HoaHocs: [
+          ...this.selectedChems().map((c, idx) => ({
+          Id: c.id,
+            PhanTram: this.getChemCtrl(r, c.id).value ?? 0,
+            ThuTuTPHH: idx + 1
+        }))
+        ]
+      })),
+      RangBuocTPHH: chems.map((c) => {
+        const rb = this.constraints().get(c.id)!;
+        return { ID_TPHH: c.id, Min_PhanTram: rb.minCtrl.value ?? null, Max_PhanTram: rb.maxCtrl.value ?? null };
+      }),
+      QuangThanhPham: {
+        Ma_Quang: this.oreForm.value.MaQuang!,
+        Ten_Quang: this.oreForm.value.TenQuang!,
+        Loai_Quang: 1, // Tron
+        Mat_Khi_Nung: null,
+        ThanhPhanHoaHoc: this.selectedChems().map((c, idx) => ({
+          ID_TPHH: c.id,
+          Gia_Tri_PhanTram: this.milestone() === MilestoneEnum.LoCao
+            ? this.getChemTotalBySumProduct(c.id)
+            : (this.milestone() === MilestoneEnum.ThieuKet
+                ? this.getThieuKetRow2Value(c.id)
+                : this.resultRow()[c.id]),
+          ThuTuTPHH: idx + 1
+        })),
+        Gia: this.getOutputOrePriceData()
+      },
+      BangChiPhi: this.buildBangChiPhiPayload(this.data?.congThucPhoiId ?? 0)
+    };
+
+    // Thêm dữ liệu liên quan nếu có planId
+    if (this.data?.planId) {
+      return {
+        ...basePayload,
+        // Process Param Values
+        ProcessParamValues: this.locaoSection?.getCurrentParamInputs()?.map(item => ({
+          IdProcessParam: item.idProcessParam,
+          GiaTri: item.giaTri,
+          ThuTuParam: item.thuTuParam
+        })) || [],
+        
+        // Gang/Slag Data
+        GangSlagData: this.milestone() === MilestoneEnum.LoCao ? {
+          GangData: this.locaoResult?.gangData?.map(item => ({
+            TphhId: item.tphhId || 0,
+            Percentage: item.percentage || 0,
+            Mass: item.mass || 0,
+            CalcFormula: item.calcFormula || null,
+            IsCalculated: item.isCalculated || false
+          })) || [],
+          SlagData: this.locaoResult?.xiData?.map(item => ({
+            TphhId: item.tphhId || 0,
+            Percentage: item.percentage || 0,
+            Mass: item.mass || 0,
+            CalcFormula: item.calcFormula || null,
+            IsCalculated: item.isCalculated || false
+          })) || []
+        } : null,
+        
+        // Thống kê Results
+        ThongKeResults: this.locaoResult?.getUpsertPlanResults()?.map((item, idx) => ({
+          ID_ThongKe_Function: item.Id_ThongKe_Function,
+          GiaTri: item.GiaTri,
+          ThuTu: idx + 1
+        })) || []
+      };
+    }
+
+    return basePayload;
+  }
+
+  // ===== Build payload upsert for CTP_BangChiPhi =====
+  private buildBangChiPhiPayload(idCongThucPhoi: number) {
+    const tyGia = this.getSafeTyGia();
+    const items: Array<{ ID_CongThucPhoi: number; ID_Quang: number | null; LineType: string; Tieuhao: number | null; DonGiaVND: number | null; DonGiaUSD: number; }> = [];
+
+    if (this.milestone() === MilestoneEnum.ThieuKet) {
+      // ThieuKet: Lấy từ getCostTableItems() - đúng như HTML đang hiển thị
+      const costItems = this.getCostTableItems();
+      for (const item of costItems) {
+        if (item.isParent) {
+          // Quặng phối chính - tìm row theo parentId
+          const row = this.rows().find(r => r.idQuang === item.parentId);
+          if (row) {
+            items.push({
+              ID_CongThucPhoi: idCongThucPhoi,
+              ID_Quang: row.idQuang,
+              LineType: LINE_TYPE_CHIPHI.QUANG,
+              Tieuhao: Number(item.consumption.toFixed(6)),
+              DonGiaVND: Number(item.unitVnd.toFixed(6)),
+              DonGiaUSD: Number(item.unitUsd.toFixed(6)),
+            });
+          }
+        } else {
+          // Quặng thành phần - sử dụng id đã có sẵn từ getCostTableItems()
+          if (item.id) {
+            items.push({
+              ID_CongThucPhoi: idCongThucPhoi,
+              ID_Quang: item.id,
+              LineType: LINE_TYPE_CHIPHI.QUANG,
+              Tieuhao: Number(item.consumption.toFixed(6)),
+              DonGiaVND: Number(item.unitVnd.toFixed(6)),
+              DonGiaUSD: Number(item.unitUsd.toFixed(6)),
+            });
+          }
+        }
+      }
+
+      // Chi phí khác - từ input trong HTML
+      const vnd = this.otherCost || 0;
+      const usd = tyGia > 0 ? vnd / tyGia : 0;
+      items.push({
+        ID_CongThucPhoi: idCongThucPhoi,
+        ID_Quang: null,
+        LineType: LINE_TYPE_CHIPHI.CHI_PHI_KHAC,
+        Tieuhao: null,
+        DonGiaVND: Number(vnd.toFixed(6)),
+        DonGiaUSD: Number(usd.toFixed(6)),
+      });
+
+      // console.log('items', items);
+
+    } else if (this.milestone() === MilestoneEnum.LoCao) {
+      // LoCao: Lấy từ rows() - đúng như HTML đang hiển thị
+      for (const r of this.rows()) {
+        const consumption = this.getLoCaoConsumption(r);
+        const unitVnd = this.getUnitPriceVND(r);
+        const unitUsd = this.getUnitPriceUSD(r);
+        
+        items.push({
+          ID_CongThucPhoi: idCongThucPhoi,
+          ID_Quang: r.idQuang,
+          LineType: LINE_TYPE_CHIPHI.QUANG,
+          Tieuhao: Number(consumption.toFixed(6)),
+          DonGiaVND: Number(unitVnd.toFixed(6)),
+          DonGiaUSD: Number(unitUsd.toFixed(6)),
+        });
+      }
+
+      // Chi phí sản xuất gang lỏng - từ input trong HTML
+      const vnd = this.otherCostLoCao || 0;
+      const usd = tyGia > 0 ? vnd / tyGia : 0;
+      items.push({
+        ID_CongThucPhoi: idCongThucPhoi,
+        ID_Quang: null,
+        LineType: LINE_TYPE_CHIPHI.CHI_PHI_SX_GANG_LONG,
+        Tieuhao: null,
+        DonGiaVND: Number(vnd.toFixed(6)),
+        DonGiaUSD: Number(usd.toFixed(6)),
+      });
+
+      // Quặng hồi - từ input trong HTML
+      const recycle = this.getLoCaoRecycleConsumption();
+      const recycleVnd = this.recycleCostVnd || 0;
+      const recycleUsd = tyGia > 0 ? recycleVnd / tyGia : 0;
+      items.push({
+        ID_CongThucPhoi: idCongThucPhoi,
+        ID_Quang: null,
+        LineType: LINE_TYPE_CHIPHI.QUANG_HOI,
+        Tieuhao: Number.isFinite(recycle) ? Number(recycle.toFixed(6)) : 0,
+        DonGiaVND: Number(recycleVnd.toFixed(6)),
+        DonGiaUSD: Number(recycleUsd.toFixed(6)),
+      });
+    }
+
+    return items;
   }
 
   cancel() {
@@ -1509,6 +1736,7 @@ export class MixQuangDialogComponent implements OnInit {
     const unitVnd = (row.giaUSD ?? 0) * tyGia;
     return Number((Number.isFinite(unitVnd) ? unitVnd : 0).toFixed(2));
   }
+
 
   getUnitPriceUSD(row: RatioRow): number {
     if (row.giaUSD != null) {
@@ -1799,7 +2027,7 @@ export class MixQuangDialogComponent implements OnInit {
       }, 0);
 
     const totalPulverizedCoalInput = this.rows()
-      .filter(row => row.tenQuang.toLowerCase().includes('than phun'))
+      .filter(row => row.tenQuang?.toLowerCase()?.includes('than phun'))
       .reduce((sum, row) => {
         const klVaoLo = this.locaoControls()?.get(row.idQuang)?.klVaoLo?.value ?? 0;
         return sum + klVaoLo;
@@ -1892,6 +2120,8 @@ export class MixQuangDialogComponent implements OnInit {
             ghi_Chu: null,
             id_Quang_Gang: result.gang.quang.id_Quang_Gang ?? null
           };
+
+          console.log('gangPayload', gangPayload);
           
           this.quangService.upsertKetQuaWithThanhPhan(gangPayload).subscribe({
             next: () => {},

@@ -1,7 +1,10 @@
 <div class="locao-tables col-12 col-lg-4">
   <!-- Process Parameters Table -->
   <div class="locao-table-section">
-    <h4>Tham số quy trình</h4>
+    <h4 class="section-title">
+      <mat-icon>settings</mat-icon>
+      Tham số quy trình
+    </h4>
     <form [formGroup]="paramForm">
       <table class="stats-table compact">
         <thead>
@@ -14,8 +17,8 @@
         <tbody>
           <tr *ngFor="let param of processParamsList; trackBy: trackByParamId">
             <td class="left">{{ param.ten }}</td>
-            <td class="center">{{ param.donVi }}</td>
-            <td class="right">
+            <td class="text-center">{{ param.donVi }}</td>
+            <td class="text-right">
               <!-- Input cho tất cả params -->
               <input
                 *ngIf="shouldShowInput(param)"

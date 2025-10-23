@@ -75,6 +75,13 @@
       <mat-label>Ghi chú</mat-label>
       <textarea matInput rows="2" [formControl]="headerForm.controls.ghiChu"></textarea>
     </mat-form-field>
+
+    <div class="span-2 d-flex align-items-center">
+      <mat-checkbox [formControl]="headerForm.controls.isPhuLieu">Là quặng phụ liệu</mat-checkbox>
+    </div>
+    <div class="span-2 d-flex align-items-center">
+      <mat-checkbox [formControl]="headerForm.controls.isCo">Là quặng Cỡ</mat-checkbox>
+    </div>
   </div>
 
   <!-- MUA -->

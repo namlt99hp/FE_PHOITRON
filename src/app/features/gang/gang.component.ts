@@ -46,7 +46,8 @@ export class GangComponent {
   fetcher = (q: TableQuery): Observable<TableResult<GangTableModel>> =>
     this.quangService.search({
       ...q,
-      loaiQuang: 2,
+      loaiQuang: [2], // Loại quặng Gang
+      isGangTarget: true, // Chỉ hiển thị gang đích (ID_Quang_Gang = null), không hiển thị gang kết quả
     }) as unknown as Observable<TableResult<GangTableModel>>;
 
   deleteHandler = (row: GangTableModel) =>

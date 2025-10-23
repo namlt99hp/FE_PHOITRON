@@ -30,7 +30,7 @@ html .mat-drawer-container {
 
   margin: 0 auto;
   &.maxWidth {
-    max-width: $boxedWidth;
+    max-width: calc(100vw - 400px);
   }
 }
 

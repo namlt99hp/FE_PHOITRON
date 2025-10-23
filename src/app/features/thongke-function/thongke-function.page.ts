@@ -24,15 +24,15 @@ export class ThongKeFunctionPage implements OnInit {
   table!: TableCommonComponent<ThongKeFunctionModel>;
 
   columns: TableColumn<ThongKeFunctionModel>[] = [
-    { key: 'code', header: 'Mã', sortable: true, width: '120px' },
-    { key: 'ten', header: 'Tên', sortable: true, width: '200px' },
-    { key: 'moTa', header: 'Mô tả', sortable: false, width: '300px' },
+    { key: 'ten', header: 'Tên', sortable: true, width: '300px' },
+    { key: 'moTa', header: 'Mô tả', sortable: false, width: '400px' },    
+    { key: 'code', header: 'Mã', sortable: true, width: '150px' },
     { key: 'donVi', header: 'Đơn vị', sortable: true, width: '100px' },
     { 
       key: 'isActive', 
       header: 'Trạng thái', 
       sortable: true, 
-      width: '120px',
+      width: '100px',
       cell: (row) => row.isActive ? 'Hoạt động' : 'Tạm dừng'
     }
   ];

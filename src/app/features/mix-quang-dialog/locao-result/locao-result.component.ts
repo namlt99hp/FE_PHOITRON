@@ -57,6 +57,7 @@ export class LocaoResultComponent implements OnInit, OnDestroy, OnChanges {
   @Input() planName: string = '';
   @Input() planId: number = 0;
   @Input() gangId: number | null = null; // DEPRECATED: use planId instead
+  
   @Input() productTotals: ProductTotal[] = [];
   // Optional inputs to compute statistics
   @Input() mixRows: MixRowData[] = [];
@@ -121,7 +122,7 @@ export class LocaoResultComponent implements OnInit, OnDestroy, OnChanges {
         this.gangData = gangTP.map((tp: any) => ({
           element: tp.ma_TPHH,
           mass: 0,
-          percentage: +(tp.phanTram ?? 0),
+          percentage: this.parseNumber(tp.phanTram ?? 0),
           isCalculated: tp.isCalculated ?? null,
           calcFormula: tp.calcFormula ?? null,
           tphhId: tp.id
@@ -130,7 +131,7 @@ export class LocaoResultComponent implements OnInit, OnDestroy, OnChanges {
         this.xiData = slagTP.map((tp: any) => ({
           element: tp.ma_TPHH,
           mass: 0,
-          percentage: +(tp.phanTram ?? 0),
+          percentage: this.parseNumber(tp.phanTram ?? 0),
           isCalculated: tp.isCalculated ?? null,
           calcFormula: tp.calcFormula ?? null,
           tphhId: tp.id
@@ -250,13 +251,30 @@ export class LocaoResultComponent implements OnInit, OnDestroy, OnChanges {
       .join('|');
   }
 
+  // Safe number parsing
+  private parseNumber(value: any): number {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    return 0;
+  }
+
+
   // Calculate totals for display
   getGangTotalMass(): number {
-    return this.gangData.reduce((sum, item) => sum + item.mass, 0);
+    return this.gangData.reduce((sum, item) => {
+      const mass = this.parseNumber(item.mass);
+      return sum + mass;
+    }, 0);
   }
 
   getGangTotalPercentage(): number {
-    return this.gangData.reduce((sum, item) => sum + item.percentage, 0);
+    return this.gangData.reduce((sum, item) => {
+      const percentage = this.parseNumber(item.percentage);
+      return sum + percentage;
+    }, 0);
   }
 
   // --- Enhanced solver for Gang table ---
@@ -283,7 +301,10 @@ export class LocaoResultComponent implements OnInit, OnDestroy, OnChanges {
       // For manual input with formula: mass = percentage/100 * total_mass_of_others / (1 - percentage/100)
       const sumOthers = this.gangData
         .filter(item => item !== manualInputWithFormula) // Exclude the element itself
-        .reduce((sum, item) => sum + item.mass, 0);
+        .reduce((sum, item) => {
+          const mass = this.parseNumber(item.mass);
+          return sum + mass;
+        }, 0);
       
       const percentageDecimal = (manualInputWithFormula.percentage || 0) / 100;
       if (percentageDecimal > 0 && percentageDecimal < 1) {
@@ -310,12 +331,20 @@ export class LocaoResultComponent implements OnInit, OnDestroy, OnChanges {
 
   getXaTotalMass(): number {
     // Tổng khối lượng Xỉ: KHÔNG tính R2
-    return this.xiData.reduce((sum, item) => item.element === 'R2' ? sum : sum + item.mass, 0);
+    return this.xiData.reduce((sum, item) => {
+      if (item.element === 'R2') return sum;
+      const mass = this.parseNumber(item.mass);
+      return sum + mass;
+    }, 0);
   }
 
   getXaTotalPercentage(): number {
     // Tổng phần trăm Xỉ: KHÔNG tính R2
-    return this.xiData.reduce((sum, item) => item.element === 'R2' ? sum : sum + item.percentage, 0);
+    return this.xiData.reduce((sum, item) => {
+      if (item.element === 'R2') return sum;
+      const percentage = this.parseNumber(item.percentage);
+      return sum + percentage;
+    }, 0);
   }
 
   // Recompute Xỉ percentages based on isCalculated flag
@@ -356,7 +385,6 @@ export class LocaoResultComponent implements OnInit, OnDestroy, OnChanges {
       // Only allow change for manual input items
       item.percentage = newValue;
       
-      
       // Immediate calculation for manual input with formula since it affects other calculations
       if (!item.isCalculated && item.calcFormula) {
         this.recalculateAll();
@@ -378,7 +406,6 @@ export class LocaoResultComponent implements OnInit, OnDestroy, OnChanges {
     this.recomputeGangTwoPass();
     this.recomputeXaPercentages();
     this.computeAndUpdateStatistics();
-    
   }
 
   // Removed: loadPlanStatistics -> statistics now fetched via bundle

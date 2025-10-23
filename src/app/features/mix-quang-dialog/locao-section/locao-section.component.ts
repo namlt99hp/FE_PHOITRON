@@ -7,11 +7,11 @@ import { LoCaoProcessParamService } from '../../../core/services/locao-process-p
 import { FormulaService } from '../../../core/services/formula.service';
 import { AdaptiveNumberPipe } from '../../../core/pipes/adaptive-number.pipe';
 import { HideZeroInputDirective } from '../../../core/directives/hide-zero-input.directive';
-
+import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-mix-quang-locao-section',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AdaptiveNumberPipe, HideZeroInputDirective],
+  imports: [CommonModule, ReactiveFormsModule,MatIconModule, AdaptiveNumberPipe, HideZeroInputDirective],
   templateUrl: './locao-section.component.html',
   styleUrls: ['./locao-section.component.scss']
 })

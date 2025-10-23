@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../models/http-response.model';
@@ -15,6 +15,8 @@ import {
   CongThucPhoiDetailResponse,
   DeleteResponseDto
 } from '../models/api-models';
+import { PlanComparisonExcelResponse } from '../models/plan-comparison-excel.model';
+import { PlanThieuKetSectionDto, PlanSectionDto } from '../models/phuong-an-phoi.model';
 
 export interface PhuongAnPhoiCreateDto {
   Ten_Phuong_An: string;
@@ -56,6 +58,10 @@ export class PhuongAnPhoiService {
     return this.http.post<ApiResponse<MixResponseDto>>(`${this.baseApi}/Mix`, dto);
   }
 
+  mixWithCompleteData(dto: any): Observable<ApiResponse<MixResponseDto>> {
+    return this.http.post<ApiResponse<MixResponseDto>>(`${this.baseApi}/MixWithCompleteData`, dto);
+  }
+
   mixStandalone(dto: MixRequestDto): Observable<ApiResponse<MixResponseDto>> {
     return this.http.post<ApiResponse<MixResponseDto>>(`${this.baseApi}/MixStandalone`, dto);
   }
@@ -87,6 +93,19 @@ export class PhuongAnPhoiService {
 
   deletePlanWithRelatedData(planId: number): Observable<ApiResponse<object>> {
     return this.http.delete<ApiResponse<object>>(`${this.baseApi}/DeletePlanWithRelatedData/${planId}`);
+  }
+
+  getPlanComparisonExcelByGangDich(gangDichId: number): Observable<ApiResponse<PlanComparisonExcelResponse>> {
+    return this.http.get<ApiResponse<PlanComparisonExcelResponse>>(`${this.baseApi}/GetPlanComparisonExcelByGangDich/${gangDichId}`);
+  }
+
+  // Combined sections for all plans under a gang target
+  getPlanSectionsByGangDich(gangDichId: number, includeThieuKet: boolean = true, includeLoCao: boolean = true): Observable<ApiResponse<PlanSectionDto[]>> {
+    const params = new HttpParams()
+      .set('includeThieuKet', includeThieuKet.toString())
+      .set('includeLoCao', includeLoCao.toString());
+    
+    return this.http.get<ApiResponse<PlanSectionDto[]>>(`${this.baseApi}/GetPlanSectionsByGangDich/gang-dich/${gangDichId}`, { params });
   }
 
 }

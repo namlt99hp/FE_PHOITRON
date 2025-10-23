@@ -24,8 +24,6 @@
       font-size: 16px;
     }
   }
-
-  /* milestone selector removed */
 }
 
 .content {
@@ -57,237 +55,283 @@
   gap: 16px;
 }
 
-.compare-content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+// Excel-like table styling
+.excel-table-container {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.summary-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px;
+.excel-table-wrapper {
+  overflow: auto;
+  max-height: 80vh;
 }
 
-.summary-card {
-  .plan-metrics {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 16px;
+.excel-table {
+  width: 100%;
+  min-width: 1200px;
+  border-collapse: collapse;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 12px;
+  background: white;
 
-    .metric {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid #f0f0f0;
-
-      &:last-child {
-        border-bottom: none;
-      }
-
-      .metric-label {
-        font-weight: 500;
-        color: #666;
-      }
-
-      .metric-value {
-        font-weight: 600;
-        color: #1976d2;
-      }
-    }
-  }
-}
-
-.comparison-matrix-card {
-  .table-container {
-    overflow-x: auto;
-    overflow-y: auto;
-    max-height: 75vh;
-    /* Reserve gutter space so header/body don't shift when scrollbar appears */
-    scrollbar-gutter: stable both-edges;
+  th, td {
+    border: 1px solid #d0d7de;
+    padding: 6px 8px;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
   }
 
-  .comparison-matrix {
-    width: 100%;
-    min-width: 900px;
-    border-collapse: collapse;
-    font-size: 14px;
+  .excel-header-cell {
+    background-color: #f6f8fa;
+    font-weight: 600;
+    color: #24292f;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 2px solid #d0d7de;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
 
-    th, td {
-      padding: 12px 16px;
-      text-align: center;
-      border: 1px solid #e0e0e0;
-    }
+  .excel-cell {
+    font-size: 11px;
+    line-height: 1.4;
 
-    thead th {
-      background-color: #f5f5f5;
-      font-weight: 600;
-      color: #333;
-      position: sticky;
-      top: 0;
-      z-index: 2;
-    }
-
-    .ore-column {
+    &.name-cell {
       text-align: left;
-      background-color: #f8f9fa;
-      font-weight: 600;
-      width: 240px;
-      min-width: 240px;
-      max-width: 240px;
-    }
-
-    .unit-column { width: 100px; min-width: 100px; max-width: 100px; }
-
-    .plan-column {
-      width: 120px;
-      min-width: 120px;
-      max-width: 120px;
+      background-color: #f6f8fa;
+      font-weight: 500;
+      min-width: 200px;
+      max-width: 300px;
+      white-space: normal;
       word-wrap: break-word;
     }
 
-    .ore-cell {
-      text-align: left;
-      background-color: #f8f9fa;
+    &.unit-cell {
+      background-color: #f6f8fa;
       font-weight: 500;
-      width: 240px;
-      min-width: 240px;
-      max-width: 240px;
+      min-width: 80px;
+      max-width: 80px;
+      font-size: 10px;
+      color: #656d76;
     }
 
-    .unit-cell {
-      width: 100px;
+    &.value-cell {
       min-width: 100px;
-      max-width: 100px;
-    }
-
-    .ratio-cell {
-      font-weight: 500;
-      width: 120px;
-      min-width: 120px;
       max-width: 120px;
+      font-weight: 400;
       
       &.has-value {
-        background-color: #e3f2fd;
-        color: #1976d2;
-        font-weight: 600;
+        background-color: #f0f8ff;
+        color: #0969da;
+        font-weight: 500;
       }
     }
+  }
 
-    .section-header td {
-      background-color: #edf2f7;
-      font-weight: 700;
+  // Section headers
+  .section-header-row {
+    .section-header-cell {
+      background-color: #e6f3ff !important;
+      font-weight: 700 !important;
+      font-size: 13px !important;
+      color: #0969da !important;
+      text-align: center !important;
       text-transform: uppercase;
-      color: #374151;
+      letter-spacing: 1px;
     }
+  }
 
-    /* Keep default table layout; let the container scroll to maintain alignment */
-    table-layout: fixed;
+  // Bold rows
+  .bold-row {
+    .excel-cell {
+      font-weight: 600 !important;
+    }
+  }
 
-    .ore-row:hover { background-color: #f9f9f9; }
+  .bold-text {
+    font-weight: 600 !important;
+  }
 
-    .total-row {
-      background-color: #f0f0f0;
-      font-weight: 700;
+  // Yellow highlight rows
+  .yellow-row {
+    background-color: #fffacd !important;
+    
+    .excel-cell {
+      background-color: #fffacd !important;
+    }
+  }
+
+  // Hover effects
+  tbody tr:hover {
+    background-color: #f6f8fa;
+    
+    .excel-cell {
+      background-color: #f6f8fa;
+    }
+    
+    .name-cell, .unit-cell {
+      background-color: #e1e4e8 !important;
+    }
+  }
+
+  // Special formatting for different value types
+  .value-cell {
+    // Percentage values
+    &:has-text('%') {
+      color: #0969da;
+      font-weight: 500;
+    }
+    
+    // Currency values
+    &:has-text('VNĐ') {
+      color: #1a7f37;
+      font-weight: 500;
+    }
+    
+    // Zero or empty values
+    &:empty, &:has-text('0'), &:has-text('-') {
+      color: #656d76;
+      font-style: italic;
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 1200px) {
+  .excel-table {
+    min-width: 1000px;
+    font-size: 11px;
+    
+    .excel-cell {
+      font-size: 10px;
+      padding: 4px 6px;
       
-      .total-label {
-        background-color: #e0e0e0;
+      &.name-cell {
+        min-width: 150px;
+        max-width: 200px;
       }
       
-      .total-value {
-        background-color: #e0e0e0;
-        color: #1976d2;
+      &.unit-cell {
+        min-width: 60px;
+        max-width: 60px;
+      }
+      
+      &.value-cell {
+        min-width: 80px;
+        max-width: 100px;
       }
     }
   }
 }
-
-.cost-comparison-card {
-  .cost-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 16px;
-
-    .cost-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 16px;
-      background-color: #f8f9fa;
-      border-radius: 8px;
-      border-left: 4px solid #1976d2;
-
-      .cost-plan-name {
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 8px;
-        text-align: center;
-      }
-
-      .cost-value {
-        font-size: 18px;
-        font-weight: 700;
-        color: #1976d2;
-      }
-    }
-  }
-
-  .cost-note {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 16px;
-    background-color: #fff3cd;
-    border-radius: 8px;
-    color: #856404;
-    font-size: 14px;
-
-    mat-icon {
-      color: #ffc107;
-    }
-  }
-}
-
-.recommendations-card {
-  .recommendations {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-
-    .recommendation-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 16px;
-      background-color: #f8f9fa;
-      border-radius: 8px;
-      border-left: 4px solid #1976d2;
-
-      .recommendation-icon {
-        color: #1976d2;
-        margin-top: 2px;
-      }
-
-      .recommendation-text {
-        flex: 1;
-        line-height: 1.5;
-      }
-    }
-  }
-}
-
 
 @media (max-width: 768px) {
-  .summary-cards {
-    grid-template-columns: 1fr;
-  }
-
   .page-header {
     .title {
       font-size: 20px;
+    }
+  }
+  
+  .excel-table {
+    min-width: 800px;
+    font-size: 10px;
+    
+    .excel-cell {
+      font-size: 9px;
+      padding: 3px 4px;
+    }
+  }
+}
+
+// Calculation parameters styling
+.calculation-parameters {
+  .parameter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  .parameter-field {
+    min-width: 120px;
+    max-width: 140px;
+    
+    ::ng-deep {
+      .mat-mdc-form-field {
+        font-size: 11px;
+        width: 100%;
+      }
+      
+      .mat-mdc-form-field-label {
+        font-size: 10px;
+        font-weight: 500;
+      }
+      
+      .mat-mdc-input-element {
+        font-size: 11px;
+        padding: 4px 8px;
+        text-align: center;
+      }
+      
+      .mat-mdc-form-field-outline {
+        border-radius: 4px;
+      }
+      
+      .mat-mdc-form-field-subscript-wrapper {
+        display: none;
+      }
+    }
+  }
+}
+
+// Responsive for calculation parameters
+@media (max-width: 1200px) {
+  .calculation-parameters {
+    .parameter-field {
+      min-width: 100px;
+      max-width: 120px;
+      
+      ::ng-deep {
+        .mat-mdc-form-field-label {
+          font-size: 9px;
+        }
+        
+        .mat-mdc-input-element {
+          font-size: 10px;
+          padding: 3px 6px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .calculation-parameters {
+    .parameter-row {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    
+    .parameter-field {
+      min-width: 90px;
+      max-width: 100px;
+      
+      ::ng-deep {
+        .mat-mdc-form-field-label {
+          font-size: 8px;
+        }
+        
+        .mat-mdc-input-element {
+          font-size: 9px;
+          padding: 2px 4px;
+        }
+      }
     }
   }
 }

@@ -53,7 +53,7 @@ import {
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { RateService } from '../../../core/services/rate.service';
-
+import {MatCheckboxModule} from '@angular/material/checkbox';
 @Component({
   selector: 'app-form-dialog',
   standalone: true,
@@ -68,6 +68,7 @@ import { RateService } from '../../../core/services/rate.service';
     MatTableModule,
     MatIconModule,
     MatTooltipModule,
+    MatCheckboxModule
   ],
   templateUrl: './quang-mua-form-dialog.component.html',
   styleUrl: './quang-mua-form-dialog.component.scss',
@@ -166,6 +167,8 @@ export class QuangMuaFormDialogComponent {
     tenQuang: ['', [Validators.required, Validators.maxLength(200)]],
     giaUSD: [null as number | null, [Validators.required, Validators.min(0.01)]],
     ghiChu: ['' as string | null],
+    isPhuLieu: [false],
+    isCo: [false]
   });
 
   private recalcVnd() {
@@ -294,7 +297,7 @@ export class QuangMuaFormDialogComponent {
       id: idQuang,
       ma_Quang: header.maQuang!,
       ten_Quang: header.tenQuang!,
-      loai_Quang: 0, // Quặng mua về luôn là loại 0
+      loai_Quang: header.isCo ? 5 : (header.isPhuLieu ? 3 : 0), // ưu tiên Cỡ (5), sau đó Phụ liệu (3), mặc định 0
       dang_Hoat_Dong: true,
       ghi_Chu: header.ghiChu ?? null,
       thanhPhanHoaHoc: thanhPhanHoaHoc,
@@ -393,11 +396,11 @@ export class QuangMuaFormDialogComponent {
         tenQuang: quangData.ten_Quang || quangData.tenQuang || '',
         giaUSD: giaUSD,
         ghiChu: quangData.ghi_Chu || quangData.ghiChu || '',
+        isPhuLieu: quangData.loai_Quang === 3 ? true: false, 
+        isCo: quangData.loai_Quang === 5 ? true: false,
       };
       
-      console.log('Form data to patch:', formData);
       this.headerForm.patchValue(formData);
-      console.log('Form after patch:', this.headerForm.value);
       
       // Force change detection
       this.cdr.detectChanges();

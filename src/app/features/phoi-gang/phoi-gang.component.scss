@@ -1,20 +1,95 @@
 .page-header {
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 20px 24px;
+  margin-bottom: 0;
+}
+
+.header-content {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
   justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
-.tab-content {
-  padding: 16px;
+.title-section {
+  .title-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .title-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: #3b82f6;
+  }
+
+  .main-title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.2;
+  }
+
+  .gang-id {
+    font-size: 16px;
+    color: #94a3b8;
+    font-weight: 400;
+    font-style: italic;
+  }
 }
 
-.title { margin: 0; }
-.muted { color: #6b7280; font-weight: 400; font-size: 0.85em; }
+.header-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto; /* Push buttons to the right */
 
-.actions { display: flex; align-items: center; gap: 8px; }
-.btn { display: inline-flex; align-items: center; gap: 6px; }
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+
+    &.add-btn {
+      background: #f0fdf4;
+      border-color: #22c55e;
+      color: #166534;
+
+      &:hover {
+        background: #dcfce7;
+        border-color: #16a34a;
+      }
+    }
+
+    &.compare-btn {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #1e40af;
+
+      &:hover {
+        background: #dbeafe;
+        border-color: #2563eb;
+      }
+    }
+
+    &.summary-btn {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      color: #92400e;
+
+      &:hover {
+        background: #fde68a;
+        border-color: #d97706;
+      }
+    }
+  }
+}
 
 .tab-label {
   vertical-align: middle;
@@ -102,34 +177,38 @@
   color: #dc2626; /* red-600 */
 }
 
-/* ----- Tabs theming (MDC) ----- */
-/* stylelint-disable selector-pseudo-element-no-unknown */
+/* ----- Modern Tabs theming ----- */
+::ng-deep .mat-mdc-tab-group {
+  background: #f8fafc;
+}
+
 ::ng-deep .mat-mdc-tab-group .mat-mdc-tab-header {
-  border-bottom: 1px solid #e5e7eb; /* gray-200 */
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0 24px;
 }
 
 ::ng-deep .mat-mdc-tab-group .mdc-tab {
-  background: #f9fafb; /* gray-50 */
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-  margin-right: 4px;
-  border-right: 1px solid #e5e7eb; /* separator between tabs */
-  transition: background-color 120ms ease, color 120ms ease;
-  padding-right: 2px; /* tighter right padding so close button is near edge */
+  background: transparent;
+  border-radius: 8px 8px 0 0;
+  margin-right: 2px;
+  transition: all 0.2s ease;
+  min-width: 120px;
 }
 
 ::ng-deep .mat-mdc-tab-group .mdc-tab:hover {
-  background: #f3f4f6; /* gray-100 */
+  background: #f1f5f9;
 }
 
 ::ng-deep .mat-mdc-tab-group .mdc-tab--active {
-  background: #ffffff;
-  color: #111827; /* gray-900 */
-  box-shadow: inset 0 -2px 0 #ffffff; /* blend into header border */
+  background: #fff;
+  color: #1e293b;
+  border-bottom: 2px solid #3b82f6;
 }
 
 ::ng-deep .mat-mdc-tab-group .mdc-tab--active .mdc-tab__text-label {
-  font-weight: 700;
+  font-weight: 600;
+  color: #1e293b;
 }
 
 /* Make tab content stretch so label container can use full width */
@@ -158,8 +237,55 @@
 .kpi span { color: #6b7280; font-size: 12px; }
 .kpi strong { font-size: 16px; color: #111827; }
 
-:host .empty-state { padding: 24px; }
-:host .empty-box { display: inline-flex; align-items: center; gap: 8px; background: #f9fafb; border: 1px dashed #e5e7eb; color: #6b7280; padding: 12px 16px; border-radius: 8px; }
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  padding: 40px 24px;
+}
+
+.empty-card {
+  text-align: center;
+  max-width: 400px;
+  padding: 40px 32px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  .empty-icon {
+    margin-bottom: 16px;
+
+    mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      color: #cbd5e1;
+    }
+  }
+
+  .empty-title {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .empty-description {
+    margin: 0 0 24px 0;
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.5;
+  }
+
+  .empty-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto;
+  }
+}
 
 /* Collapse auto-inserted text span in icon-only menu items */
 :host ::ng-deep .mat-mdc-menu-panel.icon-only-menu .mat-mdc-menu-item .mat-mdc-menu-item-text {

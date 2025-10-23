@@ -125,8 +125,8 @@ export class FormulaCalculatorComponent implements OnInit {
           }
           return new Promise<FormulaParam[]>(resolve => {
             const filtered = this.availableParams.filter(param => 
-              param.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              param.ten.toLowerCase().includes(searchTerm.toLowerCase())
+              param.code?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+              param.ten?.toLowerCase()?.includes(searchTerm.toLowerCase())
             );
             resolve(filtered);
           });
@@ -204,6 +204,7 @@ export class FormulaCalculatorComponent implements OnInit {
     
     // Validate cơ bản
     const isValid = this.validateFormula(this.currentIdFormula);
+    console.log('isValid', isValid);
     if (isValid) {
       // Trả về kết quả chuẩn
       const result: FormulaCalculatorResult = {
@@ -296,6 +297,7 @@ export class FormulaCalculatorComponent implements OnInit {
   }
 
   private validateFormula(formula: string): boolean {
+    console.log('formula', formula);
     if (!formula.trim()) return false;
     
     // Kiểm tra cân bằng ngoặc tròn
@@ -309,7 +311,7 @@ export class FormulaCalculatorComponent implements OnInit {
     if (openBraces !== closeBraces) return false;
     
     // Kiểm tra các ký tự không hợp lệ
-    const invalidChars = /[^0-9+\-*/().;ID_G:A:]/;
+    const invalidChars = /[^0-9+\-*/().;A-Za-z_:]/;
     if (invalidChars.test(formula)) return false;
     
     // Kiểm tra các pattern cơ bản

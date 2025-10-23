@@ -29,6 +29,7 @@ export interface QuangResponse {
   ty_Gia_USD_VND?: number | null;
   ngay_Chon_TyGia?: string | null;
   tien_Te?: string | null;
+  id_Quang_Gang?: number | null;
   // legacy camelCase for existing UI code
   maQuang?: string;
   tenQuang?: string;
@@ -41,7 +42,6 @@ export interface QuangResponse {
   matKhiNung?: number | null;
   loaiQuang?: number | null;
   id_CongThucPhoi?: number | null;
-  id_Quang_Gang?: number | null;
 }
 
 export interface TPHHOfQuangResponse {

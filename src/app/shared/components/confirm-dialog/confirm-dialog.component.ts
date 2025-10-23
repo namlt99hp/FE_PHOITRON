@@ -12,6 +12,7 @@ export interface ConfirmDialogData {
   cancelText?: string;
   confirmColor?: ConfirmColor;
   icon?: string;
+  showCancel?: boolean;
 }
 
 @Component({
@@ -28,6 +29,7 @@ export class ConfirmDialogComponent {
   cancelText!: string;
   color!: ConfirmColor;
   icon!: string;
+  showCancel!: boolean;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: ConfirmDialogData,
@@ -39,6 +41,7 @@ export class ConfirmDialogComponent {
     this.cancelText  = data.cancelText ?? 'Huỷ';
     this.color       = data.confirmColor ?? 'warn';
     this.icon        = data.icon ?? 'warning';
+    this.showCancel  = data.showCancel ?? true;
   }
 
   onCancel(){ this.ref.close(false); }

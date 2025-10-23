@@ -110,12 +110,13 @@ export class SelectQuangDialogComponent implements OnInit {
   ]).pipe(
     tap(() => this.loading.set(true)),
     switchMap(([q, { index, size }]) => {
-      this.searchPayload = {
+      const payload: any = this.searchPayload = {
         pageIndex: index,
         pageSize: size,
         search: q,
-      };
-      return this.quangService.search(this.searchPayload).pipe(
+      } as any;
+      payload.loaiQuang = [0,1,3];
+      return this.quangService.search(payload).pipe(
         tap((res) => this.total.set(res.total)),
         map((res) => res.data),
         catchError(() => of([] as OreVm[]))

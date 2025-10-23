@@ -38,7 +38,7 @@ export class QuangComponent {
   vnTime = inject(VnTimePipe);
   @ViewChild(TableCommonComponent)
   table!: TableCommonComponent<QuangTableModel>;
-  public tableTitle: string = 'Quặng';
+  public tableTitle: string = 'Quặng mua về';
 
   // Cấu hình cột
   readonly columns: TableColumn<QuangTableModel>[] = [
@@ -63,6 +63,7 @@ export class QuangComponent {
   fetcher = (q: TableQuery): Observable<TableResult<QuangTableModel>> =>
     this.quangService.search({
       ...q,
+      loaiQuang: [0,3,5], // Loại quặng khác 1,2,4 (loại 0 và các loại khác)
     }) as unknown as Observable<TableResult<QuangTableModel>>;
 
   // Xoá (tuỳ ý: truyền vào deleteHandler để component tự xoá & refresh)

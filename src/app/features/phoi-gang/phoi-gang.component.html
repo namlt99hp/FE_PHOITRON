@@ -1,25 +1,41 @@
 <div class="page-header">
-  <h3 class="title">Phối quặng gang: {{ maGang() }} <span class="muted">(ID: {{ id() }})</span></h3>
-  <div class="actions">
-    <button mat-raised-button color="primary" class="btn" (click)="onAddPlan()">
-      <mat-icon>add_circle</mat-icon>
-      Thêm phương án
-    </button>
-    <button mat-raised-button color="primary" class="btn" (click)="onCompare()">
-      <mat-icon>compare</mat-icon>
-      So sánh
-    </button>
-    <button mat-raised-button color="primary" class="btn" (click)="onSummary()">
-      <mat-icon>summarize</mat-icon>
-      Tổng hợp 
-    </button>
+  <div class="header-content">
+    <div class="title-section">
+      <div class="title-line">
+        <mat-icon class="title-icon">inventory</mat-icon>
+        <h1 class="main-title">{{ maGang() }}</h1>
+        <span class="gang-id">(ID: {{ id() }})</span>
+      </div>
+    </div>
+    
+    <div class="header-actions">
+      <button mat-stroked-button (click)="onAddPlan()" class="action-btn add-btn">
+        <mat-icon>add</mat-icon>
+        Thêm phương án
+      </button>
+      <button mat-stroked-button (click)="onCompare()" class="action-btn compare-btn">
+        <mat-icon>compare</mat-icon>
+        So sánh
+      </button>
+      <button mat-stroked-button (click)="onSummary()" class="action-btn summary-btn">
+        <mat-icon>summarize</mat-icon>
+        Tổng hợp
+      </button>
+    </div>
   </div>
 </div>
 
 <div *ngIf="plans().length === 0" class="empty-state">
-  <div class="empty-box">
-    <mat-icon>info</mat-icon>
-    <div>Chưa thiết lập phương án phối cho quặng gang này.</div>
+  <div class="empty-card">
+    <div class="empty-icon">
+      <mat-icon>inventory_2</mat-icon>
+    </div>
+    <h3 class="empty-title">Chưa có phương án phối</h3>
+    <p class="empty-description">Chưa thiết lập phương án phối cho quặng gang này.</p>
+    <button mat-flat-button color="primary" (click)="onAddPlan()" class="empty-action">
+      <mat-icon>add</mat-icon>
+      Tạo phương án đầu tiên
+    </button>
   </div>
 </div>
 
@@ -35,14 +51,12 @@
     </ng-template>
 
     <ng-template matTabContent>
-      <div class="tab-content">
-        <app-phoi-gang-plan-tab
-          [plan]="p"
-          [gangId]="id()"
-          [maGang]="maGang()"
-          (requestRename)="onRenamePlan(i)"
-          (requestRemove)="onRemovePlan(i)"></app-phoi-gang-plan-tab>
-      </div>
+      <app-phoi-gang-plan-tab
+        [plan]="p"
+        [gangId]="id()"
+        [maGang]="maGang()"
+        (requestRename)="onRenamePlan(i)"
+        (requestRemove)="onRemovePlan(i)"></app-phoi-gang-plan-tab>
     </ng-template>
   </mat-tab>
 </mat-tab-group>

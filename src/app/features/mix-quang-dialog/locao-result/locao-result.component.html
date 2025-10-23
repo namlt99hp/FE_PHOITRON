@@ -19,7 +19,7 @@
               <td class="right">{{ element.mass | number:'1.2-2' }}</td>
               <td class="right">
                 <ng-container *ngIf="element.isCalculated; else percentInput">
-                  {{ element.percentage | number:'1.2-2' }}
+                  {{ element.percentage | number:'1.2-2' }}%
                 </ng-container>
                 <ng-template #percentInput>
                   <input type="text" inputmode="decimal" pattern="^\\d*(\\.\\d*)?$" class="percent-input"
@@ -56,7 +56,7 @@
               <td class="right">{{ element.mass | number:'1.2-2' }}</td>
               <td class="right">
                 <ng-container *ngIf="element.isCalculated; else xaPercentInput">
-                  {{ element.percentage | number:'1.2-2' }}
+                  {{ element.percentage | number:'1.2-2' }}%
                 </ng-container>
                 <ng-template #xaPercentInput>
                   <input type="text" inputmode="decimal" pattern="^\\d*(\\.\\d*)?$" class="percent-input"

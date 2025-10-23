@@ -9,9 +9,13 @@ import { PhuongAnPhoiService } from '../../../core/services/phuong-an-phoi.servi
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { QuangService } from '../../../core/services/quang.service';
 import { MilestoneEnum } from '../../../core/enums/milestone.enum';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CongThucPhoiDetailMinimal, MixResponseDto } from '../../../core/models/api-models';
 import { GangFormDialogComponent } from '../../gang/gang-form-dialog/gang-form-dialog.component';
 import { PlanResultsComponent } from '../../thongke-function/plan-results/plan-results.component';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { CongThucPhoiService } from '../../../core/services/congthucphoi.service';
 
 export interface PhoiPlanTabModel {
   id?: number;
@@ -69,7 +73,7 @@ export interface CongThucPhoiDetail {
 @Component({
   selector: 'app-phoi-gang-plan-tab',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule, MatDialogModule],
+  imports: [CommonModule, MatButtonModule,MatTooltipModule, MatIconModule, MatDialogModule],
   templateUrl: './phoi-gang-plan-tab.component.html',
   styleUrl: './phoi-gang-plan-tab.component.scss'
 })
@@ -86,6 +90,8 @@ export class PhoiGangPlanTabComponent implements OnInit {
   private paService = inject(PhuongAnPhoiService);
   private destroyRef = inject(DestroyRef);
   private quangService = inject(QuangService);
+  private snack = inject(MatSnackBar);
+  private congThucPhoiService = inject(CongThucPhoiService);
 
   // Quặng kết quả management
   gangKetQuaId: number | null = null;
@@ -300,6 +306,7 @@ export class PhoiGangPlanTabComponent implements OnInit {
       const list = [...this.mixes()];
       list.push({ id: Number(outId), ten: String(outName) });
       this.mixes.set(list);
+      this.loadCongThucPhoiList();
       // Scroll đến chi tiết công thức mới tạo
       setTimeout(() => this.scrollToMix(outId), 0);
     });
@@ -325,6 +332,50 @@ export class PhoiGangPlanTabComponent implements OnInit {
       // Reload data sau khi edit
       if (res) {
         this.loadCongThucPhoiList();
+      }
+    });
+  }
+
+  deleteCongThuc(detail: CongThucPhoiDetail) {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '500px',
+      data: {
+        title: 'Xác nhận xóa',
+        message: `Bạn có chắc chắn muốn xóa công thức "${detail.ten_Cong_Thuc || detail.ma_Cong_Thuc}"?`,
+        confirmText: 'Xóa',
+        cancelText: 'Hủy'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.congThucPhoiService.deleteCongThucPhoi(detail.id).subscribe({
+          next: () => {
+            this.snack.open('Xóa công thức thành công', 'Đóng', { duration: 2000 });
+            this.loadCongThucPhoiList();
+          },
+          error: (error: any) => {
+            console.error('Error deleting formula:', error);
+            
+            // Check if it's a 409 Conflict error (business rule violation)
+            if (error.status === 409) {
+              // Show error dialog for business rule violations
+              this.dialog.open(ConfirmDialogComponent, {
+                width: '500px',
+                data: {
+                  title: 'Không thể xóa công thức',
+                  message: 'Quặng đầu ra của công thức này đang được sử dụng trong công thức phối khác.',
+                  confirmText: 'Đóng',
+                  cancelText: null, // Hide cancel button
+                  showCancel: false
+                }
+              });
+            } else {
+              // Show snackbar for other errors
+              this.snack.open('Xóa công thức thất bại', 'Đóng', { duration: 2000 });
+            }
+          }
+        });
       }
     });
   }
@@ -407,6 +458,7 @@ export class PhoiGangPlanTabComponent implements OnInit {
       if (result) {
         // Statistics configuration was updated successfully
         console.log('Statistics configuration updated:', result);
+        // this.loadCongThucPhoiList();
       }
     });
   }
@@ -438,9 +490,9 @@ export class PhoiGangPlanTabComponent implements OnInit {
       // Nếu tạo mới thành công, dialog trả về id Gang -> lưu lại để lần sau mở ở chế độ sửa
       if (typeof res === 'number' && res > 0) {
         this.gangKetQuaId = res;
+        // this.loadCongThucPhoiList();
       }
       // Reload quặng kết quả to be safe after any create/update
-      this.loadCongThucPhoiList();
     });
   }
 
@@ -458,9 +510,9 @@ export class PhoiGangPlanTabComponent implements OnInit {
       // Nếu tạo mới thành công, dialog trả về id Xỉ -> lưu lại để lần sau mở ở chế độ sửa
       if (typeof res === 'number' && res > 0) {
         this.slagId = res;
+        // this.loadCongThucPhoiList();
       }
       // Reload quặng kết quả to be safe after any create/update
-      this.loadCongThucPhoiList();
     });
   }
 

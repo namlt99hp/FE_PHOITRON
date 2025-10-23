@@ -32,4 +32,97 @@ export interface PhuongAnPhoiResponse {
   updatedBy?: number | null;
 }
 
+// Thiêu Kết section models
+export interface ThieuKetOreComponentDto {
+  oreId: number;
+  maQuang: string;
+  tenQuang: string;
+  tiLePhanTram: number;
+}
+
+export interface ThieuKetSectionDto {
+  components: ThieuKetOreComponentDto[];
+  tK_TIEU_HAO_QTK?: number | null;
+  tK_SIO2_QTK?: number | null;
+  tK_TFE?: number | null;
+  tK_R2?: number | null;
+  tK_PHAM_VI_VAO_LO?: number | null;
+  tK_COST?: number | null;
+}
+
+export interface PlanThieuKetSectionDto {
+  planId: number;
+  ten_Phuong_An: string;
+  ngay_Tinh_Toan?: string | null;
+  components: ThieuKetOreComponentDto[];
+  tK_TIEU_HAO_QTK?: number | null;
+  tK_SIO2_QTK?: number | null;
+  tK_TFE?: number | null;
+  tK_R2?: number | null;
+  tK_PHAM_VI_VAO_LO?: number | null;
+  tK_COST?: number | null;
+}
+
+// Lò Cao section models
+export interface LoCaoOreComponentDto {
+  oreId: number;
+  maQuang: string;
+  tenQuang: string;
+  tiLePhanTram: number;
+}
+
+export interface LoCaoSectionDto {
+  components: LoCaoOreComponentDto[];
+  lC_SAN_LUONG_GANG?: number | null;
+  lC_TIEU_HAO_QUANG?: number | null;
+  lC_COKE_25_80?: number | null;
+  lC_COKE_10_25?: number | null;
+  lC_THAN_PHUN?: number | null;
+  lC_TONG_NHIEU_LIEU?: number | null;
+  lC_XUAT_LUONG_XI?: number | null;
+  lC_R2?: number | null;
+  lC_TONG_KLK_VAO_LO?: number | null;
+  lC_TONG_ZN_VAO_LO?: number | null;
+  lC_PHAM_VI_VAO_LO?: number | null;
+  lC_TI_TRONG_GANG?: number | null;
+  lC_MN_TRONG_GANG?: number | null;
+}
+
+export interface PlanLoCaoSectionDto {
+  planId: number;
+  ten_Phuong_An: string;
+  ngay_Tinh_Toan?: string | null;
+  components: LoCaoOreComponentDto[];
+  lC_SAN_LUONG_GANG?: number | null;
+  lC_TIEU_HAO_QUANG?: number | null;
+  lC_COKE_25_80?: number | null;
+  lC_COKE_10_25?: number | null;
+  lC_THAN_PHUN?: number | null;
+  lC_TONG_NHIEU_LIEU?: number | null;
+  lC_XUAT_LUONG_XI?: number | null;
+  lC_R2?: number | null;
+  lC_TONG_KLK_VAO_LO?: number | null;
+  lC_TONG_ZN_VAO_LO?: number | null;
+  lC_PHAM_VI_VAO_LO?: number | null;
+  lC_TI_TRONG_GANG?: number | null;
+  lC_MN_TRONG_GANG?: number | null;
+}
+
+// Bảng chi phí LoCao DTO - đơn giản cho render
+export interface BangChiPhiLoCaoDto {
+  tenQuang: string;
+  tieuhao: number | null;
+  lineType: string;
+}
+
+// Combined DTO for both sections
+export interface PlanSectionDto {
+  planId: number;
+  ten_Phuong_An: string;
+  ngay_Tinh_Toan?: string | null;
+  thieuKet?: ThieuKetSectionDto | null;
+  loCao?: LoCaoSectionDto | null;
+  bangChiPhiLoCao?: BangChiPhiLoCaoDto[] | null;
+}
+
 
