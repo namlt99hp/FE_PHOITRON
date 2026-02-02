@@ -10,6 +10,9 @@ import { TableCommonComponent } from '../../shared/components/table-common/table
 import { TableColumn, TableQuery, TableResult } from '../../shared/components/table-common/table-types';
 import { Observable, of } from 'rxjs';
 import { FormulaConverterService } from '../../core/services/formula-converter.service';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { tap, map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-locao-process-param-page',
@@ -21,6 +24,8 @@ import { FormulaConverterService } from '../../core/services/formula-converter.s
 export class LoCaoProcessParamPage implements OnInit {
   private svc = inject(LoCaoProcessParamService);
   private dialog = inject(MatDialog);
+  private confirmDialogService = inject(ConfirmDialogService);
+  private snack = inject(MatSnackBar);
   private formulaConverter = inject(FormulaConverterService);
   @ViewChild(TableCommonComponent)
   table!: TableCommonComponent<LoCaoProcessParamModel>;
@@ -73,6 +78,29 @@ export class LoCaoProcessParamPage implements OnInit {
       dlg.afterClosed().subscribe((ok) => ok && (this.table?.refresh()));
     });
   }
+
+  confirmDelete = (row: LoCaoProcessParamModel) =>
+    this.confirmDialogService.open({
+      title: 'Xác nhận xóa',
+      message: `Bạn có chắc muốn xóa <b>${row.ten}</b>?`,
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+      confirmColor: 'warn',
+      icon: 'delete',
+    });
+
+  deleteHandler = (row: LoCaoProcessParamModel): Observable<void> =>
+    this.svc.delete(row.id).pipe(
+      tap((res) => {
+        if (res && res.success) {
+          this.snack.open('Xóa tham số quy trình thành công', 'Đóng', { 
+            duration: 2000, 
+            panelClass: ['snack-success'] 
+          });
+        }
+      }),
+      map(() => void 0)
+    );
 
   // Removed formula-setup functionality - using hard-coded formulas instead
 }

@@ -9,6 +9,9 @@ import { ThongKeFunctionUpsertDialog } from './upsert-dialog/thongke-function-up
 import { TableCommonComponent } from '../../shared/components/table-common/table-common.component';
 import { TableColumn, TableQuery, TableResult } from '../../shared/components/table-common/table-types';
 import { Observable, of } from 'rxjs';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { tap, map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-thongke-function-page',
@@ -20,6 +23,8 @@ import { Observable, of } from 'rxjs';
 export class ThongKeFunctionPage implements OnInit {
   private svc = inject(ThongKeFunctionService);
   private dialog = inject(MatDialog);
+  private confirmDialogService = inject(ConfirmDialogService);
+  private snack = inject(MatSnackBar);
   @ViewChild(TableCommonComponent)
   table!: TableCommonComponent<ThongKeFunctionModel>;
 
@@ -94,4 +99,27 @@ export class ThongKeFunctionPage implements OnInit {
     });
     dlg.afterClosed().subscribe((ok) => ok && (this.table?.refresh()));
   }
+
+  confirmDelete = (row: ThongKeFunctionModel) =>
+    this.confirmDialogService.open({
+      title: 'Xác nhận xóa',
+      message: `Bạn có chắc muốn xóa <b>${row.ten}</b>?`,
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+      confirmColor: 'warn',
+      icon: 'delete',
+    });
+
+  deleteHandler = (row: ThongKeFunctionModel): Observable<void> =>
+    this.svc.deleteFunction(row.id).pipe(
+      tap((res) => {
+        if (res && res.success) {
+          this.snack.open('Xóa hàm thống kê thành công', 'Đóng', { 
+            duration: 2000, 
+            panelClass: ['snack-success'] 
+          });
+        }
+      }),
+      map(() => void 0)
+    );
 }

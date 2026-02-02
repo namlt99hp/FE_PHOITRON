@@ -24,7 +24,12 @@
           <mat-icon>analytics</mat-icon>
           Thống kê
         </button>
-        <button mat-flat-button color="primary" (click)="openMixDialog()" class="mix-btn">
+        <button mat-flat-button 
+                color="primary" 
+                (click)="openMixDialog()" 
+                class="mix-btn"
+                [disabled]="hasLoCaoMilestone()"
+                [matTooltip]="hasLoCaoMilestone() ? 'Không thể phối trộn thêm vì đã có milestone Lò Cao (cấp cao nhất)' : 'Phối trộn quặng'">
           <mat-icon>shuffle</mat-icon>
           Phối trộn
         </button>

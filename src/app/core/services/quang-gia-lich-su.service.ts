@@ -28,35 +28,35 @@ export class QuangGiaLichSuService {
     return this.http.get<QuangGiaLichSuResponse>(api);
   }
 
-  create(dto: QuangGiaLichSuCreateDto): Observable<any> {
-    const api = `${this.baseApi}/Create`;
-    return this.http.post<any>(api, dto);
-  }
+  // create(dto: QuangGiaLichSuCreateDto): Observable<any> {
+  //   const api = `${this.baseApi}/Create`;
+  //   return this.http.post<any>(api, dto);
+  // }
 
-  update(dto: QuangGiaLichSuUpdateDto): Observable<any> {
-    const api = `${this.baseApi}/Update`;
-    return this.http.put<any>(api, dto);
-  }
+  // update(dto: QuangGiaLichSuUpdateDto): Observable<any> {
+  //   const api = `${this.baseApi}/Update`;
+  //   return this.http.put<any>(api, dto);
+  // }
 
-  upsert(dto: QuangGiaLichSuUpsertDto): Observable<any> {
-    const api = `${this.baseApi}/Upsert`;
-    return this.http.post<any>(api, dto);
-  }
+  // upsert(dto: QuangGiaLichSuUpsertDto): Observable<any> {
+  //   const api = `${this.baseApi}/Upsert`;
+  //   return this.http.post<any>(api, dto);
+  // }
 
-  softDelete(id: number): Observable<any> {
-    const api = `${this.baseApi}/SoftDelete/${id}`;
-    return this.http.delete<any>(api);
-  }
+  // softDelete(id: number): Observable<any> {
+  //   const api = `${this.baseApi}/SoftDelete/${id}`;
+  //   return this.http.delete<any>(api);
+  // }
 
-  getByQuang(idQuang: number): Observable<QuangGiaLichSuResponse[]> {
-    const api = `${this.baseApi}/GetByQuang/${idQuang}`;
-    return this.http.get<QuangGiaLichSuResponse[]>(api);
-  }
+  // getByQuang(idQuang: number): Observable<QuangGiaLichSuResponse[]> {
+  //   const api = `${this.baseApi}/GetByQuang/${idQuang}`;
+  //   return this.http.get<QuangGiaLichSuResponse[]>(api);
+  // }
 
-  getGiaByQuangAndDate(idQuang: number, ngayTinhISO: string): Observable<number | null> {
-    const api = `${this.baseApi}/GetGiaByQuangAndDate`;
-    return this.http.get<number | null>(api, { params: { idQuang, ngayTinh: ngayTinhISO } as any });
-  }
+  // getGiaByQuangAndDate(idQuang: number, ngayTinhISO: string): Observable<number | null> {
+  //   const api = `${this.baseApi}/GetGiaByQuangAndDate`;
+  //   return this.http.get<number | null>(api, { params: { idQuang, ngayTinh: ngayTinhISO } as any });
+  // }
 }
 
 

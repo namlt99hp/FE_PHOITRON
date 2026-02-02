@@ -32,7 +32,6 @@ import {
   switchMap,
   tap,
 } from 'rxjs';
-import { MixOreService } from '../../../core/services/mix-quang.service';
 import {
   MatPaginator,
   MatPaginatorModule,
@@ -76,7 +75,6 @@ export interface OreVm {
 })
 export class SelectQuangDialogComponent implements OnInit {
   private dlgRef = inject(MatDialogRef<SelectQuangDialogComponent>);
-  private svc = inject(MixOreService);
   private quangService = inject(QuangService);
 
   constructor(
@@ -115,7 +113,7 @@ export class SelectQuangDialogComponent implements OnInit {
         pageSize: size,
         search: q,
       } as any;
-      payload.loaiQuang = [0,1,3];
+      payload.loaiQuang = [0,1,3,5,6,7];
       return this.quangService.search(payload).pipe(
         tap((res) => this.total.set(res.total)),
         map((res) => res.data),

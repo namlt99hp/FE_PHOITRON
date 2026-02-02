@@ -48,7 +48,7 @@ export class MainLayoutComponent implements OnDestroy {
   MENU_ITEMS: MenuItem[] = [
     {
       id: 'sec-system',
-      label: 'QUẢN TRỊ HỆ THỐNG',
+      label: 'QUẢN TRỊ SẢN XUẤT',
       section: true,
       children: [
         {
@@ -69,75 +69,43 @@ export class MainLayoutComponent implements OnDestroy {
           id: 'quang',
           label: 'Quặng',
           path: '/quang',
-          icon: 'shield-lock',
+          icon: 'box',
           roles: ['admin'],
         },
         {
           id: 'tphh',
           label: 'Thành phần hóa học',
           path: '/thanh-phan-hoa-hoc',
-          icon: 'clock-history',
+          icon: 'flask',
           roles: ['admin'],
         },
         {
           id: 'quanggang',
           label: 'Quặng gang',
           path: '/quang-gang',
-          icon: 'diagram-3',
+          icon: 'stack',
           roles: ['admin'],
         },
         {
-          id: 'org',
-          label: 'Config chung',
-          icon: 'buildings',
+          id: 'phucvuphoitron',
+          label: 'Phục vụ phối trộn',
+          icon: 'sliders',
           children: [
             {
               id: 'dept',
-              label: 'Phụ liệu lò cao',
+              label: 'Quản lý phụ liệu lò cao',
               path: '/locao-process-params',
-              icon: 'hammer',
+              icon: 'tools',
             },
             {
               id: 'dept',
-              label: 'Thống kê phương án',
+              label: 'Quản lý hàm thống kê phương án',
               path: '/thongke-phuongan',
-              icon: 'hammer',
-            },
-            {
-              id: 'shift',
-              label: 'Phân quyền',
-              path: '',
-              icon: 'clock-history',
-              children: [
-                {
-                  id: 'dept',
-                  label: 'Phòng ban',
-                  path: '/management/departments',
-                  icon: 'diagram-3',
-                },
-                {
-                  id: 'work',
-                  label: 'Phân xưởng',
-                  path: '/management/workshops',
-                  icon: 'hammer',
-                },
-                {
-                  id: 'title',
-                  label: 'Chức vụ',
-                  path: '/management/positions',
-                  icon: 'person-badge',
-                },
-                {
-                  id: 'shift',
-                  label: 'Ca/Kíp làm việc',
-                  path: '/management/shifts',
-                  icon: 'clock-history',
-                },
-              ],
+              icon: 'graph-up',
             },
           ],
         },
-
+        
         // {
         //   id: 'assets',
         //   label: 'Thông tin vật tư',
@@ -159,7 +127,26 @@ export class MainLayoutComponent implements OnDestroy {
         // },
       ],
     },
-
+    {
+        id: 'sec-workflow',
+        label: 'QUẢN TRỊ NHÂN SỰ',
+        section: true,
+        children: [
+          {
+            id: 'org',
+            label: 'Tài khoản',
+            icon: 'person-circle',
+            path: '/management/departments',
+          },
+          {
+            id: 'org',
+            label: 'Phòng ban',
+            icon: 'buildings',
+            path: '/management/departments',
+          },
+          
+        ]
+    }
     // {
     //   id: 'sec-workflow',
     //   label: 'QUY TRÌNH THỰC HIỆN',

@@ -93,11 +93,11 @@ export class TableCommonComponent<T = any> implements OnInit, AfterViewInit {
     sortBy: string;
     sortDir: string;
   } = {
-    page: 'page',
-    size: 'size',
-    sortBy: 'sortBy',
-    sortDir: 'sortDir',
-  };
+      page: 'page',
+      size: 'size',
+      sortBy: 'sortBy',
+      sortDir: 'sortDir',
+    };
 
   @Input() showCreateAction = true;
   @Input() tableTitle: string = '';
@@ -126,6 +126,13 @@ export class TableCommonComponent<T = any> implements OnInit, AfterViewInit {
   @Input() showViewAction = true;
   @Input() showEditAction = true;
   @Input() showDeleteAction = true;
+  @Input() showCloneAction = false;
+
+  /** Custom text cho các actions */
+  @Input() viewActionText = 'View';
+  @Input() editActionText = 'Edit';
+  @Input() deleteActionText = 'Delete';
+  @Input() cloneActionText = 'Sao chép';
 
   /** Nếu truyền deleteHandler thì component sẽ tự confirm và gọi xoá. Nếu không, sẽ emit sự kiện delete */
   @Input() deleteHandler?: (row: T) => import('rxjs').Observable<void>;
@@ -136,6 +143,7 @@ export class TableCommonComponent<T = any> implements OnInit, AfterViewInit {
   @Output() view = new EventEmitter<T>();
   @Output() selectEdit = new EventEmitter<T>();
   @Output() delete = new EventEmitter<T>();
+  @Output() clone = new EventEmitter<T>();
   @Output() loaded = new EventEmitter<TableResult<T>>();
 
   // ===== ViewChild =====
@@ -286,6 +294,10 @@ export class TableCommonComponent<T = any> implements OnInit, AfterViewInit {
 
   onEdit(row: T) {
     this.selectEdit.emit(row);
+  }
+
+  onClone(row: T) {
+    this.clone.emit(row);
   }
 
   onDelete(row: T) {

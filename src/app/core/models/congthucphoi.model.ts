@@ -184,6 +184,7 @@ export interface Cong_Thuc_PhoiCreateDto {
   trang_Thai?: number;
   hieu_Luc_Den?: string | null; // ISO
   ghi_Chu?: string | null;
+  nguoi_Tao?: number | null;
 }
 
 export interface Cong_Thuc_PhoiUpdateDto extends Cong_Thuc_PhoiCreateDto {

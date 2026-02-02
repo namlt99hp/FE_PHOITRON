@@ -10,6 +10,10 @@
   [fetcher]="fetcher"
   [tableTitle]="''"
   [enableActions]="true"
+  [showDeleteAction]="true"
+  [confirmDelete]="confirmDelete"
+  [deleteHandler]="deleteHandler"
   (create)="onCreate()"
   (selectEdit)="onEdit($event)"
+  [showViewAction]="false"
 ></app-table-common>

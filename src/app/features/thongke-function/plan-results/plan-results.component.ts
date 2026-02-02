@@ -40,7 +40,9 @@ import { ThongKeFunctionResponse, ThongKeResultResponse } from '../../../core/mo
 export class PlanResultsComponent implements OnInit, OnDestroy {
   planId: number = 0;
   planName: string = '';
-  private dialogData: { planId: number; planName: string } | null = inject(MAT_DIALOG_DATA, { optional: true });
+  templateMode: boolean = false;
+  confirmButtonLabel: string = 'Lưu';
+  private dialogData: { planId?: number; planName?: string; templateMode?: boolean; initialSelection?: any[] } | null = inject(MAT_DIALOG_DATA, { optional: true });
   private dialogRef = inject(MatDialogRef<PlanResultsComponent>, { optional: true });
   private snack = inject(MatSnackBar);
 
@@ -50,7 +52,7 @@ export class PlanResultsComponent implements OnInit, OnDestroy {
   // Search and pagination
   searchControl = new FormControl('');
   currentPage = 0;
-  pageSize = 15;
+  pageSize = 20;
   totalCount = 0;
 
   // Available functions (left side)
@@ -64,12 +66,18 @@ export class PlanResultsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Initialize from dialog data if opened as a dialog
     if (this.dialogData) {
-      this.planId = this.dialogData.planId;
-      this.planName = this.dialogData.planName;
+      this.planId = this.dialogData.planId ?? 0;
+      this.planName = this.dialogData.planName ?? '';
+      this.templateMode = this.dialogData.templateMode ?? false;
+      this.confirmButtonLabel = this.templateMode ? 'Xác nhận' : 'Lưu';
     }
     this.setupSearchSubscription();
     // Load selected first to pre-check available list
-    this.loadSelectedResults(() => this.loadAvailableFunctions());
+    if (!this.templateMode) {
+      this.loadSelectedResults(() => this.loadAvailableFunctions());
+    } else {
+      this.loadAvailableFunctions();
+    }
   }
 
   ngOnDestroy(): void {
@@ -92,7 +100,7 @@ export class PlanResultsComponent implements OnInit, OnDestroy {
 
   loadAvailableFunctions(): void {
     const searchTerm = this.searchControl.value || '';
-    
+
     this.thongKeService.searchFunctions(
       this.currentPage + 1, // Convert to 1-based
       this.pageSize,

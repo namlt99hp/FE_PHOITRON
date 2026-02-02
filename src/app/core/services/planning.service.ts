@@ -9,20 +9,20 @@ export class PlanningService {
   private http = inject(HttpClient);
   private baseApi = `${environment.apiBaseUrl}/Planning`;
 
-  validate(req: ValidatePlanRequest): Observable<PlanValidationResult> {
-    const api = `${this.baseApi}/Validate`;
-    return this.http.post<PlanValidationResult>(api, req);
-    }
+  // validate(req: ValidatePlanRequest): Observable<PlanValidationResult> {
+  //   const api = `${this.baseApi}/Validate`;
+  //   return this.http.post<PlanValidationResult>(api, req);
+  //   }
 
-  compute(req: ComputePlanRequest): Observable<ComputePlanResult> {
-    const api = `${this.baseApi}/Compute`;
-    return this.http.post<ComputePlanResult>(api, req);
-  }
+  // compute(req: ComputePlanRequest): Observable<ComputePlanResult> {
+  //   const api = `${this.baseApi}/Compute`;
+  //   return this.http.post<ComputePlanResult>(api, req);
+  // }
 
-  compare(req: ComparePlansRequest): Observable<ComparePlansResult> {
-    const api = `${this.baseApi}/Compare`;
-    return this.http.post<ComparePlansResult>(api, req);
-  }
+  // compare(req: ComparePlansRequest): Observable<ComparePlansResult> {
+  //   const api = `${this.baseApi}/Compare`;
+  //   return this.http.post<ComparePlansResult>(api, req);
+  // }
 }
 
 

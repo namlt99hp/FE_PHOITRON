@@ -1,18 +1,137 @@
-<div class="row">
-  <div class="col-lg-8">
-    <app-sales-overview></app-sales-overview>
-  </div>
-  <div class="col-lg-4">
-    <app-yearly-breakup></app-yearly-breakup>
-    <app-monthly-earnings></app-monthly-earnings>
-  </div>
-</div>
+<div class="dashboard-container">
+  <!-- KPI cards -->
+  <section class="kpi-grid">
+    <div class="kpi-card" *ngFor="let k of kpis">
+      <div class="kpi-value">{{ k.value }}</div>
+      <div class="kpi-label">{{ k.label }}</div>
+      <div class="kpi-trend" *ngIf="k.trend">{{ k.trend }}</div>
+    </div>
+  </section>
 
-<div class="row">
-  <div class="col-lg-4">
-    <app-recent-transactions></app-recent-transactions>
+  <!-- Quick actions -->
+  <section class="actions">
+    <button mat-stroked-button class="action-btn" *ngFor="let a of actions" (click)="a.click()">
+      <i class="bi" [ngClass]="'bi-' + a.icon"></i>
+      <span>{{ a.label }}</span>
+    </button>
+  </section>
+
+  <div class="grid-2">
+    <!-- Furnace status -->
+    <section class="panel">
+      <div class="panel-header">Tình trạng lò cao</div>
+      <div class="furnaces">
+        <div class="furnace" *ngFor="let f of furnaces">
+          <div class="top">
+            <div class="name">{{ f.name }}</div>
+            <div class="prod">{{ f.prod }} / {{ f.target }} tấn</div>
+          </div>
+          <div class="bar">
+            <div class="bar-fill" [style.width.%]="(f.prod / f.target) * 100"></div>
+          </div>
+          <div class="meta">
+            <span>Nhiệt độ: {{ f.temp }}°C</span>
+            <span>Quặng sống: {{ f.oreLivePct }}%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recent plans -->
+    <section class="panel">
+      <div class="panel-header">Phương án gần đây</div>
+      <div class="table">
+        <div class="thead">
+          <div>Tên PA</div>
+          <div>Coke (kg/t)</div>
+          <div>Quặng sống</div>
+          <div>Chi phí</div>
+          <div>Trạng thái</div>
+        </div>
+        <div class="row" *ngFor="let p of recentPlans">
+          <div>{{ p.name }}</div>
+          <div>{{ p.coke }}</div>
+          <div>{{ p.oreLivePct }}%</div>
+          <div>{{ p.cost | number }}</div>
+          <div>
+            <span class="status" [class.running]="p.status === 'Đang chạy'">{{ p.status }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
-  <div class="col-lg-8">
-   <app-product-performance></app-product-performance>
+
+  <!-- Blend composition and inventory -->
+  <div class="grid-2">
+    <section class="panel">
+      <div class="panel-header">Cơ cấu phối hiện tại</div>
+      <div class="table">
+        <div class="thead">
+          <div>Quặng</div>
+          <div>Loại</div>
+          <div>Tỉ lệ (%)</div>
+        </div>
+        <div class="row" *ngFor="let b of blend">
+          <div>{{ b.ore }}</div>
+          <div>{{ b.type }}</div>
+          <div>{{ b.pct }}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">Tồn kho quặng</div>
+      <div class="table">
+        <div class="thead">
+          <div>Mã</div>
+          <div>Tên</div>
+          <div>Tồn (tấn)</div>
+          <div>Đủ trong (ngày)</div>
+        </div>
+        <div class="row" *ngFor="let i of inventory">
+          <div>{{ i.code }}</div>
+          <div>{{ i.name }}</div>
+          <div>{{ i.stock | number }}</div>
+          <div>{{ i.days }}</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Quality and alerts -->
+  <div class="grid-2">
+    <section class="panel">
+      <div class="panel-header">Chỉ tiêu chất lượng</div>
+      <div class="table">
+        <div class="thead">
+          <div>Thành phần</div>
+          <div>Mục tiêu</div>
+          <div>Thực tế</div>
+          <div>Δ</div>
+        </div>
+        <div class="row" *ngFor="let q of quality">
+          <div>{{ q.el }}</div>
+          <div>{{ q.target }}</div>
+          <div>{{ q.actual }}</div>
+          <div [ngClass]="{pos: (q.actual - q.target) <= 0, neg: (q.actual - q.target) > 0}">
+            {{ (q.actual - q.target) | number:'1.2-2' }}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">Cảnh báo & gợi ý tối ưu</div>
+      <ul class="alerts">
+        <li *ngFor="let al of alerts" [class.warn]="al.level==='warning'" [class.danger]="al.level==='danger'">
+          <i class="bi" [ngClass]="{
+            'bi-exclamation-circle': al.level==='warning',
+            'bi-exclamation-triangle': al.level==='danger',
+            'bi-lightbulb': al.level==='info'
+          }"></i>
+          <span>{{ al.text }}</span>
+        </li>
+      </ul>
+    </section>
   </div>
 </div>

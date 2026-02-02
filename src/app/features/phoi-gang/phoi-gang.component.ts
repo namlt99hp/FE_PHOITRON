@@ -78,12 +78,38 @@ export class PhoiGangPageComponent {
           Ghi_Chu: null
         }
       };
-      this.paService.upsert(payload).subscribe((res) => {
-        const newId = (res as any)?.data?.id as number | undefined;
-        const list = [...this.plans()];
-        list.push({ id: newId, ten });
-        this.plans.set(list);
-        this.selectedIndex.set(list.length - 1);
+      this.paService.upsert(payload).subscribe({
+        next: (res) => {
+          const newId = (res as any)?.data?.id as number | undefined;
+          if (newId) {
+            // Reload danh sách plans để đảm bảo có đầy đủ thông tin
+            this.paService.getByQuangDich(this.id()).subscribe((r) => {
+              const list = (r as any)?.data ?? [];
+              const mapped = list
+                .sort((a: any, b: any) => new Date(a.ngay_Tinh_Toan).getTime() - new Date(b.ngay_Tinh_Toan).getTime())
+                .map((x: any) => ({ id: x.id, ten: x.ten_Phuong_An, ngay_Tinh_Toan: x.ngay_Tinh_Toan }));
+              this.plans.set(mapped);
+              const idx = mapped.findIndex((x: any) => x.id === newId);
+              this.selectedIndex.set(idx >= 0 ? idx : mapped.length - 1);
+              this.snack.open('Tạo phương án thành công. Gang và xỉ kết quả đã được tự động tạo.', 'Đóng', {
+                duration: 3000,
+                panelClass: ['snack-success']
+              });
+            });
+          } else {
+            this.snack.open('Tạo phương án thất bại', 'Đóng', {
+              duration: 2000,
+              panelClass: ['snack-error']
+            });
+          }
+        },
+        error: (err) => {
+          console.error('Error creating plan:', err);
+          this.snack.open('Tạo phương án thất bại', 'Đóng', {
+            duration: 2000,
+            panelClass: ['snack-error']
+          });
+        }
       });
     });
   }
@@ -109,11 +135,11 @@ export class PhoiGangPageComponent {
         this.selectedIndex.set(nextIdx);
       };
       if (id) {
-        this.paService.deletePlanWithRelatedData(id).subscribe({ 
+        this.paService.deletePlanWithRelatedData(id).subscribe({
           next: () => {
             doRemove();
             this.snack.open('Xóa phương án và tất cả dữ liệu liên quan thành công', 'Đóng', { duration: 1500, panelClass: ['snack-success'] });
-          }, 
+          },
           error: (err) => {
             console.error('Error deleting plan:', err);
             this.snack.open('Có lỗi xảy ra khi xóa phương án', 'Đóng', { duration: 3000, panelClass: ['snack-error'] });
@@ -149,11 +175,11 @@ export class PhoiGangPageComponent {
         this.selectedIndex.set(nextIdx);
       };
       if (effId) {
-        this.paService.deletePlanWithRelatedData(effId).subscribe({ 
+        this.paService.deletePlanWithRelatedData(effId).subscribe({
           next: () => {
             doRemove();
             this.snack.open('Xóa phương án và tất cả dữ liệu liên quan thành công', 'Đóng', { duration: 1500, panelClass: ['snack-success'] });
-          }, 
+          },
           error: (err) => {
             console.error('Error deleting plan:', err);
             this.snack.open('Có lỗi xảy ra khi xóa phương án', 'Đóng', { duration: 3000, panelClass: ['snack-error'] });
@@ -188,11 +214,11 @@ export class PhoiGangPageComponent {
         this.selectedIndex.set(nextIdx);
       };
       if (effId) {
-        this.paService.deletePlanWithRelatedData(effId).subscribe({ 
+        this.paService.deletePlanWithRelatedData(effId).subscribe({
           next: () => {
             doRemove();
             this.snack.open('Xóa vĩnh viễn phương án và tất cả dữ liệu liên quan thành công', 'Đóng', { duration: 1500, panelClass: ['snack-success'] });
-          }, 
+          },
           error: (err) => {
             console.error('Error deleting plan permanently:', err);
             this.snack.open('Có lỗi xảy ra khi xóa vĩnh viễn phương án', 'Đóng', { duration: 3000, panelClass: ['snack-error'] });
@@ -295,18 +321,34 @@ export class PhoiGangPageComponent {
       this.paService.clonePlan(dto).subscribe({
         next: (res) => {
           const newId = (res as any)?.data?.id as number | undefined;
-          this.paService.getByQuangDich(this.id()).subscribe((r) => {
-            const list = (r as any)?.data ?? [];
-            const mapped = list
-              .sort((a: any, b: any) => new Date(a.ngay_Tinh_Toan).getTime() - new Date(b.ngay_Tinh_Toan).getTime())
-              .map((x: any) => ({ id: x.id, ten: x.ten_Phuong_An, ngay_Tinh_Toan: x.ngay_Tinh_Toan }));
-            this.plans.set(mapped);
-            const idx = mapped.findIndex((x: any) => x.id === newId);
-            this.selectedIndex.set(idx >= 0 ? idx : this.selectedIndex());
-            this.snack.open('Nhân bản phương án thành công', 'OK', { duration: 2000 });
-          });
+          if (newId) {
+            this.paService.getByQuangDich(this.id()).subscribe((r) => {
+              const list = (r as any)?.data ?? [];
+              const mapped = list
+                .sort((a: any, b: any) => new Date(a.ngay_Tinh_Toan).getTime() - new Date(b.ngay_Tinh_Toan).getTime())
+                .map((x: any) => ({ id: x.id, ten: x.ten_Phuong_An, ngay_Tinh_Toan: x.ngay_Tinh_Toan }));
+              this.plans.set(mapped);
+              const idx = mapped.findIndex((x: any) => x.id === newId);
+              this.selectedIndex.set(idx >= 0 ? idx : this.selectedIndex());
+              this.snack.open('Nhân bản phương án thành công. Gang và xỉ kết quả đã được tự động tạo với format mới.', 'Đóng', {
+                duration: 3000,
+                panelClass: ['snack-success']
+              });
+            });
+          } else {
+            this.snack.open('Nhân bản phương án thất bại', 'Đóng', {
+              duration: 2000,
+              panelClass: ['snack-error']
+            });
+          }
         },
-        error: () => this.snack.open('Nhân bản thất bại', 'OK', { duration: 2000 })
+        error: (err) => {
+          console.error('Error cloning plan:', err);
+          this.snack.open('Nhân bản phương án thất bại', 'Đóng', {
+            duration: 2000,
+            panelClass: ['snack-error']
+          });
+        }
       });
     });
   }

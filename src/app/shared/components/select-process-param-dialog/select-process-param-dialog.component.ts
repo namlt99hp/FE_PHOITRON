@@ -14,8 +14,16 @@ import { LoCaoProcessParamModel } from '../../../core/models/locao-process-param
 import { LoCaoProcessParamService } from '../../../core/services/locao-process-param.service';
 
 export interface SelectProcessParamDialogData {
-  planId: number;
+  planId?: number;
   planName?: string;
+  templateMode?: boolean;
+  initialSelection?: Array<{
+    id: number;
+    thuTu: number;
+    code?: string;
+    ten?: string;
+    donVi?: string;
+  }>;
 }
 
 export interface ProcessParamWithOrder extends LoCaoProcessParamModel {
@@ -56,12 +64,16 @@ export class SelectProcessParamDialogComponent implements OnInit {
   selectedParams: ProcessParamWithOrder[] = [];
   loading = false;
   private nextOrder = 1;
+  templateMode = false;
+  confirmButtonLabel = 'Lưu cấu hình';
 
-  constructor(@Inject(MAT_DIALOG_DATA) public data: SelectProcessParamDialogData) {}
+  constructor(@Inject(MAT_DIALOG_DATA) public data: SelectProcessParamDialogData) { }
 
   ngOnInit(): void {
+    this.templateMode = !!this.data?.templateMode;
+    this.confirmButtonLabel = this.templateMode ? 'Xác nhận' : 'Lưu cấu hình';
     this.loadProcessParams();
-    
+
     // Subscribe to search changes
     this.form.get('search')?.valueChanges.subscribe(searchTerm => {
       this.filterParams(searchTerm || '');
@@ -76,17 +88,64 @@ export class SelectProcessParamDialogComponent implements OnInit {
         selected: false,
         thuTu: 0
       }));
-      
-      // Load current configuration for this plan
-      this.locaoProcessParamService.getConfiguredByPaId(this.data.planId).subscribe(configuredParams => {
+
+      if (this.templateMode) {
+        const initialMap = new Map<number, { thuTu: number }>();
+        (this.data.initialSelection ?? []).forEach(item => {
+          initialMap.set(item.id, { thuTu: item.thuTu });
+        });
+
         this.allProcessParams.forEach(param => {
-          const configured = configuredParams.find(c => c.id === param.id);
-          if (configured) {
+          const matched = initialMap.get(param.id);
+          if (matched) {
             param.selected = true;
-            param.thuTu = this.nextOrder++;
+            param.thuTu = matched.thuTu && matched.thuTu > 0 ? matched.thuTu : this.nextOrder++;
           }
         });
-        
+
+        const maxOrder = this.allProcessParams
+          .filter(p => p.selected)
+          .reduce((max, p) => Math.max(max, p.thuTu || 0), 0);
+        this.nextOrder = maxOrder + 1;
+
+        this.updateSelectedList();
+        this.filterParams(this.form.value.search || '');
+        this.loading = false;
+        return;
+      }
+
+      if (this.data.planId == null) {
+        this.updateSelectedList();
+        this.filterParams(this.form.value.search || '');
+        this.loading = false;
+        return;
+      }
+
+      // Load current configuration for this plan
+      this.locaoProcessParamService.getConfiguredByPaId(this.data.planId).subscribe(configuredParams => {
+        // Map configured params by ID for quick lookup
+        const configuredMap = new Map<number, { thuTuParam?: number | null }>();
+        configuredParams.forEach(c => {
+          configuredMap.set(c.id, { thuTuParam: c.thuTuParam });
+        });
+
+        this.allProcessParams.forEach(param => {
+          const configured = configuredMap.get(param.id);
+          if (configured) {
+            param.selected = true;
+            // Lấy thuTu từ cấu hình phương án, nếu không có thì dùng nextOrder
+            param.thuTu = configured.thuTuParam && configured.thuTuParam > 0
+              ? configured.thuTuParam
+              : this.nextOrder++;
+          }
+        });
+
+        // Cập nhật nextOrder dựa trên thuTu lớn nhất
+        const maxOrder = this.allProcessParams
+          .filter(p => p.selected)
+          .reduce((max, p) => Math.max(max, p.thuTu || 0), 0);
+        this.nextOrder = maxOrder + 1;
+
         this.updateSelectedList();
         this.filterParams(this.form.value.search || '');
         this.loading = false;
@@ -110,7 +169,7 @@ export class SelectProcessParamDialogComponent implements OnInit {
 
   toggleParamSelection(param: ProcessParamWithOrder): void {
     param.selected = !param.selected;
-    
+
     if (param.selected) {
       param.thuTu = this.nextOrder++;
     } else {
@@ -122,7 +181,7 @@ export class SelectProcessParamDialogComponent implements OnInit {
       param.thuTu = 0;
       this.nextOrder--;
     }
-    
+
     this.updateSelectedList();
   }
 
@@ -138,7 +197,7 @@ export class SelectProcessParamDialogComponent implements OnInit {
       const temp = param.thuTu;
       param.thuTu = this.selectedParams[index - 1].thuTu;
       this.selectedParams[index - 1].thuTu = temp;
-      
+
       this.updateSelectedList();
     }
   }
@@ -149,7 +208,7 @@ export class SelectProcessParamDialogComponent implements OnInit {
       const temp = param.thuTu;
       param.thuTu = this.selectedParams[index + 1].thuTu;
       this.selectedParams[index + 1].thuTu = temp;
-      
+
       this.updateSelectedList();
     }
   }
@@ -168,6 +227,18 @@ export class SelectProcessParamDialogComponent implements OnInit {
   }
 
   confirm(): void {
+    if (this.templateMode || this.data.planId == null) {
+      const items = this.selectedParams.map((p, index) => ({
+        id: p.id,
+        thuTu: p.thuTu && p.thuTu > 0 ? p.thuTu : index + 1,
+        code: p.code,
+        ten: p.ten,
+        donVi: p.donVi
+      }));
+      this.dialogRef.close({ items });
+      return;
+    }
+
     const processParamIds = this.selectedParams.map(p => p.id);
     const thuTuParams = this.selectedParams.map(p => p.thuTu);
 

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, signal, OnInit, DestroyRef, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal, computed, OnInit, DestroyRef, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -11,11 +11,11 @@ import { QuangService } from '../../../core/services/quang.service';
 import { MilestoneEnum } from '../../../core/enums/milestone.enum';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CongThucPhoiDetailMinimal, MixResponseDto } from '../../../core/models/api-models';
-import { GangFormDialogComponent } from '../../gang/gang-form-dialog/gang-form-dialog.component';
 import { PlanResultsComponent } from '../../thongke-function/plan-results/plan-results.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CongThucPhoiService } from '../../../core/services/congthucphoi.service';
+import { GangSlagConfigDialogComponent } from './gang-slag-config-dialog/gang-slag-config-dialog.component';
 
 export interface PhoiPlanTabModel {
   id?: number;
@@ -73,18 +73,24 @@ export interface CongThucPhoiDetail {
 @Component({
   selector: 'app-phoi-gang-plan-tab',
   standalone: true,
-  imports: [CommonModule, MatButtonModule,MatTooltipModule, MatIconModule, MatDialogModule],
+  imports: [
+    CommonModule,
+    MatButtonModule,
+    MatTooltipModule,
+    MatIconModule,
+    MatDialogModule
+  ],
   templateUrl: './phoi-gang-plan-tab.component.html',
   styleUrl: './phoi-gang-plan-tab.component.scss'
 })
 export class PhoiGangPlanTabComponent implements OnInit {
   @Input() plan!: PhoiPlanTabModel;
-@Input() gangId!: number;
-@Input() maGang!: string;
+  @Input() gangId!: number;
+  @Input() maGang!: string;
 
-@Output() requestRename = new EventEmitter<void>();
-@Output() processParamConfigChanged = new EventEmitter<void>();
-@Output() requestRemove = new EventEmitter<void>();
+  @Output() requestRename = new EventEmitter<void>();
+  @Output() processParamConfigChanged = new EventEmitter<void>();
+  @Output() requestRemove = new EventEmitter<void>();
 
   private dialog = inject(MatDialog);
   private paService = inject(PhuongAnPhoiService);
@@ -99,19 +105,24 @@ export class PhoiGangPlanTabComponent implements OnInit {
 
   // Danh sách công thức phối đã tạo (mỗi công thức gắn với 1 quặng output)
   mixes = signal<{ id: number; ten: string }[]>([]);
-  
+
   // Chi tiết các công thức phối
   congThucDetails = signal<CongThucPhoiDetail[]>([]);
-  
+
   // Chemistry matrix per detailId
   private detailChem = signal(new Map<number, { headers: { id: number; ma: string; ten: string }[]; rows: Array<{ oreId: number; oreName: string; ratio: number; matKhiNung: number; values: Map<number, number>; loai_Quang?: number }>; out: { name: string; matKhiNung: number; values: Map<number, number> } }>());
-  
+
   // Loading state
   isLoading = signal<boolean>(false);
 
   // Note: Sorting logic removed - BE now handles sorting by ThuTuPhoi
 
   milestone = signal<MilestoneEnum>(MilestoneEnum.Standard);
+
+  // Kiểm tra xem đã có milestone lò cao chưa
+  hasLoCaoMilestone = computed(() => {
+    return this.congThucDetails().some(detail => detail.milestone === MilestoneEnum.LoCao);
+  });
 
   ngOnInit(): void {
     this.loadCongThucPhoiList();
@@ -132,20 +143,20 @@ export class PhoiGangPlanTabComponent implements OnInit {
           this.congThucDetails.set([]);
           return;
         }
-        
+
         // Get all formulas from flat list (already sorted by ThuTuPhoi from BE)
         const allFormulas = res.data.formulas ?? [];
-        
+
         // Get quặng kết quả (gang và xỉ) từ API response
         const quangKetQua = res.data.quangKetQua ?? [];
         this.updateQuangKetQua(quangKetQua);
-        
+
         // Update mixes for pipeline tabs and anchors
-        this.mixes.set(allFormulas.map(f => ({ 
-          id: f.congThuc.id, 
-          ten: f.congThuc.ten ?? f.congThuc.ma 
+        this.mixes.set(allFormulas.map(f => ({
+          id: f.congThuc.id,
+          ten: f.congThuc.ten ?? f.congThuc.ma
         })));
-        
+
         // Convert to CongThucPhoiDetail format (already sorted by ThuTuPhoi from BE)
         const details = allFormulas.map(f => this.mapToCongThucPhoiDetail(f));
         this.congThucDetails.set(details);
@@ -154,7 +165,7 @@ export class PhoiGangPlanTabComponent implements OnInit {
         for (const d of details) {
           this.loadChemistryForDetail(d);
         }
-        
+
         // No need for frontend sorting - BE already sorts by ThuTuPhoi
         // Each formula includes its milestone for display purposes
       }, _ => {
@@ -201,7 +212,7 @@ export class PhoiGangPlanTabComponent implements OnInit {
     };
   }
 
-  
+
 
   private loadChemistryForDetail(detail: CongThucPhoiDetail) {
     // Build headers priority: output ore chems -> constraints -> inputs
@@ -285,6 +296,30 @@ export class PhoiGangPlanTabComponent implements OnInit {
   // Backward-compatible aliases
   getTotalValue(detailId: number, chemId: number): number { return this.getOutValue(detailId, chemId); }
 
+  private getDefaultChemSelections(): Array<{ id: number; ma_TPHH: string; ten_TPHH: string }> {
+    const firstDetail = this.congThucDetails()[0];
+    if (!firstDetail?.rangBuocTPHH?.length) {
+      return [];
+    }
+
+    const map = new Map<number, { id: number; ma_TPHH: string; ten_TPHH: string }>();
+    for (const chem of firstDetail.rangBuocTPHH) {
+      const chemId = Number(chem.id_TPHH ?? chem.id);
+      if (!chemId) continue;
+      map.set(chemId, {
+        id: chemId,
+        ma_TPHH: chem.ma_TPHH,
+        ten_TPHH: chem.ten_TPHH
+      });
+    }
+
+    let result = Array.from(map.values());
+    if (this.milestone() === MilestoneEnum.LoCao) {
+      result = result.filter(c => (c.ma_TPHH ?? '').toUpperCase() !== 'MKN');
+    }
+    return result;
+  }
+
   openMixDialog() {
     this.dialog.open(MixQuangDialogComponent, {
       width: '1700px',
@@ -297,6 +332,8 @@ export class PhoiGangPlanTabComponent implements OnInit {
         gangId: this.gangId,
         maGang: this.maGang,
         milestone: this.milestone(),
+        outputLoaiQuang: 7, // Loại 7 cho quặng phối trộn trong phương án
+        defaultChems: this.getDefaultChemSelections(),
       }
     }).afterClosed().subscribe((res: MixResponseDto | null) => {
       // Kỳ vọng BE trả { idQuangOut }
@@ -327,6 +364,7 @@ export class PhoiGangPlanTabComponent implements OnInit {
         gangId: this.gangId,
         maGang: this.maGang,
         milestone: detail.milestone, // Truyền milestone của công thức cụ thể
+        outputLoaiQuang: 7, // Loại 7 cho quặng phối trộn trong phương án
       }
     }).afterClosed().subscribe((res: MixResponseDto | null) => {
       // Reload data sau khi edit
@@ -356,7 +394,7 @@ export class PhoiGangPlanTabComponent implements OnInit {
           },
           error: (error: any) => {
             console.error('Error deleting formula:', error);
-            
+
             // Check if it's a 409 Conflict error (business rule violation)
             if (error.status === 409) {
               // Show error dialog for business rule violations
@@ -413,9 +451,10 @@ export class PhoiGangPlanTabComponent implements OnInit {
     }
   }
 
-  // Check if ore is a mixed ore (loai_Quang = 1)
+  // Check if ore is a mixed ore (loai_Quang = 1 hoặc 7)
+  // Loại 1: Trộn bình thường, Loại 7: Trộn trong phương án
   isMixedOre(ore: any): boolean {
-    return ore.loai_Quang === 1;
+    return  ore.loai_Quang === 7;
   }
 
   // Process Parameter Configuration
@@ -477,42 +516,63 @@ export class PhoiGangPlanTabComponent implements OnInit {
   }
 
   onCreateGang() {
-    this.dialog.open(GangFormDialogComponent, {
-      width: '1200px',
+    if (!this.gangKetQuaId) {
+      this.snack.open('Gang kết quả chưa được tạo. Vui lòng tạo phương án trước.', 'Đóng', { duration: 3000 });
+      return;
+    }
+    if (!this.gangId) {
+      this.snack.open('Gang đích chưa được thiết lập. Vui lòng kiểm tra lại.', 'Đóng', { duration: 3000 });
+      return;
+    }
+
+    this.dialog.open(GangSlagConfigDialogComponent, {
+      width: '90vw',
+      maxWidth: '1200px',
+      height: '90vh',
+      maxHeight: '800px',
       disableClose: true,
-      data: { 
-        id: this.gangKetQuaId ?? null, 
+      data: {
+        quangId: this.gangKetQuaId,
         loaiQuang: 2, // Gang
-        idQuangGang: null, // Gang không cần link đến gang khác
-        planId: this.plan.id // Pass plan ID for result ore mapping
+        planId: this.plan.id,
+        idQuangGang: this.gangId // Gang kết quả không có id_Quang_Gang
       }
-    }).afterClosed().subscribe((res) => {
-      // Nếu tạo mới thành công, dialog trả về id Gang -> lưu lại để lần sau mở ở chế độ sửa
-      if (typeof res === 'number' && res > 0) {
-        this.gangKetQuaId = res;
-        // this.loadCongThucPhoiList();
+    }).afterClosed().subscribe((saved) => {
+      if (saved) {
+        // Reload data if needed
+        console.log('Gang config saved');
       }
-      // Reload quặng kết quả to be safe after any create/update
     });
   }
 
   onCreateSlag() {
-    this.dialog.open(GangFormDialogComponent, {
-      width: '1200px',
+    if (!this.slagId) {
+      this.snack.open('Xỉ kết quả chưa được tạo. Vui lòng tạo phương án trước.', 'Đóng', { duration: 3000 });
+      return;
+    }
+
+    if (!this.gangId) {
+      this.snack.open('Gang đích chưa được thiết lập. Vui lòng kiểm tra lại.', 'Đóng', { duration: 3000 });
+      return;
+    }
+
+    this.dialog.open(GangSlagConfigDialogComponent, {
+      width: '90vw',
+      maxWidth: '1200px',
+      height: '90vh',
+      maxHeight: '800px',
       disableClose: true,
-      data: { 
-        id: this.slagId ?? null, 
-        loaiQuang: 4, 
-        idQuangGang: this.gangId,
-        planId: this.plan.id // Pass plan ID for result ore mapping
+      data: {
+        quangId: this.slagId,
+        loaiQuang: 4, // Xỉ
+        planId: this.plan.id,
+        idQuangGang: this.gangId // Xỉ kết quả phải link đến gang đích (giống như khi tạo từ template)
       }
-    }).afterClosed().subscribe((res) => {
-      // Nếu tạo mới thành công, dialog trả về id Xỉ -> lưu lại để lần sau mở ở chế độ sửa
-      if (typeof res === 'number' && res > 0) {
-        this.slagId = res;
-        // this.loadCongThucPhoiList();
+    }).afterClosed().subscribe((saved) => {
+      if (saved) {
+        // Reload data if needed
+        console.log('Slag config saved');
       }
-      // Reload quặng kết quả to be safe after any create/update
     });
   }
 

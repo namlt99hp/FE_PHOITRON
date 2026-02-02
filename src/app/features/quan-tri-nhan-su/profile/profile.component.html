@@ -1,0 +1,160 @@
+<div class="profile-account-container">
+  <div class="profile-content">
+    <!-- Account Info Section -->
+    <section class="account-section">
+      <h2 class="section-title">Thông tin tài khoản</h2>
+      <p class="section-description">Quản lý và sửa đổi thông tin chi tiết tài khoản, ảnh đại diện và thông tin đăng nhập</p>
+      
+      <div class="account-info-card">
+        <div class="avatar-section">
+          <div class="avatar-wrapper">
+            <img 
+              [src]="currentUser?.ChuKy || '/assets/images/profile/user-1.jpg'" 
+              alt="Profile" 
+              class="profile-avatar"
+              onerror="this.src='/assets/images/profile/user-1.jpg'">
+            <button mat-icon-button class="avatar-edit-btn" (click)="changeAvatar()" aria-label="Change avatar">
+              <i class="bi bi-pencil-fill"></i>
+            </button>
+          </div>
+          <div class="user-info">
+            <h3 class="user-name">{{ userDisplayName }}</h3>
+            <p class="user-email">{{ userEmail }}</p>
+            <button mat-stroked-button class="change-btn" (click)="changeAvatar()">
+              Change
+            </button>
+          </div>
+          <button mat-stroked-button class="logout-btn" (click)="logout()">Đăng xuất</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Detailed Account Info Section -->
+    <section class="account-section">
+      <h2 class="section-title">Chi tiết tài khoản</h2>
+      <div class="details-grid">
+        <div class="detail-item">
+          <div class="label">ID Tài khoản</div>
+          <div class="value">{{ currentUser?.ID_TaiKhoan }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">Tên đăng nhập</div>
+          <div class="value">{{ currentUser?.TenTaiKhoan }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">Họ và tên</div>
+          <div class="value">{{ currentUser?.HoVaTen }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">Phòng ban (API)</div>
+          <div class="value">{{ currentUser?.PhongBan_API }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">Tên phòng ban</div>
+          <div class="value">{{ currentUser?.TenPhongBan }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">Tên ngắn phòng ban</div>
+          <div class="value">{{ currentUser?.TenNganPhongBan }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">ID Phòng ban</div>
+          <div class="value">{{ currentUser?.ID_PhongBan }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">ID Phân xưởng</div>
+          <div class="value">{{ currentUser?.ID_PhanXuong }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">Xưởng (API)</div>
+          <div class="value">{{ currentUser?.Xuong_API }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">Vai trò</div>
+          <div class="value">{{ roles.join(', ') || '-' }}</div>
+        </div>
+        <div class="detail-item signature">
+          <div class="label">Chữ ký</div>
+          <div class="value">
+            <img *ngIf="currentUser?.ChuKy" [src]="currentUser?.ChuKy" alt="ChuKy" class="signature-img" />
+            <span *ngIf="!currentUser?.ChuKy" class="text-muted">Không có</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Set New Password Section -->
+    <!-- <section class="account-section">
+      <h2 class="section-title">SET NEW PASSWORD</h2>
+      
+      <form [formGroup]="passwordForm" (ngSubmit)="setNewPassword()" class="password-form">
+        <div class="form-group">
+          <label for="newPassword" class="form-label">New password</label>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-icon matPrefix>lock</mat-icon>
+            <input 
+              matInput 
+              type="password" 
+              id="newPassword"
+              formControlName="newPassword"
+              placeholder="Enter new password">
+          </mat-form-field>
+          <p class="input-hint">Your password must be at least 6 characters long.</p>
+          @if (passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.hasError('required')) {
+            <p class="error-text">Vui lòng nhập mật khẩu mới</p>
+          }
+          @if (passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.hasError('minlength')) {
+            <p class="error-text">Mật khẩu phải có ít nhất 6 ký tự</p>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword" class="form-label">Confirm new password</label>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-icon matPrefix>lock</mat-icon>
+            <input 
+              matInput 
+              type="password" 
+              id="confirmPassword"
+              formControlName="confirmPassword"
+              placeholder="Confirm new password">
+          </mat-form-field>
+          @if (passwordForm.get('confirmPassword')?.touched && passwordForm.get('confirmPassword')?.hasError('required')) {
+            <p class="error-text">Vui lòng xác nhận mật khẩu</p>
+          }
+          @if (passwordForm.get('confirmPassword')?.touched && passwordForm.hasError('passwordMismatch')) {
+            <p class="error-text">Mật khẩu xác nhận không khớp</p>
+          }
+        </div>
+
+        @if (passwordError) {
+          <div class="error-message">
+            <i class="bi bi-exclamation-circle"></i>
+            {{ passwordError }}
+          </div>
+        }
+
+        @if (passwordSuccess) {
+          <div class="success-message">
+            <i class="bi bi-check-circle"></i>
+            {{ passwordSuccess }}
+          </div>
+        }
+
+        <button 
+          mat-stroked-button 
+          type="submit" 
+          class="submit-btn"
+          [disabled]="passwordForm.invalid || isSubmittingPassword">
+          @if (isSubmittingPassword) {
+            <mat-spinner diameter="20" class="me-2"></mat-spinner>
+            <span>Đang xử lý...</span>
+          } @else {
+            <span>Set New Password</span>
+          }
+        </button>
+      </form>
+    </section> -->
+  </div>
+</div>
+

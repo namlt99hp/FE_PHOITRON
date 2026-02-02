@@ -3,18 +3,19 @@ import { HomeComponent } from './features/home/home.component';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component';
 import { RoleGuard } from './core/guards/role.guard';
+import { authGuard } from './core/guards/auth.guard';
 // import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
     {
     path: '',
     component: MainLayoutComponent,
+    canActivate: [authGuard],
     children: [
       { path: '', redirectTo: 'home', pathMatch: 'full' },
       {
         path: 'home',
         loadChildren: () => import('./features/home/home.routes').then(m => m.HOME_ROUTES),
-        // canActivate: [authGuard],
         data: { roles: ['admin'], title: 'TRANG CHỦ' }
       },
       // {
@@ -26,19 +27,16 @@ export const routes: Routes = [
       {
         path: 'quang',
         loadChildren: () => import('./features/quang/quang.routes').then(m => m.QUANG_ROUTES),
-        // canActivate: [authGuard],
         data: { roles: ['admin'] , title: 'QUẶNG'}
       },
       {
         path: 'thanh-phan-hoa-hoc',
         loadChildren: () => import('./features/tphh/tphh.routes').then(m => m.TPHH_ROUTES),
-        // canActivate: [authGuard],
         data: { roles: ['admin'] , title: 'THÀNH PHẦN HÓA HỌC'}
       },
       {
         path: 'quang-gang',
         loadChildren: () => import('./features/gang/gang.routes').then(m => m.GANG_ROUTES),
-        // canActivate: [authGuard],
         data: { roles: ['admin'] , title: 'QUẶNG GANG'}
       },  
       {
@@ -65,6 +63,11 @@ export const routes: Routes = [
         path: 'thongke-phuongan',
         loadChildren: () => import('./features/thongke-function/thongke-function.routes').then(m => m.thongkeFunctionRoutes),
         data: { roles: ['admin'] , title: 'HÀM THỐNG KÊ'}
+      },
+      {
+        path: 'quan-tri-nhan-su',
+        loadChildren: () => import('./features/quan-tri-nhan-su/quan-tri-nhan-su.routes').then(m => m.QUAN_TRI_NHAN_SU_ROUTES),
+        data: { roles: ['admin', 'user'], title: 'QUẢN TRỊ NHÂN SỰ' }
       },
       
     ]

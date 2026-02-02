@@ -58,7 +58,7 @@ export class ThongKeFunctionUpsertDialog implements OnInit {
   ngOnInit(): void {
     this.loadFunctionMappings();
     // this.loadUsedFunctionCodes();
-    
+
     if (this.data.model) {
       this.isEdit = true;
       this.form.patchValue(this.data.model);
@@ -73,28 +73,16 @@ export class ThongKeFunctionUpsertDialog implements OnInit {
     this.updateAvailableMappings();
   }
 
-//   loadUsedFunctionCodes(): void {
-//     this.svc.getAllFunctions().subscribe({
-//       next: (functions) => {
-//         this.usedFunctionCodes = functions.map(f => f.code);
-//         this.updateAvailableMappings();
-//       },
-//       error: (error) => {
-//         console.error('Error loading used function codes:', error);
-//         this.updateAvailableMappings();
-//       }
-//     });
-//   }
 
   updateAvailableMappings(): void {
     if (this.isEdit && this.data.model?.code) {
       // In edit mode, include the current function's code in available mappings
-      this.availableMappings = this.functionMappings.filter(m => 
+      this.availableMappings = this.functionMappings.filter(m =>
         !this.usedFunctionCodes.includes(m.functionCode) || m.functionCode === this.data.model!.code
       );
     } else {
       // In create mode, exclude all used function codes
-      this.availableMappings = this.functionMappings.filter(m => 
+      this.availableMappings = this.functionMappings.filter(m =>
         !this.usedFunctionCodes.includes(m.functionCode)
       );
     }
@@ -127,8 +115,8 @@ export class ThongKeFunctionUpsertDialog implements OnInit {
   isMappingDisabled(mapping: FunctionMappingItem): boolean {
     if (this.isEdit && this.data.model?.code) {
       // In edit mode, only disable if it's used by another function
-      return this.usedFunctionCodes.includes(mapping.functionCode) && 
-             mapping.functionCode !== this.data.model.code;
+      return this.usedFunctionCodes.includes(mapping.functionCode) &&
+        mapping.functionCode !== this.data.model.code;
     } else {
       // In create mode, disable if it's used by any function
       return this.usedFunctionCodes.includes(mapping.functionCode);
@@ -138,7 +126,7 @@ export class ThongKeFunctionUpsertDialog implements OnInit {
   onSubmit(): void {
     if (this.form.valid) {
       const model: ThongKeFunctionUpsertModel = this.form.value;
-      
+
       // Use upsert method
       this.svc.upsertFunction(this.isEdit ? this.data.model!.id : null, model).subscribe({
         next: () => {

@@ -3,108 +3,310 @@
 <div mat-dialog-content class="dialog-body">
   <div class="grid">
     <mat-form-field appearance="outline">
-      <mat-label>{{ data.loaiQuang === 4 ? 'Mã xỉ' : 'Mã gang' }}</mat-label>
-      <input matInput [formControl]="form.controls.maGang" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
       <mat-label>{{ data.loaiQuang === 4 ? 'Tên xỉ' : 'Tên gang' }}</mat-label>
       <input matInput [formControl]="form.controls.tenGang" />
     </mat-form-field>
-
+    <mat-form-field appearance="outline">
+      <mat-label>{{ data.loaiQuang === 4 ? 'Mã xỉ' : 'Mã gang' }}</mat-label>
+      <input matInput [formControl]="form.controls.maGang" placeholder="Tự động tạo từ tên gang" readonly />
+    </mat-form-field>
     <mat-form-field appearance="outline" class="span-2">
       <mat-label>Ghi chú</mat-label>
       <textarea matInput rows="2" [formControl]="form.controls.ghiChu"></textarea>
     </mat-form-field>
   </div>
 
-  <ng-container>
-    <section class="section">
-    <div class="section-header">
-      <h3 class="section-title">Thành phần hoá học</h3>
-      <button mat-stroked-button color="primary" (click)="openSelectChems()">
-        <mat-icon>category</mat-icon>&nbsp;Chọn TPHH
+  <ng-container *ngIf="isGangTargetMode">
+    <div class="template-toolbar">
+      <mat-slide-toggle [checked]="useTemplate()" (change)="onTemplateToggle($event.checked)" [disabled]="templateLoading()">
+        Clone cấu hình template gang gần nhất
+      </mat-slide-toggle>
+      <button
+        mat-stroked-button
+        color="accent"
+        *ngIf="useTemplate()"
+        (click)="reloadTemplate()"
+        [disabled]="templateLoading()"
+      >
+        <mat-icon>refresh</mat-icon>&nbsp;Tải lại
       </button>
     </div>
-  
-    <div class="constraints" *ngIf="selectedChems().length > 0">
-      <table class="constraints-table">
-        <thead>
-          <tr>
-            <th class="stub">TPHH</th>
-            <th
-              *ngFor="let c of selectedChems()"
-              class="chem-col"
-            >
-              <div class="th-wrap">
-                <span class="th-text" [title]="c.ten_TPHH">{{
-                  c.ma_TPHH
-                }}</span>
-                <button 
-                  type="button" 
-                  class="remove-btn" 
-                  (click)="removeChem(c.id)"
-                  matTooltip="Xóa quặng này"
-                  matTooltipPosition="above">
-                  <mat-icon>close</mat-icon>
-                </button>
-              </div>
-            </th>
-          </tr>
-        </thead>
-  
-        <tbody>
-          <tr>
-            <th class="stub">Hàm lượng</th>
-            <td *ngFor="let c of selectedChems(); trackBy: trackByChem">
-              <ng-container *ngIf="tp_HoaHocs().get(c.id) as ctrl">
-                <div class="input-with-formula">
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    inputmode="decimal"
-                    class="cell-input text-right"
-                    [formControl]="ctrl.phanTram"
-                    [readonly]="ctrl.isCalculated"
-                  />
-                  <button 
-                    type="button" 
-                    class="formula-btn" 
-                    (click)="openFormulaCalculator(c)"
-                    matTooltip="Thiết lập công thức tính toán"
-                    matTooltipPosition="above">
-                    <mat-icon>calculate</mat-icon>
-                  </button>
-                </div>
-              </ng-container>
-            </td>
-          </tr>
-          <tr class="formula-row">
-            <th class="stub">Công thức</th>
-            <td *ngFor="let c of selectedChems(); trackBy: trackByChem">
-              <ng-container *ngIf="tp_HoaHocs().get(c.id) as ctrl">
-                <div *ngIf="ctrl.calcFormula" class="formula-display">
-                  <small>{{ ctrl.displayFormula || ctrl.calcFormula }}</small>
-                </div>
-                <div *ngIf="!ctrl.calcFormula" class="formula-empty">
-                  <small>-</small>
-                </div>
-              </ng-container>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+
+    <div class="template-status" *ngIf="templateLoading()">
+      <mat-progress-spinner mode="indeterminate" diameter="24"></mat-progress-spinner>
+      <span>Đang tải template...</span>
     </div>
-  </section>
+
+    <div class="template-status error" *ngIf="templateError() as err">
+      <mat-icon color="warn">error_outline</mat-icon>
+      <span>{{ err }}</span>
+    </div>
+
+    <!-- Configuration Grid: 2 rows x 2 columns -->
+    <div class="config-grid" *ngIf="(useTemplate() && templatePreview()) || (!useTemplate() && (hasGangConfig() || hasSlagConfig() || hasProcessParamConfig() || hasThongKeConfig()))">
+      <!-- Row 1: Gang and Slag -->
+      <div class="config-row">
+        <!-- Gang Config -->
+        <div class="config-card">
+          <div class="config-header">
+            <h4>Gang (Thành phần hóa học)</h4>
+            <button
+              mat-icon-button
+              (click)="editGangConfig()"
+              matTooltip="Sửa cấu hình gang"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+          </div>
+          <div class="config-content">
+            <table class="tiny-table" *ngIf="selectedChems().length > 0; else noGangConfig">
+              <thead>
+                <tr>
+                  <th>TPHH</th>
+                  <th>Công thức</th>
+                  <th style="width: 50px;"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of selectedChems()">
+                  <td>{{ item.ma_TPHH }}</td>
+                  <td class="formula-cell">
+                    <ng-container *ngIf="tp_HoaHocs().get(item.id) as ctrl">
+                      <span 
+                        *ngIf="ctrl.calcFormula || ctrl.displayFormula" 
+                        class="formula-text"
+                        [matTooltip]="ctrl.displayFormula || ctrl.calcFormula || ''"
+                        matTooltipPosition="above"
+                      >
+                        {{ ctrl.displayFormula || ctrl.calcFormula }}
+                      </span>
+                      <span *ngIf="!ctrl.calcFormula && !ctrl.displayFormula" class="formula-empty">-</span>
+                    </ng-container>
+                  </td>
+                  <td>
+                    <div class="action-buttons">
+                      <button
+                        type="button"
+                        mat-icon-button
+                        (click)="openFormulaCalculator(item)"
+                        matTooltip="Thiết lập công thức tính toán"
+                        class="formula-btn-small"
+                      >
+                        <mat-icon>calculate</mat-icon>
+                      </button>
+                      <button
+                        type="button"
+                        mat-icon-button
+                        (click)="removeGangTpHoaHoc(item.id)"
+                        matTooltip="Xóa thành phần hóa học"
+                        class="delete-btn-small"
+                      >
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <ng-template #noGangConfig>
+              <div class="empty-placeholder">Chưa cấu hình</div>
+            </ng-template>
+          </div>
+        </div>
+
+        <!-- Slag Config -->
+        <div class="config-card">
+          <div class="config-header">
+            <h4>Xỉ (Thành phần hóa học)</h4>
+            <button
+              mat-icon-button
+              (click)="editSlagConfig()"
+              matTooltip="Sửa cấu hình xỉ"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+          </div>
+          <div class="config-content">
+            <table class="tiny-table" *ngIf="selectedSlagChems().length > 0; else noSlagConfig">
+              <thead>
+                <tr>
+                  <th>TPHH</th>
+                  <th>Công thức</th>
+                  <th style="width: 50px;"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of selectedSlagChems()">
+                  <td>{{ item.ma_TPHH }}</td>
+                  <td class="formula-cell">
+                    <ng-container *ngIf="slagTP_HoaHocs().get(item.id) as ctrl">
+                      <span 
+                        *ngIf="ctrl.calcFormula || ctrl.displayFormula" 
+                        class="formula-text"
+                        [matTooltip]="ctrl.displayFormula || ctrl.calcFormula || ''"
+                        matTooltipPosition="above"
+                      >
+                        {{ ctrl.displayFormula || ctrl.calcFormula }}
+                      </span>
+                      <span *ngIf="!ctrl.calcFormula && !ctrl.displayFormula" class="formula-empty">-</span>
+                    </ng-container>
+                  </td>
+                  <td>
+                    <div class="action-buttons">
+                      <button
+                        type="button"
+                        mat-icon-button
+                        (click)="openSlagFormulaCalculator(item)"
+                        matTooltip="Thiết lập công thức tính toán"
+                        class="formula-btn-small"
+                      >
+                        <mat-icon>calculate</mat-icon>
+                      </button>
+                      <button
+                        type="button"
+                        mat-icon-button
+                        (click)="removeSlagTpHoaHoc(item.id)"
+                        matTooltip="Xóa thành phần hóa học"
+                        class="delete-btn-small"
+                      >
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <ng-template #noSlagConfig>
+              <div class="empty-placeholder">Chưa cấu hình</div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Process Params and Statistics -->
+      <div class="config-row">
+        <!-- Process Params Config -->
+        <div class="config-card">
+          <div class="config-header">
+            <h4>Tham số lò cao</h4>
+            <button
+              mat-icon-button
+              (click)="editProcessParamConfig()"
+              matTooltip="Sửa cấu hình tham số lò cao"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+          </div>
+          <div class="config-content">
+            <table class="tiny-table param-table" *ngIf="selectedProcessParams().length > 0; else noProcessParamConfig">
+              <thead>
+                <tr>
+                  <th class="code-col">Mã</th>
+                  <th class="name-col">Tên</th>
+                  <th class="order-col">Thứ tự</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of selectedProcessParams()">
+                  <td class="code-col">{{ item.code }}</td>
+                  <td class="name-col">{{ item.ten }}</td>
+                  <td class="order-col">{{ item.thuTu }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <ng-template #noProcessParamConfig>
+              <div class="empty-placeholder">Chưa cấu hình</div>
+            </ng-template>
+          </div>
+        </div>
+
+        <!-- Statistics Config -->
+        <div class="config-card">
+          <div class="config-header">
+            <h4>Thông số thống kê</h4>
+            <button
+              mat-icon-button
+              (click)="editThongKeConfig()"
+              matTooltip="Sửa cấu hình thông số thống kê"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+          </div>
+          <div class="config-content">
+            <table class="tiny-table param-table" *ngIf="selectedThongKes().length > 0; else noThongKeConfig">
+              <thead>
+                <tr>
+                  <th class="code-col">Mã</th>
+                  <th class="name-col">Tên</th>
+                  <th class="order-col">Thứ tự</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of selectedThongKes()">
+                  <td class="code-col">{{ item.code }}</td>
+                  <td class="name-col">{{ item.ten }}</td>
+                  <td class="order-col">{{ item.thuTu }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <ng-template #noThongKeConfig>
+              <div class="empty-placeholder">Chưa cấu hình</div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Configuration Buttons (when not cloned and not configured yet) -->
+    <div class="config-buttons" *ngIf="!useTemplate() && (!hasGangConfig() || !hasSlagConfig() || !hasProcessParamConfig() || !hasThongKeConfig())">
+      <button
+        mat-stroked-button
+        class="config-btn"
+        (click)="configureGang()"
+        [class.configured]="hasGangConfig()"
+        matTooltip="Cấu hình thành phần hóa học gang"
+      >
+        <mat-icon>{{ hasGangConfig() ? 'check_circle' : 'add_circle' }}</mat-icon>
+        <span>{{ hasGangConfig() ? 'Đã cấu hình Gang' : 'Cấu hình Gang' }}</span>
+      </button>
+      <button
+        mat-stroked-button
+        class="config-btn"
+        (click)="configureSlag()"
+        [class.configured]="hasSlagConfig()"
+        matTooltip="Cấu hình thành phần hóa học xỉ"
+      >
+        <mat-icon>{{ hasSlagConfig() ? 'check_circle' : 'add_circle' }}</mat-icon>
+        <span>{{ hasSlagConfig() ? 'Đã cấu hình Xỉ' : 'Cấu hình Xỉ' }}</span>
+      </button>
+      <button
+        mat-stroked-button
+        class="config-btn"
+        (click)="configureProcessParam()"
+        [class.configured]="hasProcessParamConfig()"
+        matTooltip="Cấu hình tham số lò cao"
+      >
+        <mat-icon>{{ hasProcessParamConfig() ? 'check_circle' : 'add_circle' }}</mat-icon>
+        <span>{{ hasProcessParamConfig() ? 'Đã cấu hình Tham số' : 'Cấu hình Tham số' }}</span>
+      </button>
+      <button
+        mat-stroked-button
+        class="config-btn"
+        (click)="configureThongKe()"
+        [class.configured]="hasThongKeConfig()"
+        matTooltip="Cấu hình thông số thống kê"
+      >
+        <mat-icon>{{ hasThongKeConfig() ? 'check_circle' : 'add_circle' }}</mat-icon>
+        <span>{{ hasThongKeConfig() ? 'Đã cấu hình Thống kê' : 'Cấu hình Thống kê' }}</span>
+      </button>
+    </div>
+
+    <mat-divider></mat-divider>
   </ng-container>
 </div>
 
-
 <div mat-dialog-actions align="end">
-  <button mat-stroked-button color="warn" class="push-start" *ngIf="data.loaiQuang === 4 && data.id" (click)="onDeleteSlag()">
-    <mat-icon>delete</mat-icon>&nbsp;Xoá xỉ
-  </button>
+
   <button mat-stroked-button (click)="onCancel()">Huỷ</button>
   <button mat-flat-button color="primary" (click)="onSave()" [disabled]="form.invalid">Lưu</button>
   

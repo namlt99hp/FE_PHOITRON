@@ -38,14 +38,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import {MatSelectModule} from '@angular/material/select';
+import { MatSelectModule } from '@angular/material/select';
 import {
   CongThucPhoiUpsertDto,
   OreChemItemDto,
   QuangTron,
   UpsertAndConfirmDto,
 } from '../../core/models/congthucphoi.model';
-import { MixOreService } from '../../core/services/mix-quang.service';
 import {
   ChemVm,
   SelectTphhDialogComponent,
@@ -62,13 +61,6 @@ import { QuangDetailResponse } from '../../core/models/quang.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MilestoneEnum } from '../../core/enums/milestone.enum';
 import { RateService } from '../../core/services/rate.service';
-// Interface for ore data calculation
-export interface OreData {
-  id: number;
-  name: string;
-  ratio: number;
-  mkn: number;
-}
 import { MixQuangLoCaoSectionComponent } from './locao-section/locao-section.component';
 import { LoCaoProcessParamService } from '../../core/services/locao-process-param.service';
 import { LocaoResultComponent, GangComposition, XaComposition, LocaoStatistics } from './locao-result/locao-result.component';
@@ -94,7 +86,7 @@ type RatioRow = {
   // thành phần hoá học có thể SỬA TAY tại ô của từng quặng
   chems: Map<number, FormControl<number>>; // key: chemId, value: %
   chem$?: Map<number, Signal<number>>;
-  
+
   // ==== Milestone-specific FormControls ====
   // Lò Cao milestone
   klVaoLoCtrl: FormControl<number | null>; // KL vào lò
@@ -103,7 +95,7 @@ type RatioRow = {
   tyLeHoiQuang$?: Signal<number | null>; // Signal for Tỷ lệ hồi quặng
   klNhanCtrl: FormControl<number | null>; // KL nhận
   klNhan$?: Signal<number | null>; // Signal for KL nhận
-  
+
   // Thiêu Kết milestone  
   khauHaoCtrl: FormControl<number | null>; // Khấu hao
   khauHao$?: Signal<number | null>; // Signal for Khấu hao
@@ -150,7 +142,6 @@ export class MixQuangDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
   private dlgRef = inject(MatDialogRef<MixQuangDialogComponent>);
   private dialog = inject(MatDialog);
-  private svc = inject(MixOreService);
   private quangService = inject(QuangService);
   private congThucPhoiService = inject(CongThucPhoiService);
   private paService = inject(PhuongAnPhoiService);
@@ -162,21 +153,33 @@ export class MixQuangDialogComponent implements OnInit {
   private thongKeService = inject(ThongKeFunctionService);
 
 
-  data = inject<{ neoOreId?: number; existingOreId?: number; formulaId?: number; gangId?: number; maGang?: string; milestone?: MilestoneEnum; planId?: number; planName?: string; planNgayTao?: string; congThucPhoiId?: number } | null>(
+  data = inject<{ neoOreId?: number; existingOreId?: number; formulaId?: number; gangId?: number; maGang?: string; milestone?: MilestoneEnum; planId?: number; planName?: string; planNgayTao?: string; congThucPhoiId?: number; outputLoaiQuang?: number; defaultChems?: ChemVm[] } | null>(
     MAT_DIALOG_DATA,
     { optional: true }
   );
   private readonly injector = inject(Injector);
-  
+
   @ViewChild(MixQuangLoCaoSectionComponent) locaoSection!: MixQuangLoCaoSectionComponent;
   @ViewChild(LocaoResultComponent) locaoResult!: LocaoResultComponent;
-  
+
   // Hiển thị tên gang đích và phương án
   gangName = signal<string>('');
   planName = signal<string>('');
   today = signal<Date>(new Date());
   milestone = signal<MilestoneEnum>(MilestoneEnum.Standard);
-  
+
+  // Label for output ore type (e.g., Vê viên)
+  get outputLoaiQuangLabel(): string {
+    const t = this.data?.outputLoaiQuang ?? 1;
+    if (t === 6) return 'Quặng vê viên';
+    if (t === 1) return 'Quặng phối';
+    if (t === 2) return 'Gang';
+    if (t === 3) return 'Quặng phụ liệu (Coke, than phun...)';
+    if (t === 4) return 'Xỉ';
+    if (t === 5) return 'Quặng cỡ';
+    return `Loại quặng phối`;
+  }
+
   // Expose enum to template
   readonly MilestoneEnum = MilestoneEnum;
   // ==== Header forms ====
@@ -198,6 +201,15 @@ export class MixQuangDialogComponent implements OnInit {
 
   // ==== Chọn TPHH (cột động) + ràng buộc min/max ====
   selectedChems = signal<ChemVm[]>([]); // [{id, code, name}]
+  
+  // Filter MKN khi milestone là Lò Cao
+  displayedChems = computed(() => {
+    const chems = this.selectedChems();
+    if (this.milestone() === MilestoneEnum.LoCao) {
+      return chems.filter(c => (c.ma_TPHH ?? '').toUpperCase() !== 'MKN');
+    }
+    return chems;
+  });
   // form ràng buộc: Map<chemId, {min,max}>
   constraints = signal<
     Map<
@@ -215,13 +227,13 @@ export class MixQuangDialogComponent implements OnInit {
   // ---- thêm:
   selectedOres = signal<OreVm[]>([]);
   oreChemMap = signal(new Map<number, Map<number, number>>()); // oreId -> (chemId -> %)
-  
+
   // ==== Lò cao specific controls ====
   // Map<oreId, {klVaoLo: FormControl, tyLeHoiQuang: FormControl}>
-  locaoControls = signal(new Map<number, {klVaoLo: FormControl<number | null>, tyLeHoiQuang: FormControl<number | null>}>());
+  locaoControls = signal(new Map<number, { klVaoLo: FormControl<number | null>, tyLeHoiQuang: FormControl<number | null> }>());
   updateTrigger = signal(0);
 
- 
+
   // ==== Bảng động: cột = ['__ore','__ratio', ...chemIds...,'__actionsRow'] ==== (ẩn cột MKN)
   displayedColumns = computed(() => {
     // ore info + ratio + each chem + actions (không render cột MKN riêng)
@@ -255,29 +267,29 @@ export class MixQuangDialogComponent implements OnInit {
     const rb = this.constraints().get(chemId);
     const min = rb?.minCtrl.value ?? null;
     const max = rb?.maxCtrl.value ?? null;
-    
+
     // Không có constraints thì không highlight
     if (min == null && max == null) return false;
-    
+
     let res: number;
-    
+
     switch (this.milestone()) {
       case MilestoneEnum.LoCao:
         // Lò Cao: sử dụng SUMPRODUCT calculation
         res = this.getChemTotalBySumProduct(chemId);
         break;
-        
+
       case MilestoneEnum.ThieuKet:
         // Thiêu kết: sử dụng Row2 value (final result)
         res = this.getThieuKetRow2Value(chemId);
         break;
-        
+
       default:
         // Standard: sử dụng weighted average
         res = this.resultRow()[chemId] ?? 0;
         break;
     }
-    
+
     if (min != null && res < min) return true;
     if (max != null && res > max) return true;
     return false;
@@ -370,35 +382,22 @@ export class MixQuangDialogComponent implements OnInit {
     return !this.isFormValid();
   }
 
+  // Map để lưu BangChiPhi từ backend cho quặng loại 7: key = ID_Quang (quặng loại 7), value = Array<BangChiPhiItem>
+  private _bangChiPhiByLoai7: Map<number, Array<{ iD_CongThucPhoi: number; iD_Quang: number | null; lineType: string; tieuhao: number | null; donGiaVND: number | null; donGiaUSD: number; }>> = new Map();
+
   ngOnInit(): void {
     // Khởi tạo _formulaByOutputOre để tránh undefined
     (this as any)._formulaByOutputOre = new Map<number, any[]>();
-    
-     // Lấy tên phương án (nếu được truyền qua) và mã gang
-     this.planName.set(this.data?.planName ?? (`PA-${this.data?.planId ?? ''}`));
-     this.gangName.set(this.data?.maGang ?? '');
+
+    // Lấy tên phương án (nếu được truyền qua) và mã gang
+    this.planName.set(this.data?.planName ?? (`PA-${this.data?.planId ?? ''}`));
+    this.gangName.set(this.data?.maGang ?? '');
     // Nếu truyền neoOreId vào để set mặc định công thức neo
 
     this.milestone.set(this.data?.milestone ?? MilestoneEnum.Standard);
+    this.applyDefaultChemsFromData();
     const neoId = this.data?.neoOreId ?? null;
     if (neoId) this.formulaForm.controls.ID_QuangNeo.setValue(neoId);
-    // Nếu edit công thức hoặc load ore có sẵn cho header, bạn có thể gọi API ở đây.
-    // Ví dụ: nếu MAT_DIALOG_DATA có existingOreId => fill oreForm.
-    if (this.data?.existingOreId) {
-      this.svc
-        .getOreHeader(this.data.existingOreId)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((ore) => {
-          if (!ore) return;
-          this.oreForm.patchValue({
-            MaQuang: ore.MaQuang,
-            TenQuang: ore.TenQuang,
-            NgayTao: new Date().toISOString().split('T')[0],
-            GhiChu: ore.GhiChu ?? '',
-          });
-        });
-    }
-
     // Nếu có congThucPhoiId -> load chi tiết công thức phối để edit
     if (this.data?.congThucPhoiId) {
       this.paService.getDetailMinimal(this.data.congThucPhoiId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((res) => {
@@ -454,21 +453,21 @@ export class MixQuangDialogComponent implements OnInit {
 
           // Build oreChemMap từ dữ liệu đã lưu (không refetch)
           const oreChemMap = new Map<number, Map<number, number>>();
-          
+
           // Tạo map từ oreId trong ores để đảm bảo consistency
           const oreIdMap = new Map(ores.map(o => [o.id, o]));
-          
+
           for (const ctq of d.chiTietQuang ?? []) {
             // Fallback cho cả hai field
             const oreId = (ctq as any).iD_Quang ?? ctq.id_Quang;
-            
+
             // Chỉ process nếu oreId tồn tại trong ores array
             if (!oreIdMap.has(oreId)) {
               continue;
             }
-            
+
             const chemMap = new Map<number, number>();
-            
+
             // Lấy thành phần hóa học từ dữ liệu đã lưu
             for (const tphh of ctq.tP_HoaHocs ?? []) {
               const chemId = tphh.id;
@@ -487,10 +486,25 @@ export class MixQuangDialogComponent implements OnInit {
             this.milestone.set(d.milestone);
           }
 
-          // Load BangChiPhi data for non-ore cost items (các dòng khác không có iD_Quang)
+          // Load BangChiPhi data
           if (d.bangChiPhi?.length) {
+            // Reset map cho quặng loại 7
+            this._bangChiPhiByLoai7.clear();
+            
+            // Tìm tất cả quặng loại 7 trong chiTietQuang
+            const loai7OreIds = new Set<number>();
+            for (const ctq of (d.chiTietQuang ?? [])) {
+              const loaiQuang = (ctq as any).loai_Quang ?? ctq.loai_Quang;
+              if (loaiQuang === 7) {
+                const id = (ctq as any).iD_Quang ?? ctq.id_Quang;
+                if (id) {
+                  loai7OreIds.add(id);
+                }
+              }
+            }
+            
             for (const item of d.bangChiPhi) {
-              // Chỉ load các dòng không có iD_Quang (chi phí khác)
+              // Load các dòng không có iD_Quang (chi phí khác)
               if (item.iD_Quang === null) {
                 if (item.lineType === LINE_TYPE_CHIPHI.CHI_PHI_KHAC && d.milestone === MilestoneEnum.ThieuKet) {
                   this.otherCost = item.donGiaVND || 0;
@@ -498,6 +512,20 @@ export class MixQuangDialogComponent implements OnInit {
                   this.otherCostLoCao = item.donGiaVND || 0;
                 } else if (item.lineType === LINE_TYPE_CHIPHI.QUANG_HOI && d.milestone === MilestoneEnum.LoCao) {
                   this.recycleCostVnd = item.donGiaVND || 0;
+                }
+              } else if (d.milestone === MilestoneEnum.ThieuKet && item.iD_Quang) {
+                // Nếu milestone = Thiêu kết và có iD_Quang
+                // Nếu quặng này không phải là quặng loại 7, thì nó là quặng thành phần của một quặng loại 7 nào đó
+                // Sử dụng iD_Quang_DauRa từ backend để map vào quặng loại 7
+                if (!loai7OreIds.has(item.iD_Quang) && item.iD_Quang_DauRa) {
+                  // Đây là quặng thành phần, map vào quặng loại 7 từ iD_Quang_DauRa
+                  const loai7Id = item.iD_Quang_DauRa;
+                  if (loai7OreIds.has(loai7Id)) {
+                    if (!this._bangChiPhiByLoai7.has(loai7Id)) {
+                      this._bangChiPhiByLoai7.set(loai7Id, []);
+                    }
+                    this._bangChiPhiByLoai7.get(loai7Id)!.push(item);
+                  }
                 }
               }
             }
@@ -514,16 +542,25 @@ export class MixQuangDialogComponent implements OnInit {
               const src = mapById.get(row.idQuang);
               if (!src) continue;
               if (this.milestone() === MilestoneEnum.ThieuKet) {
-                row.khauHaoCtrl?.setValue(src.khauHao ?? null, { emitEvent: false });
-                row.percentageCtrl?.setValue(src.tiLeKhaoHao ?? null, { emitEvent: false });
+                // Set null nếu giá trị là null, undefined, hoặc 0 (không nhập gì)
+                row.khauHaoCtrl?.setValue((src.khauHao != null && src.khauHao > 0) ? src.khauHao : null, { emitEvent: false });
+                row.percentageCtrl?.setValue((src.tiLeKhaoHao != null && src.tiLeKhaoHao > 0) ? src.tiLeKhaoHao : null, { emitEvent: false });
               } else if (this.milestone() === MilestoneEnum.LoCao) {
-                row.klVaoLoCtrl?.setValue(src.klVaoLo ?? null, { emitEvent: false });
-                row.tyLeHoiQuangCtrl?.setValue(src.tyLeHoiQuang ?? null, { emitEvent: false });
-                row.klNhanCtrl?.setValue(src.klNhan ?? null, { emitEvent: false });
+                // Set null nếu giá trị là null, undefined, hoặc 0 (không nhập gì)
+                row.klVaoLoCtrl?.setValue((src.klVaoLo != null && src.klVaoLo > 0) ? src.klVaoLo : null, { emitEvent: false });
+                // Khi edit: giữ nguyên giá trị từ backend (kể cả 0), chỉ set null nếu thực sự là null/undefined
+                // Giá trị sẽ được set default trong initializeLocaoControls() nếu là null
+                row.tyLeHoiQuangCtrl?.setValue(src.tyLeHoiQuang != null ? src.tyLeHoiQuang : null, { emitEvent: false });
+                row.klNhanCtrl?.setValue((src.klNhan != null && src.klNhan > 0) ? src.klNhan : null, { emitEvent: false });
               }
             }
             this.rows.set([...currentRows]);
-            
+
+            // Update loai7 ratio after loading data
+            queueMicrotask(() => {
+              this.setupAutoRatioForLoai7();
+            });
+
             // Trigger change detection to update cost table with loaded BangChiPhi data
             this.cdr.markForCheck();
           });
@@ -538,9 +575,9 @@ export class MixQuangDialogComponent implements OnInit {
             }
           });
 
-          // Nếu milestone Thiêu Kết: tải công thức của các quặng loại 1 (quặng phối) từ dữ liệu edit
+          // Nếu milestone Thiêu Kết: tải công thức của các quặng loại 1 và loại 7 (quặng phối) từ dữ liệu edit
           if (this.milestone() === MilestoneEnum.ThieuKet) {
-            const outputOreIds = ores.filter((o: any) => o.loaiQuang === 1).map((o: any) => o.id);
+            const outputOreIds = ores.filter((o: any) => o.loaiQuang === 1 || o.loaiQuang === 7).map((o: any) => o.id);
             if (outputOreIds.length > 0) {
               this.quangService.getFormulasByOutputOreIds(outputOreIds).subscribe((responses) => {
                 // Lưu tạm vào map để bảng chi phí có thể render khi cần
@@ -549,52 +586,113 @@ export class MixQuangDialogComponent implements OnInit {
                 (this as any)._formulaByOutputOre = dict;
               });
             } else {
-              // Không có quặng loại 1, khởi tạo empty map
+              // Không có quặng loại 1 hoặc 7, khởi tạo empty map
               (this as any)._formulaByOutputOre = new Map<number, any[]>();
             }
           }
         }
-        });
+      });
     }
 
     // Subscribe to form changes để update mã/tên công thức real-time
-    this.oreForm.controls.MaQuang.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.updateGeneratedFormulas();
-      });
-
+    // Chỉ subscribe TenQuang vì MaQuang sẽ tự động generate từ TenQuang
     this.oreForm.controls.TenQuang.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        startWith(this.oreForm.controls.TenQuang.value) // Trigger ngay lập tức với giá trị hiện tại
+      )
       .subscribe(() => {
         this.updateGeneratedFormulas();
       });
+  }
 
-    // Initialize với giá trị ban đầu
-    this.updateGeneratedFormulas();
+  private applyDefaultChemsFromData(): void {
+    if (this.data?.congThucPhoiId) {
+      return; // Đang edit -> dữ liệu sẽ được load từ API
+    }
+    const defaultChems = this.data?.defaultChems ?? [];
+    if (!defaultChems.length) {
+      return;
+    }
+    const shouldHideMkn = this.milestone() === MilestoneEnum.LoCao;
+    const filtered = defaultChems.filter(c => {
+      const code = (c.ma_TPHH ?? '').toUpperCase();
+      return !shouldHideMkn || code !== 'MKN';
+    });
+    if (!filtered.length) {
+      return;
+    }
+    this.selectedChems.set(filtered);
+    this.syncConstraints(filtered);
   }
 
 
+  // Helper: Convert string to slug (lowercase, replace spaces and special chars with hyphens)
+  private toSlug(input: string | null | undefined): string {
+    if (!input) return '';
+    
+    // Remove Vietnamese accents and convert to lowercase
+    const normalized = input.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    // Replace spaces and special chars with hyphens
+    const slug = normalized
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return slug;
+  }
+
   // Method để update generated formulas real-time
   private updateGeneratedFormulas() {
-    const maQuang = this.oreForm.controls.MaQuang.value;
     const tenQuang = this.oreForm.controls.TenQuang.value;
-    const planName = this.planName();
-    
+    // Chỉ thêm plan-gang khi outputLoaiQuang = 7 (loại quặng phối trong phương án)
+    const isLoai7 = this.data?.outputLoaiQuang === 7;
+    const planName = isLoai7 ? this.planName() : '';
+    const gangName = isLoai7 ? (this.gangName() || this.data?.maGang || '') : '';
+
+    // Auto-generate MaQuang from TenQuang (chỉ khi tạo mới, không phải edit)
+    // Khi edit (có congThucPhoiId), giữ nguyên MaQuang đã có
+    if (!this.data?.congThucPhoiId) {
+      if (tenQuang) {
+        const tenQuangSlug = this.toSlug(tenQuang);
+        
+        // Chỉ thêm plan-gang khi outputLoaiQuang = 7
+        if (isLoai7 && planName && gangName) {
+          const planSlug = this.toSlug(planName);
+          const gangSlug = this.toSlug(gangName);
+          const maQuang = `${tenQuangSlug}-${planSlug}-${gangSlug}`;
+          this.oreForm.controls.MaQuang.setValue(maQuang, { emitEvent: false });
+        } else {
+          // Không phải loại 7: chỉ dùng tên quặng
+          this.oreForm.controls.MaQuang.setValue(tenQuangSlug, { emitEvent: false });
+        }
+      } else {
+        // Clear khi không có tên quặng
+        this.oreForm.controls.MaQuang.setValue('', { emitEvent: false });
+      }
+    }
+
+    const maQuang = this.oreForm.controls.MaQuang.value;
+
     // Update mã công thức khi có mã quặng
     if (maQuang) {
       this.maCongThucCtrl.setValue(`CTP-${maQuang}-${this.formatDateForCode()}`);
     } else {
       this.maCongThucCtrl.setValue('');
     }
-    
+
     // Update tên công thức khi có tên quặng
-    if (tenQuang && planName) {
-      this.tenCongThucCtrl.setValue(`CTP - ${tenQuang} - ${planName} - ${this.formatDateForCode()}`);
+    if (tenQuang) {
+      if (isLoai7 && planName) {
+        // Loại 7 (phối trong phương án): thêm tên phương án
+        this.tenCongThucCtrl.setValue(`CTP - ${planName} - ${tenQuang} - ${this.formatDateForCode()}`);
+      } else {
+        // Các loại khác: chỉ dùng tên quặng
+        this.tenCongThucCtrl.setValue(`CTP - ${tenQuang} - ${this.formatDateForCode()}`);
+      }
     } else {
       this.tenCongThucCtrl.setValue('');
     }
-    
     // Trigger change detection để UI update
     this.cdr.detectChanges();
   }
@@ -638,16 +736,21 @@ export class MixQuangDialogComponent implements OnInit {
         } as RatioRow;
       });
       this.rows.set(updated);
-      
+
+      // Update loai7 ratio after rows update
+      queueMicrotask(() => {
+        this.setupAutoRatioForLoai7();
+      });
+
       // Initialize Lò Cao controls after rows update
       if (this.milestone() === MilestoneEnum.LoCao) {
         this.initializeLocaoControls();
       }
 
 
-      // Nếu milestone Thiêu Kết: tải công thức của các quặng loại 1 (quặng phối)
+      // Nếu milestone Thiêu Kết: tải công thức của các quặng loại 1 và loại 7 (quặng phối)
       if (this.milestone() === MilestoneEnum.ThieuKet) {
-        const outputOreIds = list.filter(o => (o as any).loaiQuang === 1).map(o => o.id);
+        const outputOreIds = list.filter(o => (o as any).loaiQuang === 1 || (o as any).loaiQuang === 7).map(o => o.id);
         if (outputOreIds.length > 0) {
 
           this.quangService.getFormulasByOutputOreIds(outputOreIds).subscribe((responses) => {
@@ -658,79 +761,208 @@ export class MixQuangDialogComponent implements OnInit {
             (this as any)._formulaByOutputOre = dict;
           });
         } else {
-          // Không có quặng loại 1, khởi tạo empty map
+          // Không có quặng loại 1 hoặc 7, khởi tạo empty map
           (this as any)._formulaByOutputOre = new Map<number, any[]>();
         }
       }
     });
   }
 
-  getCostTableItems(): Array<{ id: number, ten: string; consumption: number; unitVnd: number; unitUsd: number; isParent: boolean; parentId?: number; }> {
-    const out: Array<{ id: number, ten: string; consumption: number; unitVnd: number; unitUsd: number; isParent: boolean; parentId?: number; }> = [];
+  getCostTableItems(): Array<{ id: number, ten: string; consumption: number; unitVnd: number; unitUsd: number; isParent: boolean; parentId?: number; loaiQuang?: number; }> {
+    const out: Array<{ id: number, ten: string; consumption: number; unitVnd: number; unitUsd: number; isParent: boolean; parentId?: number; loaiQuang?: number; }> = [];
     const formulaMap: Map<number, any[]> | undefined = (this as any)._formulaByOutputOre;
-    
+
     // Add ore items
     for (const r of this.rows()) {
       // Lấy trực tiếp giá trị từ cột "Tiêu hao" ThieuKet (dùng getThieuKetKhauHaoPercentage)
       const baseCons = this.getThieuKetKhauHaoPercentage(r);
 
-      // Nếu r là quặng phối (loại 1) và có công thức: liệt kê từng thành phần
-
       const parts = formulaMap?.get(r.idQuang);
-      
-      if (parts?.length) {
+
+      // Nếu r là quặng phối (loại 1) và có công thức: liệt kê từng thành phần
+      // LƯU Ý: chỉ áp dụng cho các quặng KHÔNG phải loại 7
+      // Quặng loại 7 sẽ được xử lý ở nhánh riêng bên dưới
+      if (parts?.length && r.loaiQuang !== 7) {
         for (const p of parts) {
           const safeTyGia = this.getSafeTyGia();
-          const pUnitVnd = p.gia_VND_1Tan ?? ((p.gia_USD_1Tan || 0) * (p.ty_Gia_USD_VND || safeTyGia || 0));
-          const pUnitUsd = p.gia_USD_1Tan ?? ((p.gia_VND_1Tan || 0) / ((p.ty_Gia_USD_VND || safeTyGia || 0) || 1));
-          const pRatio = p.ti_Le_PhanTram ?? 0;
+          // Đảm bảo tất cả giá trị là number
+          const pGiaVND = typeof p.gia_VND_1Tan === 'number' ? p.gia_VND_1Tan : 0;
+          const pGiaUSD = typeof p.gia_USD_1Tan === 'number' ? p.gia_USD_1Tan : 0;
+          const pTyGia = typeof p.ty_Gia_USD_VND === 'number' ? p.ty_Gia_USD_VND : (typeof safeTyGia === 'number' ? safeTyGia : 0);
+          const pUnitVnd = pGiaVND || (Number(pGiaUSD) * Number(pTyGia));
+          const pUnitUsd = pGiaUSD || (Number(pGiaVND) / (Number(pTyGia) || 1));
+          const pRatio = typeof p.ti_Le_PhanTram === 'number' ? p.ti_Le_PhanTram : 0;
+          
+          // Đảm bảo baseCons là number
+          const numBaseCons = typeof baseCons === 'number' ? baseCons : 0;
+          
           // Tính tiêu hao thành phần = tiêu hao quặng phối * (tỷ lệ thành phần / 100)
-          const cons = baseCons * (pRatio / 100);
-          // Tính đơn giá thành phần = đơn giá quặng thành phần * (tỷ lệ thành phần / 100)
-          const unitPriceVnd = (pUnitVnd || 0) * (pRatio / 100);
-          const unitPriceUsd = (pUnitUsd || 0) * (pRatio / 100);
-          out.push({ 
+          const cons = Number(numBaseCons) * (Number(pRatio) / 100);
+          // Đơn giá thành phần = giá thành của quặng thành phần (không nhân với tỷ lệ)
+          const unitPriceVnd = Number(pUnitVnd || 0);
+          const unitPriceUsd = Number(pUnitUsd || 0);
+          out.push({
             id: p.id,
-            ten: p.ten_Quang, 
-            consumption: Number(cons.toFixed(3)), 
+            ten: p.ten_Quang,
+            consumption: Number(cons.toFixed(3)),
             unitVnd: Number(unitPriceVnd.toFixed(2)),
             unitUsd: Number(unitPriceUsd.toFixed(2)),
             isParent: false,
-            parentId: r.idQuang
+            parentId: r.idQuang,
+            // Loại quặng của thành phần: lấy từ chính phần tử p (nếu có), không dùng loại của quặng phối
+            loaiQuang: (p as any).loai_Quang ?? undefined
           });
         }
         // Thêm chính quặng phối để highlight
-        out.push({ 
+        out.push({
           id: r.idQuang,
-          ten: r.tenQuang, 
-          consumption: Number(baseCons.toFixed(3)), 
+          ten: r.tenQuang,
+          consumption: Number(baseCons.toFixed(3)),
           unitVnd: this.getUnitPriceVND(r),
           unitUsd: this.getUnitPriceUSD(r),
           isParent: true,
-          parentId: r.idQuang
+          parentId: r.idQuang,
+          loaiQuang: r.loaiQuang
         });
-      } else {
-        // Không có công thức -> chính nó, tính đơn giá theo tỷ lệ
-        const ratio = r.ratioCtrl.value ?? 0;
-        const totalRatio = this.totalRatio();
-        const unitPriceVnd = totalRatio > 0 ? this.getUnitPriceVND(r) * (ratio / totalRatio) : 0;
-        const unitPriceUsd = totalRatio > 0 ? this.getUnitPriceUSD(r) * (ratio / totalRatio) : 0;
+      } else if (r.loaiQuang === 7 && this.milestone() === MilestoneEnum.ThieuKet) {
+        // Quặng loại 7 trong milestone Thiêu kết: tính tiêu hao từ tỷ lệ phối
+        const componentItems = this._bangChiPhiByLoai7.get(r.idQuang) || [];
+        const formulaParts = formulaMap?.get(r.idQuang) || [];
         
-        out.push({  
+        // Tiêu hao của quặng loại 7 = getThieuKetKhauHaoPercentage (từ tỷ lệ phối trong công thức hiện tại)
+        const loai7Consumption = baseCons;
+        
+        if (componentItems.length > 0 && formulaParts.length > 0) {
+          // Tính tiêu hao và SUMPRODUCT cho các quặng thành phần
+          let totalConsumption = 0;
+          let sumProduct = 0;
+          
+          // Thêm các quặng thành phần từ BangChiPhi và công thức phối
+          for (const item of componentItems) {
+            if (item.iD_Quang && item.donGiaVND !== null) {
+              // Tìm tỷ lệ thành phần từ công thức phối
+              const part = formulaParts.find((p: any) => p.id === item.iD_Quang);
+              const partRatio = part ? (typeof part.ti_Le_PhanTram === 'number' ? part.ti_Le_PhanTram : 0) : 0;
+              
+              // Tính tiêu hao thành phần = tiêu hao quặng loại 7 * (tỷ lệ thành phần / 100)
+              const partConsumption = Number(loai7Consumption) * (Number(partRatio) / 100);
+              totalConsumption += partConsumption;
+              
+              // Tính SUMPRODUCT
+              sumProduct += partConsumption * Number(item.donGiaVND || 0);
+              
+              // Sử dụng tên quặng từ backend, nếu không có thì tìm từ rows()
+              let tenQuang = (item as any).ten_Quang || '';
+              if (!tenQuang && part) {
+                tenQuang = part.ten_Quang || '';
+              }
+              if (!tenQuang) {
+                const foundRow = this.rows().find(row => row.idQuang === item.iD_Quang);
+                if (foundRow) {
+                  tenQuang = foundRow.tenQuang;
+                }
+              }
+              
+              out.push({
+                id: item.iD_Quang,
+                ten: tenQuang,
+                consumption: Number(partConsumption.toFixed(3)),
+                unitVnd: Number(item.donGiaVND),
+                unitUsd: Number(item.donGiaUSD),
+                isParent: false,
+                parentId: r.idQuang,
+                loaiQuang: (item as any).loai_Quang ?? undefined
+              });
+            }
+          }
+          
+          // Đơn giá quặng loại 7 = SUMPRODUCT / tổng tiêu hao
+          const unitPriceVnd = totalConsumption > 0 ? sumProduct / totalConsumption : 0;
+          const tyGia = this.getSafeTyGia();
+          const unitPriceUsd = tyGia > 0 ? unitPriceVnd / tyGia : 0;
+          
+          // Thêm chính quặng loại 7 (tính từ các thành phần)
+          out.push({
+            id: r.idQuang,
+            ten: r.tenQuang,
+            consumption: Number(totalConsumption.toFixed(3)),
+            unitVnd: Number(unitPriceVnd.toFixed(2)),
+            unitUsd: Number(unitPriceUsd.toFixed(2)),
+            isParent: true,
+            parentId: r.idQuang,
+            loaiQuang: r.loaiQuang
+          });
+        } else {
+          // Không có BangChiPhi từ backend, tính như bình thường
+          const ratio = r.ratioCtrl.value ?? 0;
+          const numRatio = typeof ratio === 'number' ? (isNaN(ratio) ? 0 : ratio) : 
+                          (typeof ratio === 'string' ? (parseFloat(ratio) || 0) : 0);
+          const totalRatio = this.totalRatio();
+          const numTotalRatio = typeof totalRatio === 'number' ? totalRatio : 0;
+          const unitPriceVnd = numTotalRatio > 0 ? Number(this.getUnitPriceVND(r)) * (Number(numRatio) / Number(numTotalRatio)) : 0;
+          const unitPriceUsd = numTotalRatio > 0 ? Number(this.getUnitPriceUSD(r)) * (Number(numRatio) / Number(numTotalRatio)) : 0;
+
+          out.push({
+            id: r.idQuang,
+            ten: r.tenQuang,
+            consumption: Number(baseCons.toFixed(3)),
+            unitVnd: Number(unitPriceVnd.toFixed(2)),
+            unitUsd: Number(unitPriceUsd.toFixed(2)),
+            isParent: false,
+            loaiQuang: r.loaiQuang
+          });
+        }
+      } else {
+        // Không có công thức -> chính nó, đơn giá = giá thành của quặng (không nhân với tỷ lệ)
+        const unitPriceVnd = this.getUnitPriceVND(r);
+        const unitPriceUsd = this.getUnitPriceUSD(r);
+
+        out.push({
           id: r.idQuang,
-          ten: r.tenQuang, 
-          consumption: Number(baseCons.toFixed(3)), 
+          ten: r.tenQuang,
+          consumption: Number(baseCons.toFixed(3)),
           unitVnd: Number(unitPriceVnd.toFixed(2)),
           unitUsd: Number(unitPriceUsd.toFixed(2)),
-          isParent: false
+          isParent: false,
+          loaiQuang: r.loaiQuang
         });
       }
     }
-    return out;
+    
+    const sortedOut = out.sort((a, b) => {
+      // Nếu cả hai đều có parentId
+      if (a.parentId && b.parentId) {
+        // Nếu cùng parentId
+        if (a.parentId === b.parentId) {
+          // Quặng thành phần (isParent = false) đứng trước quặng phối (isParent = true)
+          if (!a.isParent && b.isParent) return -1;
+          if (a.isParent && !b.isParent) return 1;
+          return 0;
+        }
+        // Nếu khác parentId, sắp xếp theo parentId
+        return a.parentId - b.parentId;
+      }
+      
+      // Nếu một trong hai có parentId
+      if (a.parentId && !b.parentId) return -1; // Quặng có parentId đứng trước
+      if (!a.parentId && b.parentId) return 1;  // Quặng không có parentId đứng sau
+      
+      // Nếu cả hai đều không có parentId, giữ nguyên thứ tự
+      return 0;
+    });
+    
+    return sortedOut;
   }
 
   totalRatio(): number {
-    return this.rows().reduce((s, r) => s + (r.ratioCtrl.value ?? 0), 0);
+    return this.rows().reduce((s, r) => {
+      const value = r.ratioCtrl.value ?? 0;
+      // Đảm bảo giá trị là number, không phải string
+      const numValue = typeof value === 'number' ? (isNaN(value) ? 0 : value) : 
+                      (typeof value === 'string' ? (parseFloat(value) || 0) : 0);
+      const currentSum = typeof s === 'number' ? s : 0;
+      return Number(currentSum) + Number(numValue);
+    }, 0);
   }
 
   // ===== Bảng chi phí - tính toán tổng =====
@@ -742,19 +974,22 @@ export class MixQuangDialogComponent implements OnInit {
     return this.getCostTableItems().reduce((sum, item) => sum + (item.consumption || 0), 0);
   }
 
-  getTotalUnitPriceSum(): number {
-    return this.getCostTableItems().reduce((sum, item) => sum + (item.unitVnd || 0), 0);
-  }
-
   getTotalAllCosts(): number {
-    return this.getTotalUnitPriceSum() + (this.otherCost || 0);
+    // Tổng chi phí = SUMPRODUCT(tiêu hao, đơn giá) + chi phí khác
+    const sumProduct = this.getCostTableItems().reduce((sum, item) => {
+      return sum + (Number(item.consumption || 0) * Number(item.unitVnd || 0));
+    }, 0);
+    return Number((sumProduct + (this.otherCost || 0)).toFixed(2));
   }
 
   getTotalAllCostsUSD(): number {
-    const totalUnitPriceUSD = this.getCostTableItems().reduce((sum, item) => sum + (item.unitUsd || 0), 0);
+    // Tổng chi phí USD = SUMPRODUCT(tiêu hao, đơn giá USD) + chi phí khác USD
+    const sumProduct = this.getCostTableItems().reduce((sum, item) => {
+      return sum + (Number(item.consumption || 0) * Number(item.unitUsd || 0));
+    }, 0);
     const tyGia = this.getSafeTyGia();
     const otherCostUSD = tyGia > 0 ? (this.otherCost || 0) / tyGia : 0;
-    return Number((totalUnitPriceUSD + otherCostUSD).toFixed(2));
+    return Number((sumProduct + otherCostUSD).toFixed(2));
   }
 
   private getSafeTyGia(): number {
@@ -768,10 +1003,6 @@ export class MixQuangDialogComponent implements OnInit {
   }
 
   onOtherCostChange(): void {
-    // Trigger change detection để cập nhật tổng
-  }
-
-  onOtherCostGangLongChange(): void {
     // Trigger change detection để cập nhật tổng
   }
 
@@ -816,14 +1047,20 @@ export class MixQuangDialogComponent implements OnInit {
 
 
   getLocaoKlNhan(row: RatioRow): number {
+    // Nếu tỉ lệ phối = 0 hoặc không nhập, không tính KL nhận
+    const ratio = row.ratioCtrl.value ?? 0;
+    if (ratio <= 0) {
+      return 0;
+    }
+
     // Use the calculated KL vào lò for all ore types
     const klVaoLo = this.getLocaoKlVaoLoValue(row);
-    
+
     const controls = this.locaoControls().get(row.idQuang);
     if (!controls) return klVaoLo;
-    
+
     const tyLeHoiQuang = controls.tyLeHoiQuang.value || 0;
-    
+
     return klVaoLo * (1 + tyLeHoiQuang / 100);
   }
 
@@ -832,7 +1069,7 @@ export class MixQuangDialogComponent implements OnInit {
     const totalGangMass = this.locaoResult?.getGangTotalMass() ?? 0;
     if (totalGangMass === 0) return 0;
     // Quặng loại 3: dùng KL vào lò; các loại khác: dùng KL nhận
-    const numerator = row.loaiQuang === 3 
+    const numerator = row.loaiQuang === 3
       ? (this.getLocaoKlVaoLoCtrl(row).value ?? 0)
       : this.getLocaoKlNhan(row);
     return (numerator / totalGangMass) * 100;
@@ -849,9 +1086,14 @@ export class MixQuangDialogComponent implements OnInit {
       const unitPrice = this.getUnitPriceVND(r);
       return sum + (consumption * unitPrice);
     }, 0);
-    
+
+    // Đảm bảo tất cả các giá trị đều là số
+    const otherCost = Number(this.otherCostLoCao) || 0;
+    const recycleCost = Number(this.recycleCostVnd) || 0;
+    const total = Number(oreCost) + otherCost + recycleCost;
+
     // Tổng bao gồm chi phí SX gang lỏng và có thể cộng chi phí quặng hồi nếu dùng nhập tay
-    return Number((oreCost + this.otherCostLoCao + (this.recycleCostVnd || 0)).toFixed(2));
+    return Number(total.toFixed(2));
   }
 
   getTotalLoCaoCostUSD(): number {
@@ -861,9 +1103,15 @@ export class MixQuangDialogComponent implements OnInit {
       return sum + (consumption * (unitPrice || 0));
     }, 0);
     const tyGia = this.getSafeTyGia();
-    const otherCostUSD = tyGia > 0 ? this.otherCostLoCao / tyGia : 0;
-    const recycleUSD = tyGia > 0 ? (this.recycleCostVnd || 0) / tyGia : 0;
-    return Number((oreCost + otherCostUSD + recycleUSD).toFixed(2));
+    
+    // Đảm bảo tất cả các giá trị đều là số
+    const otherCost = Number(this.otherCostLoCao) || 0;
+    const recycleCost = Number(this.recycleCostVnd) || 0;
+    const otherCostUSD = tyGia > 0 ? otherCost / tyGia : 0;
+    const recycleUSD = tyGia > 0 ? recycleCost / tyGia : 0;
+    
+    const total = Number(oreCost) + otherCostUSD + recycleUSD;
+    return Number(total.toFixed(2));
   }
 
   // Lò cao: Chi phí sản xuất khác (nhập tay)
@@ -871,47 +1119,6 @@ export class MixQuangDialogComponent implements OnInit {
   onOtherCostLocaoChange(): void {
     // placeholder for future hooks (recalc totals, validations...)
   }
-
-  // Save output ore prices to database (for all milestones)
-  // private saveOutputOrePrices(): void {
-  //   if (!this.data?.planId) return;
-
-  //   let outputOreData: any;
-
-  //   if (this.milestone() === MilestoneEnum.LoCao) {
-  //     // Lò cao: Gang và Xỉ
-  //     outputOreData = {
-  //       gangPrice: {
-  //         giaVND: this.getTotalLoCaoCost(),
-  //         giaUSD: this.getTotalLoCaoCostUSD(),
-  //         tyGia: this.rows()[0]?.tyGia ?? 1
-  //       },
-  //       xaPrice: {
-  //         giaVND: 0, // Xỉ không có giá trị thương mại
-  //         giaUSD: 0,
-  //         tyGia: this.rows()[0]?.tyGia ?? 1
-  //       }
-  //     };
-  //   } else if (this.milestone() === MilestoneEnum.ThieuKet) {
-  //     // Thiêu kết: Quặng phối đầu ra
-  //     outputOreData = {
-  //       outputOrePrice: {
-  //         giaVND: this.getTotalAllCosts(),
-  //         giaUSD: this.getTotalAllCostsUSD(),
-  //         tyGia: this.rows()[0]?.tyGia ?? 1
-  //       }
-  //     };
-  //   } else {
-  //     // Milestone khác: Tính theo tỷ lệ
-  //     outputOreData = {
-  //       outputOrePrice: {
-  //         giaVND: this.getTotalCostByRatioVND(),
-  //         giaUSD: this.getTotalCostByRatioVND() / (this.rows()[0]?.tyGia ?? 1),
-  //         tyGia: this.rows()[0]?.tyGia ?? 1
-  //       }
-  //     };
-  //   }
-  // }
 
   // Lò cao: Quặng hồi - tiêu hao = 100 * (SUM(KL nhận non-type-3) - SUM(KL vào lò non-type-3)) / Tổng khối lượng Gang
   getLoCaoRecycleConsumption(): number {
@@ -926,10 +1133,10 @@ export class MixQuangDialogComponent implements OnInit {
       if (r.loaiQuang === 3) return s;
       return s + (r.klVaoLoCtrl?.value ?? 0);
     }, 0);
-    
+
     const denominator = this.locaoResult?.getGangTotalMass() ?? 0;
     if (denominator === 0) return 0;
-    
+
     const result = 100 * (sumKlNhan - sumKlVaoLo) / denominator;
     return Number(result.toFixed(3));
   }
@@ -937,7 +1144,7 @@ export class MixQuangDialogComponent implements OnInit {
   // Internal state to store calculated values
   private calculatedValues = new Map<string, number>();
   private inputValues = new Map<string, number>();
-  private processParamsInfo = new Map<string, {id: number, code: string, iD_Quang_LienKet?: number, scope?: number, calcFormula?: string}>();
+  private processParamsInfo = new Map<string, { id: number, code: string, iD_Quang_LienKet?: number, scope?: number, calcFormula?: string }>();
   private lastAllNonLoai3ParamValue: number | null = null; // lưu giá trị param scope=1 gần nhất
 
 
@@ -953,7 +1160,7 @@ export class MixQuangDialogComponent implements OnInit {
   private getOutputOrePriceData(): any {
     const tyGia = this.rows()[0]?.tyGia ?? 1;
     const ngayChonTyGia = new Date().toISOString();
-    
+
     if (this.milestone() === MilestoneEnum.LoCao) {
       // Lò cao: Tổng chi phí Gang
       return {
@@ -1001,10 +1208,10 @@ export class MixQuangDialogComponent implements OnInit {
 
   getMixRowsForStatistics(): MixRowData[] {
     const mixRows: MixRowData[] = [];
-    
+
     this.rows().forEach(row => {
       const chems: Record<string, number> = {};
-      
+
       // Convert chems Map to Record<string, number>
       row.chems.forEach((chemCtrl, chemId) => {
         // Find chem name by ID from selectedChems
@@ -1013,7 +1220,7 @@ export class MixQuangDialogComponent implements OnInit {
           chems[chem.ma_TPHH] = chemCtrl.value || 0;
         }
       });
-      
+
       // Create base row data
       const baseRow = {
         code: row.maQuang, // Use maQuang as initial code
@@ -1029,7 +1236,7 @@ export class MixQuangDialogComponent implements OnInit {
       const normalizedRow = this.attachOreCodeByRegex(baseRow);
       mixRows.push(normalizedRow);
     });
-    
+
     return mixRows;
   }
 
@@ -1042,7 +1249,7 @@ export class MixQuangDialogComponent implements OnInit {
         return { ...row, code: normalizedCode };
       }
     }
-    
+
     // Use regex to determine code based on tenQuang
     const name = row.tenQuang?.toLowerCase() || '';
     if (/(thiêu|thieu|sinter|qtk)/i.test(name)) return { ...row, code: ORE_TYPE_CODES.thieuKet };
@@ -1050,13 +1257,13 @@ export class MixQuangDialogComponent implements OnInit {
     if (/(25\s*[-_]\s*80|25\s*80|coke\s*25\s*[-_]\s*80|coke\s*2580)/i.test(name)) return { ...row, code: ORE_TYPE_CODES.mecoke2580 };
     if (/(10\s*[-_]\s*25|10\s*25|coke\s*10\s*[-_]\s*25|coke\s*1025)/i.test(name)) return { ...row, code: ORE_TYPE_CODES.mecoke1025 };
     if (/(than\s*phun|pulverized|pci)/i.test(name)) return { ...row, code: ORE_TYPE_CODES.thanphun };
-    
+
     // If no match, return without code (will be treated as generic ore)
     return { ...row, code: undefined };
   }
 
   // Handle process params change from locao-section
-  onProcessParamsChange(inputDataList: Array<{id: number, code: string, value: number, iD_Quang_LienKet?: number, scope?: number, calcFormula?: string}>): void {
+  onProcessParamsChange(inputDataList: Array<{ id: number, code: string, value: number, iD_Quang_LienKet?: number, scope?: number, calcFormula?: string }>): void {
     // Update input values and process params info
     inputDataList.forEach(data => {
       this.inputValues.set(data.code, data.value);
@@ -1081,7 +1288,7 @@ export class MixQuangDialogComponent implements OnInit {
   private recalculateAllFormulas(): void {
     // Clear previous calculations
     this.calculatedValues.clear();
-    
+
     // First pass: calculate all formulas
     this.processParamsInfo.forEach((paramInfo, code) => {
       if (paramInfo.calcFormula) {
@@ -1100,14 +1307,14 @@ export class MixQuangDialogComponent implements OnInit {
   private calculateFormula(formula: string): number {
     // Build param values map for FormulaService
     const paramValues = new Map<number, number>();
-    
+
     this.processParamsInfo.forEach((paramInfo, code) => {
       let value: number;
-      
+
       if (paramInfo.calcFormula) {
         // Check if this is self-referencing
         const isSelfReferencing = this.isSelfReferencingFormula(paramInfo.calcFormula, paramInfo.id);
-        
+
         if (isSelfReferencing) {
           // Self-referencing formula: use input value for itself
           value = this.inputValues.get(code) || 0;
@@ -1119,10 +1326,10 @@ export class MixQuangDialogComponent implements OnInit {
         // If this param has no formula, use input value
         value = this.inputValues.get(code) || 0;
       }
-      
+
       paramValues.set(paramInfo.id, value);
     });
-    
+
     // Use FormulaService to evaluate
     return this.formulaService.evaluateFormula(formula, paramValues);
   }
@@ -1183,14 +1390,14 @@ export class MixQuangDialogComponent implements OnInit {
   // Update all non-type-3 ores using ratio formula
   private updateAllNonLoai3Ores(paramValue: number): void {
     const rows = this.rows();
-    
+
     for (const row of rows) {
       if (row.loaiQuang !== 3) { // Only apply to non-type-3 ores
         const tyLe = row.ratioCtrl.value || 0; // Get ratio from FormControl
-        
+
         // Formula: KL vào lò = (Tỷ lệ × Giá trị param) / 100
         const newKlVaoLo = (tyLe * paramValue) / 100;
-        
+
         // Check if FormControl exists before using it
         if (row.klVaoLoCtrl) {
           row.klVaoLoCtrl.setValue(newKlVaoLo, { emitEvent: true });
@@ -1198,10 +1405,7 @@ export class MixQuangDialogComponent implements OnInit {
       }
     }
   }
-    
 
-  // Debug method để xem dữ liệu quặng hiện tại
-  
   // Kiểm tra xem KL vào lò có được tính toán từ locao-section hay không
   isLocaoKlVaoLoCalculated(row: RatioRow): boolean {
     // TODO: Implement logic kiểm tra xem quặng này có param nào được link từ locao-section không
@@ -1211,6 +1415,12 @@ export class MixQuangDialogComponent implements OnInit {
 
   // Lấy giá trị KL vào lò (từ calculation hoặc từ input)
   getLocaoKlVaoLoValue(row: RatioRow): number {
+    // Nếu tỉ lệ phối = 0 hoặc không nhập, không tính KL vào lò
+    const ratio = row.ratioCtrl.value ?? 0;
+    if (ratio <= 0) {
+      return 0;
+    }
+
     if (this.isLocaoKlVaoLoCalculated(row)) {
       // TODO: Lấy giá trị từ calculation
       return 0;
@@ -1223,50 +1433,56 @@ export class MixQuangDialogComponent implements OnInit {
 
   // Initialize controls when rows change
   private initializeLocaoControls(): void {
-    const controlsMap = new Map<number, {klVaoLo: FormControl<number | null>, tyLeHoiQuang: FormControl<number | null>, klNhan: FormControl<number | null>}>();
-    
+    const controlsMap = new Map<number, { klVaoLo: FormControl<number | null>, tyLeHoiQuang: FormControl<number | null>, klNhan: FormControl<number | null> }>();
+
     for (const row of this.rows()) {
       // FormControls are now always initialized in RatioRow creation
       // Just add subscriptions and store in controlsMap
       const klVaoLoControl = row.klVaoLoCtrl;
       const tyLeHoiQuangControl = row.tyLeHoiQuangCtrl;
       const klNhanControl = row.klNhanCtrl;
-      
-      // Set tyLeHoiQuang to 0 for loaiQuang = 3 (disabled input)
-      if (row.loaiQuang === 3) {
+
+      // Set default tyLeHoiQuang based on loaiQuang if not already set
+      // Chỉ set default khi tạo mới (không có giá trị từ backend)
+      // Khi edit, giá trị từ backend đã được set ở dòng 510, không cần set default nữa
+      if (tyLeHoiQuangControl.value === null || tyLeHoiQuangControl.value === undefined) {
+        if (row.loaiQuang === 3) {
+          tyLeHoiQuangControl.setValue(0, { emitEvent: false });
+        } else if (row.loaiQuang === 7) {
+          tyLeHoiQuangControl.setValue(9, { emitEvent: false });
+        } else if (row.loaiQuang !== undefined) {
+          // Chỉ set default cho các loại quặng khác (không phải loại 3 và 7)
+          tyLeHoiQuangControl.setValue(1, { emitEvent: false });
+        }
+      } else if (row.loaiQuang === 3) {
+        // Always set to 0 for loaiQuang = 3 (disabled input)
         tyLeHoiQuangControl.setValue(0, { emitEvent: false });
       }
-      
+
       // Calculate initial klNhan value before render
       const initialKlNhan = this.calculateKlNhan(row);
       klNhanControl.setValue(initialKlNhan, { emitEvent: false });
-      
-      // Add value changes watchers for KL vào lò
-      klVaoLoControl.valueChanges.subscribe(value => {
-        this.onLocaoControlValueChange(row.idQuang, 'klVaoLo', value);
-        
-        // Recalculate klNhan when klVaoLo changes
-        const newKlNhan = this.calculateKlNhan(row);
-        klNhanControl.setValue(newKlNhan, { emitEvent: true });
-      });
-      
-      // Add value changes watchers for Tỷ lệ hồi quặng
-      tyLeHoiQuangControl.valueChanges.subscribe(value => {
-        this.onLocaoControlValueChange(row.idQuang, 'tyLeHoiQuang', value);
-        
-        // Recalculate klNhan when tyLeHoiQuang changes
-        const newKlNhan = this.calculateKlNhan(row);
-        klNhanControl.setValue(newKlNhan, { emitEvent: true });
-      });
-      
-      // Add value changes watchers for KL nhận
-      klNhanControl.valueChanges.subscribe(value => {
-        this.onLocaoControlValueChange(row.idQuang, 'klNhan', value);
-        
-        // Trigger change detection to update mixRows
-        this.cdr.detectChanges();
-      });
-      
+
+        // Add value changes watchers for KL vào lò
+        klVaoLoControl.valueChanges.subscribe(value => {
+          // Recalculate klNhan when klVaoLo changes
+          const newKlNhan = this.calculateKlNhan(row);
+          klNhanControl.setValue(newKlNhan, { emitEvent: true });
+        });
+
+        // Add value changes watchers for Tỷ lệ hồi quặng
+        tyLeHoiQuangControl.valueChanges.subscribe(value => {
+          // Recalculate klNhan when tyLeHoiQuang changes
+          const newKlNhan = this.calculateKlNhan(row);
+          klNhanControl.setValue(newKlNhan, { emitEvent: true });
+        });
+
+        // Add value changes watchers for KL nhận
+        klNhanControl.valueChanges.subscribe(value => {
+          // Trigger change detection to update mixRows
+          this.cdr.detectChanges();
+        });
+
       // Recalculate KL vào lò khi tỷ lệ thay đổi (milestone Lò cao + có param scope=1)
       row.ratioCtrl.valueChanges.subscribe(ratio => {
         if (this.milestone() === MilestoneEnum.LoCao && this.lastAllNonLoai3ParamValue !== null && row.loaiQuang !== 3) {
@@ -1282,25 +1498,15 @@ export class MixQuangDialogComponent implements OnInit {
         klNhan: klNhanControl
       });
     }
-    
+
     this.locaoControls.set(controlsMap);
-    
+
     // Attach signals for all rows to ensure subscriptions are created
     for (const row of this.rows()) {
       this.attachSignals(row);
     }
   }
 
-  private onLocaoControlValueChange(quangId: number, field: string, value: number | null): void {
-    // Find ore by ID to get ore code/name
-    const ore = this.rows().find(r => r.idQuang === quangId);
-    if (!ore || value === null) return;
-
-    // Update corresponding process params in locao-section based on linked ore ID
-    // This is now handled by the new architecture where locao-section emits data
-    // and mix-quang-dialog handles all calculations internally
-
-  }
 
 
   private attachSignals(row: RatioRow) {
@@ -1355,10 +1561,10 @@ export class MixQuangDialogComponent implements OnInit {
       newChem$.set(
         chemId,
         reuse ??
-          toSignal(ctrl.valueChanges.pipe(startWith(ctrl.value)), {
-            initialValue: ctrl.value,
-            injector: this.injector,
-          })
+        toSignal(ctrl.valueChanges.pipe(startWith(ctrl.value)), {
+          initialValue: ctrl.value,
+          injector: this.injector,
+        })
       );
     }
     row.chem$ = newChem$;
@@ -1367,6 +1573,10 @@ export class MixQuangDialogComponent implements OnInit {
   // remove 1 row (quặng)
   removeRow(row: RatioRow) {
     this.rows.set(this.rows().filter((r) => r !== row));
+    // Update loai7 ratio after removing a row
+    queueMicrotask(() => {
+      this.setupAutoRatioForLoai7();
+    });
   }
 
   // remove 1 chem (cột)
@@ -1385,6 +1595,10 @@ export class MixQuangDialogComponent implements OnInit {
         return { ...r, chems: m };
       })
     );
+    // Update loai7 ratio after removing a chem (though it shouldn't affect ratio)
+    queueMicrotask(() => {
+      this.setupAutoRatioForLoai7();
+    });
   }
 
   // Format ngày cho mã công thức (ddMMyy)
@@ -1432,25 +1646,40 @@ export class MixQuangDialogComponent implements OnInit {
         Ngay_Tao: this.oreForm.value.NgayTao ? new Date(this.oreForm.value.NgayTao).toISOString() : new Date().toISOString(),
       },
       Milestone: this.data?.planId ? this.milestone() : null, // Chỉ gửi milestone khi mix trong plan
-      ChiTietQuang: rows.map((r) => ({ 
-        ID_Quang: r.idQuang, 
+      ChiTietQuang: rows.map((r) => ({
+        ID_Quang: r.idQuang,
         Ti_Le_PhanTram: r.ratioCtrl.value ?? 0,
-        // Milestone-specific mapping
+        // Milestone-specific mapping - gửi null thay vì 0 để tránh hiển thị số 0 không cần thiết
         ...(this.milestone() === MilestoneEnum.ThieuKet ? {
-          Khau_Hao: this.getThieuKetKhauHaoValue(r),
-          Ti_Le_KhaoHao: this.getThieuKetKhauHaoPercentage(r),
+          Khau_Hao: (() => {
+            const val = this.getThieuKetKhauHaoValue(r);
+            return val && val > 0 ? val : null;
+          })(),
+          Ti_Le_KhaoHao: (() => {
+            const val = this.getThieuKetKhauHaoPercentage(r);
+            return val && val > 0 ? val : null;
+          })(),
         } : {}),
         ...(this.milestone() === MilestoneEnum.LoCao ? {
-          KL_VaoLo: r.klVaoLoCtrl?.value ?? null,
-          Ti_Le_HoiQuang: r.tyLeHoiQuangCtrl?.value ?? null,
-          KL_Nhan: r.klNhanCtrl?.value ?? null,
+          KL_VaoLo: (() => {
+            const val = r.klVaoLoCtrl?.value;
+            return val != null && val > 0 ? val : null;
+          })(),
+          Ti_Le_HoiQuang: (() => {
+            const val = r.tyLeHoiQuangCtrl?.value;
+            return val != null && val > 0 ? val : null;
+          })(),
+          KL_Nhan: (() => {
+            const val = r.klNhanCtrl?.value;
+            return val != null && val > 0 ? val : null;
+          })(),
         } : {}),
         TP_HoaHocs: [
           ...this.selectedChems().map((c, idx) => ({
-          Id: c.id,
-            PhanTram: this.getChemCtrl(r, c.id).value ?? 0,
+            Id: c.id,
+            PhanTram: this.getChemCtrl(r, c.id).value != null && this.getChemCtrl(r, c.id).value > 0 ? this.getChemCtrl(r, c.id).value : null,
             ThuTuTPHH: idx + 1
-        }))
+          }))
         ]
       })),
       RangBuocTPHH: chems.map((c) => {
@@ -1460,15 +1689,15 @@ export class MixQuangDialogComponent implements OnInit {
       QuangThanhPham: {
         Ma_Quang: this.oreForm.value.MaQuang!,
         Ten_Quang: this.oreForm.value.TenQuang!,
-        Loai_Quang: 1, // Tron
+        Loai_Quang: this.data?.outputLoaiQuang ?? 1,
         Mat_Khi_Nung: null, // Không còn sử dụng MKN từ quặng
         ThanhPhanHoaHoc: this.selectedChems().map((c, idx) => ({
           ID_TPHH: c.id,
           Gia_Tri_PhanTram: this.milestone() === MilestoneEnum.LoCao
             ? this.getChemTotalBySumProduct(c.id)
             : (this.milestone() === MilestoneEnum.ThieuKet
-                ? this.getThieuKetRow2Value(c.id)
-                : this.resultRow()[c.id]),
+              ? this.getThieuKetRow2Value(c.id)
+              : this.resultRow()[c.id]),
           ThuTuTPHH: idx + 1
         })),
         Gia: this.getOutputOrePriceData()
@@ -1485,7 +1714,7 @@ export class MixQuangDialogComponent implements OnInit {
         next: (res) => {
           this.dlgRef.close(res?.data);
           const msg = this.data?.planId ? 'Tạo quặng phối theo phương án thành công' : 'Tạo quặng phối độc lập thành công';
-          this.snack.open(msg, 'Đóng', { duration: 1500, panelClass: ['snack-success']  });
+          this.snack.open(msg, 'Đóng', { duration: 1500, panelClass: ['snack-success'] });
         },
         error: (e) => {
           // Handle error silently
@@ -1509,25 +1738,40 @@ export class MixQuangDialogComponent implements OnInit {
         Ngay_Tao: this.oreForm.value.NgayTao ? new Date(this.oreForm.value.NgayTao).toISOString() : new Date().toISOString(),
       },
       Milestone: this.data?.planId ? this.milestone() : null,
-      ChiTietQuang: rows.map((r) => ({ 
-        ID_Quang: r.idQuang, 
+      ChiTietQuang: rows.map((r) => ({
+        ID_Quang: r.idQuang,
         Ti_Le_PhanTram: r.ratioCtrl.value ?? 0,
-        // Milestone-specific mapping
+        // Milestone-specific mapping - gửi null thay vì 0 để tránh hiển thị số 0 không cần thiết
         ...(this.milestone() === MilestoneEnum.ThieuKet ? {
-          Khau_Hao: this.getThieuKetKhauHaoValue(r),
-          Ti_Le_KhaoHao: this.getThieuKetKhauHaoPercentage(r),
+          Khau_Hao: (() => {
+            const val = this.getThieuKetKhauHaoValue(r);
+            return val && val > 0 ? val : null;
+          })(),
+          Ti_Le_KhaoHao: (() => {
+            const val = this.getThieuKetKhauHaoPercentage(r);
+            return val && val > 0 ? val : null;
+          })(),
         } : {}),
         ...(this.milestone() === MilestoneEnum.LoCao ? {
-          KL_VaoLo: r.klVaoLoCtrl?.value ?? null,
-          Ti_Le_HoiQuang: r.tyLeHoiQuangCtrl?.value ?? null,
-          KL_Nhan: r.klNhanCtrl?.value ?? null,
+          KL_VaoLo: (() => {
+            const val = r.klVaoLoCtrl?.value;
+            return val != null && val > 0 ? val : null;
+          })(),
+          Ti_Le_HoiQuang: (() => {
+            const val = r.tyLeHoiQuangCtrl?.value;
+            return val != null && val > 0 ? val : null;
+          })(),
+          KL_Nhan: (() => {
+            const val = r.klNhanCtrl?.value;
+            return val != null && val > 0 ? val : null;
+          })(),
         } : {}),
         TP_HoaHocs: [
           ...this.selectedChems().map((c, idx) => ({
-          Id: c.id,
+            Id: c.id,
             PhanTram: this.getChemCtrl(r, c.id).value ?? 0,
             ThuTuTPHH: idx + 1
-        }))
+          }))
         ]
       })),
       RangBuocTPHH: chems.map((c) => {
@@ -1537,15 +1781,15 @@ export class MixQuangDialogComponent implements OnInit {
       QuangThanhPham: {
         Ma_Quang: this.oreForm.value.MaQuang!,
         Ten_Quang: this.oreForm.value.TenQuang!,
-        Loai_Quang: 1, // Tron
+        Loai_Quang: this.data?.outputLoaiQuang ?? 1,
         Mat_Khi_Nung: null,
         ThanhPhanHoaHoc: this.selectedChems().map((c, idx) => ({
           ID_TPHH: c.id,
           Gia_Tri_PhanTram: this.milestone() === MilestoneEnum.LoCao
             ? this.getChemTotalBySumProduct(c.id)
             : (this.milestone() === MilestoneEnum.ThieuKet
-                ? this.getThieuKetRow2Value(c.id)
-                : this.resultRow()[c.id]),
+              ? this.getThieuKetRow2Value(c.id)
+              : this.resultRow()[c.id]),
           ThuTuTPHH: idx + 1
         })),
         Gia: this.getOutputOrePriceData()
@@ -1563,7 +1807,7 @@ export class MixQuangDialogComponent implements OnInit {
           GiaTri: item.giaTri,
           ThuTuParam: item.thuTuParam
         })) || [],
-        
+
         // Gang/Slag Data
         GangSlagData: this.milestone() === MilestoneEnum.LoCao ? {
           GangData: this.locaoResult?.gangData?.map(item => ({
@@ -1581,7 +1825,7 @@ export class MixQuangDialogComponent implements OnInit {
             IsCalculated: item.isCalculated || false
           })) || []
         } : null,
-        
+
         // Thống kê Results
         ThongKeResults: this.locaoResult?.getUpsertPlanResults()?.map((item, idx) => ({
           ID_ThongKe_Function: item.Id_ThongKe_Function,
@@ -1638,7 +1882,7 @@ export class MixQuangDialogComponent implements OnInit {
         ID_CongThucPhoi: idCongThucPhoi,
         ID_Quang: null,
         LineType: LINE_TYPE_CHIPHI.CHI_PHI_KHAC,
-        Tieuhao: null,
+        Tieuhao: 1,
         DonGiaVND: Number(vnd.toFixed(6)),
         DonGiaUSD: Number(usd.toFixed(6)),
       });
@@ -1651,7 +1895,7 @@ export class MixQuangDialogComponent implements OnInit {
         const consumption = this.getLoCaoConsumption(r);
         const unitVnd = this.getUnitPriceVND(r);
         const unitUsd = this.getUnitPriceUSD(r);
-        
+
         items.push({
           ID_CongThucPhoi: idCongThucPhoi,
           ID_Quang: r.idQuang,
@@ -1669,7 +1913,7 @@ export class MixQuangDialogComponent implements OnInit {
         ID_CongThucPhoi: idCongThucPhoi,
         ID_Quang: null,
         LineType: LINE_TYPE_CHIPHI.CHI_PHI_SX_GANG_LONG,
-        Tieuhao: null,
+        Tieuhao: 1,
         DonGiaVND: Number(vnd.toFixed(6)),
         DonGiaUSD: Number(usd.toFixed(6)),
       });
@@ -1760,24 +2004,6 @@ export class MixQuangDialogComponent implements OnInit {
     return Number(total.toFixed(2));
   }
 
-  // KL vào lò reactive mapping removed per request
-
-  // ===== Bảng tiêu hao thành phần theo Thiêu Kết =====
-  // Tiêu hao thành phần = (Tổng tiêu hao Thiêu Kết) * (tỷ lệ quặng thành phần / tổng tỷ lệ)
-  getTotalThieuKetConsumption(): number {
-    return Number(this.getTotalThieuKetKhauHao().toFixed(3));
-  }
-
-  getComponentConsumptionFromTarget(row: RatioRow): number {
-    const totalRatio = this.totalRatio();
-    if (totalRatio === 0) return 0;
-    const ratio = row.ratioCtrl.value ?? 0;
-    const totalCons = this.getTotalThieuKetKhauHao();
-    const cons = totalCons * (ratio / totalRatio);
-    return Number(cons.toFixed(3));
-  }
-
-
   async syncSelections(
     opts: {
       ores?: OreVm[];
@@ -1840,12 +2066,21 @@ export class MixQuangDialogComponent implements OnInit {
         }
       }
 
-      // Initialize milestone-specific FormControls
-      const klVaoLoCtrl = prevRow?.klVaoLoCtrl || new FormControl<number | null>(0);
-      const tyLeHoiQuangCtrl = prevRow?.tyLeHoiQuangCtrl || new FormControl<number | null>(o.loaiQuang === 3 ? 0 : 0);
-      const klNhanCtrl = prevRow?.klNhanCtrl || new FormControl<number | null>(0);
-      const khauHaoCtrl = prevRow?.khauHaoCtrl || new FormControl<number | null>(0);
-      const percentageCtrl = prevRow?.percentageCtrl || new FormControl<number | null>(0);
+      // Initialize milestone-specific FormControls (null thay vì 0 để tránh hiển thị số 0 không cần thiết)
+      const klVaoLoCtrl = prevRow?.klVaoLoCtrl || new FormControl<number | null>(null);
+      // Set default tyLeHoiQuang: loaiQuang = 7 → 9%, loaiQuang = 3 → 0%, các loại khác → 1%
+      let defaultTyLeHoiQuang: number | null = null;
+      if (o.loaiQuang === 3) {
+        defaultTyLeHoiQuang = 0;
+      } else if (o.loaiQuang === 7) {
+        defaultTyLeHoiQuang = 9;
+      } else {
+        defaultTyLeHoiQuang = 1;
+      }
+      const tyLeHoiQuangCtrl = prevRow?.tyLeHoiQuangCtrl || new FormControl<number | null>(defaultTyLeHoiQuang);
+      const klNhanCtrl = prevRow?.klNhanCtrl || new FormControl<number | null>(null);
+      const khauHaoCtrl = prevRow?.khauHaoCtrl || new FormControl<number | null>(null);
+      const percentageCtrl = prevRow?.percentageCtrl || new FormControl<number | null>(null);
 
       const row: RatioRow = {
         idQuang: o.id,
@@ -1878,7 +2113,10 @@ export class MixQuangDialogComponent implements OnInit {
     });
 
     this.rows.set(nextRows);
-    
+
+    // Setup auto-calculation for loaiQuang = 7 (tỉ lệ phối = 100 - tổng các hàng khác)
+    this.setupAutoRatioForLoai7();
+
     // Initialize Lò Cao controls if needed
     if (this.milestone() === MilestoneEnum.LoCao) {
       this.initializeLocaoControls();
@@ -1888,32 +2126,48 @@ export class MixQuangDialogComponent implements OnInit {
   // Method to calculate thieuKetKhauHao column for a specific row
   getThieuKetKhauHaoValue(row: RatioRow): number {
     const ratio = row.ratioCtrl.value ?? 0;
-    
+    // Đảm bảo giá trị là number
+    const numRatio = typeof ratio === 'number' ? (isNaN(ratio) ? 0 : ratio) : 
+                    (typeof ratio === 'string' ? (parseFloat(ratio) || 0) : 0);
+
     // Tìm MKN value từ các thành phần hóa học
     let mknValue = 0;
     const mknChem = this.selectedChems().find(c => c.ma_TPHH === 'MKN');
     if (mknChem) {
       const mknCtrl = row.chems.get(mknChem.id);
-      mknValue = mknCtrl?.value ?? 0;
+      const mknVal = mknCtrl?.value ?? 0;
+      mknValue = typeof mknVal === 'number' ? (isNaN(mknVal) ? 0 : mknVal) : 
+                (typeof mknVal === 'string' ? (parseFloat(mknVal) || 0) : 0);
     }
-    
+
     // Công thức: tỷ lệ * (1 - MKN / 100)
-    const result = ratio * (1 - mknValue / 100);
-    return result;
+    const result = Number(numRatio) * (1 - Number(mknValue) / 100);
+    return isNaN(result) || !isFinite(result) ? 0 : Number(result);
   }
 
   // Method to get total thieuKetKhauHao value
   getTotalThieuKetKhauHao(): number {
-    return this.rows().reduce((sum, row) => sum + this.getThieuKetKhauHaoValue(row), 0);
+    return this.rows().reduce((sum, row) => {
+      const value = this.getThieuKetKhauHaoValue(row);
+      const numValue = typeof value === 'number' ? value : 0;
+      const currentSum = typeof sum === 'number' ? sum : 0;
+      return Number(currentSum) + Number(numValue);
+    }, 0);
   }
 
   // Method to calculate percentage for each ore
   // Yêu cầu: lấy tỷ lệ nhập vào / tổng tỷ lệ (không dùng giá trị khấu hao)
   getThieuKetKhauHaoPercentage(row: RatioRow): number {
     const total = this.getTotalThieuKetKhauHao();
+    if (total === 0) return 0;
 
     const ratio = row.ratioCtrl.value ?? 0;
-    return ratio / total;
+    // Đảm bảo giá trị là number
+    const numRatio = typeof ratio === 'number' ? (isNaN(ratio) ? 0 : ratio) : 
+                    (typeof ratio === 'string' ? (parseFloat(ratio) || 0) : 0);
+    const numTotal = typeof total === 'number' ? total : 0;
+    const result = numTotal > 0 ? numRatio / numTotal : 0;
+    return isNaN(result) || !isFinite(result) ? 0 : Number(result);
   }
 
   // Method to get total percentage (should always be 100%)
@@ -1934,13 +2188,13 @@ export class MixQuangDialogComponent implements OnInit {
   getTotalLocaoTyLeHoiQuang(): number {
     const totalKlVaoLo = this.getTotalLocaoKlVaoLo();
     if (totalKlVaoLo === 0) return 0;
-    
+
     const weightedSum = this.rows().reduce((sum, row) => {
       const klVaoLo = this.getLocaoKlVaoLoCtrl(row).value ?? 0;
       const tyLeHoiQuang = this.getLocaoTyLeHoiQuangCtrl(row).value ?? 0;
       return sum + (klVaoLo * tyLeHoiQuang);
     }, 0);
-    
+
     return weightedSum / totalKlVaoLo;
   }
 
@@ -1972,12 +2226,12 @@ export class MixQuangDialogComponent implements OnInit {
   getThieuKetCaOSiO2Ratio(): number {
     const caoChem = this.selectedChems().find(c => c.ma_TPHH === 'CaO');
     const sio2Chem = this.selectedChems().find(c => c.ma_TPHH === 'SiO2');
-    
+
     if (!caoChem || !sio2Chem) return 0;
-    
+
     const caoValue = this.getThieuKetRow1Value(caoChem.id);
     const sio2Value = this.getThieuKetRow1Value(sio2Chem.id);
-    
+
     if (sio2Value === 0) return 0;
     return caoValue / sio2Value;
   }
@@ -1987,30 +2241,6 @@ export class MixQuangDialogComponent implements OnInit {
     const chem = this.selectedChems().find(c => c.id === chemId);
     return chem?.ma_TPHH === 'MKN';
   }
-
-  // Method to get ore data for calculation in thieu-ket-khau-hao component
-  getOreDataForCalculation(): OreData[] {
-    return this.rows().map(row => {
-      // Lấy tỷ lệ từ form control
-      const ratio = row.ratioCtrl.value ?? 0;
-      
-      // Tìm MKN value từ các thành phần hóa học
-      let mknValue = 0;
-      const mknChem = this.selectedChems().find(c => c.ma_TPHH === 'MKN');
-      if (mknChem) {
-        const mknCtrl = row.chems.get(mknChem.id);
-        mknValue = mknCtrl?.value ?? 0;
-      }
-      
-      return {
-        id: row.idQuang,
-        name: row.tenQuang,
-        ratio: ratio,
-        mkn: mknValue
-      };
-    });
-  }
-
 
   getLocaoStatistics(): LocaoStatistics {
     // Calculate statistics based on current mixing data
@@ -2089,74 +2319,166 @@ export class MixQuangDialogComponent implements OnInit {
     }));
   }
 
-  // Save Gang and Xỉ data to Quang_TP_PhanTich
-  private saveGangAndXaData(): void {
-    // Get current Gang and Xỉ data from locao-result component (with real TPHH IDs from API)
-    const gangData = this.locaoResult?.gangData || [];
-    const xaData = this.locaoResult?.xiData || [];
+  // Tính tỉ lệ phối cho loại 7: 100 - tổng các hàng khác (không phải loại 7)
+  getRatioForLoai7(): number {
+    const rows = this.rows();
+    let totalOtherRows: number = 0; // Đảm bảo khởi tạo là number
     
-    if (!this.data?.planId) return;
+    for (const r of rows) {
+      if (r.loaiQuang !== 7) {
+        const value: number | null = r.ratioCtrl.value;
+        // Đảm bảo giá trị là number hợp lệ
+        let numValue: number = 0;
+        if (value === null || value === undefined) {
+          numValue = 0;
+        } else if (typeof value === 'number') {
+          numValue = isNaN(value) || !isFinite(value) ? 0 : Number(value);
+        } else {
+          // Nếu là string (trường hợp đặc biệt), parse
+          const strValue = String(value);
+          const trimmed = strValue.trim();
+          if (trimmed === '' || trimmed === '.' || trimmed === '-') {
+            numValue = 0;
+          } else {
+            // Xử lý trường hợp "7." -> parse thành 7
+            const toParse = trimmed.endsWith('.') && trimmed.split('.').length === 2 
+              ? trimmed.slice(0, -1) 
+              : trimmed;
+            const parsed = parseFloat(toParse);
+            numValue = isNaN(parsed) || !isFinite(parsed) ? 0 : Number(parsed);
+          }
+        }
+        // Đảm bảo cộng số, không nối chuỗi
+        totalOtherRows = Number(totalOtherRows) + Number(numValue);
+      }
+    }
     
-    // Get gang and slag result IDs from plan
-    this.quangService.getGangAndSlagChemistryByPlan(this.data.planId).subscribe({
-      next: (result) => {
-        // Save Gang data using new API
-        if (gangData.length > 0 && result.gang) {
-          const gangPayload = {
-            id: result.gang.quang.id,
-            ma_Quang: result.gang.quang.ma_Quang,
-            ten_Quang: result.gang.quang.ten_Quang,
-            loai_Quang: 2 as const, // Gang
-            thanhPhanHoaHoc: gangData.map((item: any, idx: number) => ({
-              ID_TPHH: item.tphhId || 0, // Use real TPHH ID from API data
-              Gia_Tri_PhanTram: item.percentage || 0,
-              ThuTuTPHH: idx + 1,
-              KhoiLuong: item.mass || 0,
-              CalcFormula: item.calcFormula || null,
-              IsCalculated: item.isCalculated || false
-            })),
-            id_PhuongAn: this.data!.planId!, // Required for result ore mapping
-            dang_Hoat_Dong: true,
-            ghi_Chu: null,
-            id_Quang_Gang: result.gang.quang.id_Quang_Gang ?? null
-          };
-
-          console.log('gangPayload', gangPayload);
-          
-          this.quangService.upsertKetQuaWithThanhPhan(gangPayload).subscribe({
-            next: () => {},
-            error: (err) => console.error('Failed to save Gang data:', err)
-          });
-        }
-        
-        // Save Xỉ data using new API
-        if (xaData.length > 0 && result.slag) {
-          const xaPayload = {
-            id: result.slag.quang.id,
-            ma_Quang: result.slag.quang.ma_Quang,
-            ten_Quang: result.slag.quang.ten_Quang,
-            loai_Quang: 4 as const, // Xỉ
-            thanhPhanHoaHoc: xaData.map((item: any, idx: number) => ({
-              ID_TPHH: item.tphhId || 0, // Use real TPHH ID from API data
-              Gia_Tri_PhanTram: item.percentage || 0,
-              ThuTuTPHH: idx + 1,
-              KhoiLuong: item.mass || 0,
-              CalcFormula: item.calcFormula || null,
-              IsCalculated: item.isCalculated || false
-            })),
-            id_PhuongAn: this.data!.planId!, // Required for result ore mapping
-            dang_Hoat_Dong: true,
-            ghi_Chu: null,
-            id_Quang_Gang: result.slag.quang.id_Quang_Gang ?? null
-          };
-          
-          this.quangService.upsertKetQuaWithThanhPhan(xaPayload).subscribe({
-            next: () => {},
-            error: (err) => console.error('Failed to save Xỉ data:', err)
-          });
-        }
-      },
-      error: (err) => console.error('Failed to get gang/slag result IDs:', err)
-    });
+    const ratioLoai7 = 100 - Number(totalOtherRows);
+    const result = Math.max(0, Math.round(ratioLoai7 * 100) / 100);
+    // Đảm bảo luôn trả về number hợp lệ
+    const finalResult = isNaN(result) || !isFinite(result) ? 0 : Number(result);
+    return finalResult;
   }
+
+  // Setup auto-calculation for loaiQuang = 7
+  private setupAutoRatioForLoai7(): void {
+    const rows = this.rows();
+    const loai7Row = rows.find(r => r.loaiQuang === 7);
+    
+    if (!loai7Row) return;
+
+    // Unsubscribe all previous subscriptions first
+    rows.forEach(row => {
+      if (row.loaiQuang !== 7 && (row as any)._ratioSubscription) {
+        (row as any)._ratioSubscription.unsubscribe();
+        (row as any)._ratioSubscription = null;
+      }
+    });
+
+    // Subscribe to valueChanges of all non-loai7 rows
+    rows.forEach(row => {
+      if (row.loaiQuang !== 7) {
+        // Subscribe to ratio changes
+        (row as any)._ratioSubscription = row.ratioCtrl.valueChanges
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe((newValue) => {
+            // Helper function để parse giá trị an toàn và kiểm tra hợp lệ
+            const parseValue = (val: any): number => {
+              if (val === null || val === undefined || val === '') return 0;
+              
+              // Nếu là number, kiểm tra hợp lệ
+              if (typeof val === 'number') {
+                return isNaN(val) || !isFinite(val) ? 0 : val;
+              }
+              
+              // Nếu là string
+              if (typeof val === 'string') {
+                // Loại bỏ khoảng trắng
+                const trimmed = val.trim();
+                // Nếu rỗng hoặc chỉ có dấu chấm/các ký tự không hợp lệ, return 0
+                if (trimmed === '' || trimmed === '.' || trimmed === '-') return 0;
+                
+                  // Kiểm tra nếu string kết thúc bằng dấu chấm (đang nhập dở) - không tính
+                  // Ví dụ: "7." hoặc "7.6." - không hợp lệ, dùng giá trị cũ
+                  if (trimmed.endsWith('.') && trimmed.split('.').length > 2) {
+                    return 0;
+                  }
+                
+                // Parse số
+                const parsed = parseFloat(trimmed);
+                return isNaN(parsed) || !isFinite(parsed) ? 0 : parsed;
+              }
+              
+              return 0;
+            };
+            
+            // Kiểm tra nếu giá trị mới nhập chưa hợp lệ (đang nhập dở như "7.")
+            const isValidValue = (val: any): boolean => {
+              if (val === null || val === undefined || val === '') return true; // Cho phép xóa
+              if (typeof val === 'number') return !isNaN(val) && isFinite(val);
+              if (typeof val === 'string') {
+                const trimmed = val.trim();
+                // Nếu kết thúc bằng dấu chấm và chỉ có 1 dấu chấm, có thể đang nhập dở
+                // Nhưng vẫn tính để hiển thị tạm thời
+                if (trimmed === '.' || trimmed === '-') return false;
+                const parsed = parseFloat(trimmed);
+                return !isNaN(parsed) && isFinite(parsed);
+              }
+              return false;
+            };
+            
+            // Parse giá trị mới nhập (xử lý trường hợp "7." -> 7)
+            const parsedNewValue = parseValue(newValue);
+            
+            // Tính lại tỷ lệ cho loại 7: 100 - tổng tỷ lệ các hàng khác
+            const currentRows = this.rows();
+            const currentLoai7Row = currentRows.find(r => r.loaiQuang === 7);
+            
+            if (currentLoai7Row) {
+              // Tính tổng: dùng giá trị parsed cho hàng vừa thay đổi, value cho các hàng khác
+              const totalOtherRows = currentRows
+                .filter(r => r.loaiQuang !== 7)
+                .reduce((sum, r) => {
+                  // Nếu là hàng vừa thay đổi, dùng giá trị parsed (để xử lý trường hợp "7." -> 7)
+                  // Nếu không, dùng value hiện tại và parse
+                  const value = r === row ? parsedNewValue : r.ratioCtrl.value;
+                  const numValue = parseValue(value);
+                  // Đảm bảo numValue là number, không phải string
+                  const finalValue = typeof numValue === 'number' ? numValue : 0;
+                  // Đảm bảo sum là number trước khi cộng
+                  const currentSum = typeof sum === 'number' ? sum : 0;
+                  return currentSum + finalValue;
+                }, 0);
+              
+              // Đảm bảo totalOtherRows là number
+              const totalOtherRowsNum = typeof totalOtherRows === 'number' ? totalOtherRows : 0;
+              
+              const newRatio = Math.max(0, 100 - totalOtherRowsNum);
+              // Đảm bảo giá trị là number và làm tròn để tránh floating point issues
+              const roundedRatio = typeof newRatio === 'number' ? Math.round(newRatio * 100) / 100 : 0;
+              
+              // Đảm bảo giá trị là number hợp lệ trước khi set
+              if (typeof roundedRatio === 'number' && !isNaN(roundedRatio) && isFinite(roundedRatio)) {
+                // Chỉ set nếu giá trị khác với giá trị hiện tại (tránh trigger không cần thiết)
+                const currentValue = currentLoai7Row.ratioCtrl.value;
+                const currentValueNum = typeof currentValue === 'number' ? currentValue : parseFloat(String(currentValue)) || 0;
+                
+                if (Math.abs(currentValueNum - roundedRatio) > 0.001) {
+                  // Đảm bảo setValue với number, không phải string
+                  currentLoai7Row.ratioCtrl.setValue(Number(roundedRatio), { emitEvent: false });
+                }
+              }
+            }
+          });
+      }
+    });
+
+    // Set initial value for loai7
+    const totalOtherRows = rows
+      .filter(r => r.loaiQuang !== 7)
+      .reduce((sum, r) => sum + (r.ratioCtrl.value ?? 0), 0);
+    const initialRatio = Math.max(0, 100 - totalOtherRows);
+    loai7Row.ratioCtrl.setValue(initialRatio, { emitEvent: false });
+  }
+
 }

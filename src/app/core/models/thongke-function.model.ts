@@ -18,6 +18,7 @@ export interface ThongKeFunctionUpsertModel {
   isActive: boolean;
   highlightClass?: string;
   isAutoCalculated: boolean;
+  nguoi_Tao?: string | null;
 }
 
 export interface PlanResultModel {

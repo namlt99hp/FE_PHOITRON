@@ -34,28 +34,28 @@ export class ThongKeFunctionService {
     );
   }
 
-  createFunction(model: ThongKeFunctionUpsertModel): Observable<ThongKeFunctionModel> {
-    return this.http.post<any>(`${this.apiUrl}/Upsert`, { 
-      ...model, 
-      ID: null,
-      IsAutoCalculated: model.isAutoCalculated ?? true
-    }).pipe(
-      map(response => response.data)
-    );
-  }
+  // createFunction(model: ThongKeFunctionUpsertModel): Observable<ThongKeFunctionModel> {
+  //   return this.http.post<any>(`${this.apiUrl}/Upsert`, { 
+  //     ...model, 
+  //     ID: null,
+  //     IsAutoCalculated: model.isAutoCalculated ?? true
+  //   }).pipe(
+  //     map(response => response.data)
+  //   );
+  // }
 
-  updateFunction(id: number, model: ThongKeFunctionUpsertModel): Observable<ThongKeFunctionModel> {
-    return this.http.post<any>(`${this.apiUrl}/Upsert`, { 
-      ...model, 
-      ID: id,
-      IsAutoCalculated: model.isAutoCalculated ?? true
-    }).pipe(
-      map(response => response.data)
-    );
-  }
+  // updateFunction(id: number, model: ThongKeFunctionUpsertModel): Observable<ThongKeFunctionModel> {
+  //   return this.http.post<any>(`${this.apiUrl}/Upsert`, { 
+  //     ...model, 
+  //     ID: id,
+  //     IsAutoCalculated: model.isAutoCalculated ?? true
+  //   }).pipe(
+  //     map(response => response.data)
+  //   );
+  // }
 
-  deleteFunction(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/Delete/${id}`);
+  deleteFunction(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/Delete/${id}`);
   }
 
   // Plan Results Management

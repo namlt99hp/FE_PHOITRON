@@ -1,5 +1,4 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Component, inject, ViewChild } from '@angular/core';
 import { TableCommonComponent } from '../../shared/components/table-common/table-common.component';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,22 +11,24 @@ import { Observable } from 'rxjs';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { GangFormDialogComponent } from './gang-form-dialog/gang-form-dialog.component';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { tap, map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-gang',
   standalone: true,
-  imports: [CommonModule, HttpClientModule, TableCommonComponent, MatButtonModule, MatIconModule, MatDialogModule, GangFormDialogComponent],
+  imports: [CommonModule, TableCommonComponent, MatButtonModule, MatIconModule, MatDialogModule, GangFormDialogComponent],
   templateUrl: './gang.component.html',
   styleUrl: './gang.component.scss'
 })
 export class GangComponent {
-  private http = inject(HttpClient);
   private dialog = inject(MatDialog);
   private quangService = inject(QuangService);
+  private confirmDialogService = inject(ConfirmDialogService);
+  private snack = inject(MatSnackBar);
   vnTime = inject(VnTimePipe);
   @ViewChild(TableCommonComponent)
   table!: TableCommonComponent<GangTableModel>;
-  private confirmDialogService = inject(ConfirmDialogService);
   // Cấu hình cột
   readonly columns: TableColumn<GangTableModel>[] = [
     { key: 'id', header: 'ID', width: '90px', sortable: true, align: 'start' },
@@ -50,8 +51,23 @@ export class GangComponent {
       isGangTarget: true, // Chỉ hiển thị gang đích (ID_Quang_Gang = null), không hiển thị gang kết quả
     }) as unknown as Observable<TableResult<GangTableModel>>;
 
-  deleteHandler = (row: GangTableModel) =>
-    this.http.delete<void>(`/api/users/${row.id}`);
+  deleteHandler = (row: GangTableModel): Observable<void> =>
+    this.quangService.deleteGangDich(row.id).pipe(
+      tap((res) => {
+        if (res && res.success) {
+          this.snack.open('Xóa gang đích và tất cả dữ liệu liên quan thành công', 'Đóng', {
+            duration: 3000,
+            panelClass: ['snack-success']
+          });
+        } else {
+          this.snack.open(res?.message || 'Xóa gang đích thất bại', 'Đóng', {
+            duration: 2000,
+            panelClass: ['snack-error']
+          });
+        }
+      }),
+      map(() => void 0)
+    );
 
   onEdit(row: GangTableModel) {
     this.dialog
@@ -85,7 +101,22 @@ export class GangComponent {
         data: { id: null },
       })
       .afterClosed()
-      .subscribe((res) => { 
+      .subscribe((res) => {
+        if (res) {
+          this.table?.refresh();
+        }
+      });
+  }
+
+  onClone(row: GangTableModel) {
+    this.dialog
+      .open(GangFormDialogComponent, {
+        width: '1200px',
+        disableClose: true,
+        data: { id: null, cloneFromId: row.id, cloneWithPlans: true }, // Thêm flag để clone tất cả phương án
+      })
+      .afterClosed()
+      .subscribe((res) => {
         if (res) {
           this.table?.refresh();
         }
@@ -94,8 +125,8 @@ export class GangComponent {
 
   confirmDelete = (row: GangTableModel) =>
     this.confirmDialogService.open({
-      title: 'Xác nhận xoá',
-      message: `Bạn có chắc muốn xoá <b>${(row as any).tenQuang}</b>?`,
+      title: 'Xác nhận xoá gang đích',
+      message: `Bạn có chắc muốn xoá gang đích <b>${(row as any).tenQuang}</b>?<br><br><small class="text-warn">Lưu ý: Hành động này sẽ xóa tất cả phương án, template config, xỉ liên quan và gang đích này. Không thể hoàn tác!</small>`,
       confirmText: 'Xoá',
       cancelText: 'Huỷ',
       confirmColor: 'warn',

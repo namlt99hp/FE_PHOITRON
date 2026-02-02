@@ -6,6 +6,7 @@ export interface TPHHTableModel{
     thu_Tu?: number | null;
     ghi_Chu?: string | null;
     ngay_Tao?: string;
+    nguoi_Tao?: number | null;
     da_Xoa?: boolean;
 }
 
@@ -15,6 +16,7 @@ export interface TPHHCreateDto{
     don_Vi?: string | null;
     thu_Tu?: number | null;
     ghi_Chu?: string | null;
+    nguoi_Tao?: number | null;
 }
 
 export interface TPHHUpdateDto extends TPHHCreateDto{

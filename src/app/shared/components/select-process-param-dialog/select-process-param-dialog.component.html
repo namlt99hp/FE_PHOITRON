@@ -1,6 +1,6 @@
-<h2 mat-dialog-title>Cấu hình Tham số Quy trình</h2>
+<h2 mat-dialog-title>{{ templateMode ? 'Chọn tham số lò cao' : 'Cấu hình Tham số Quy trình' }}</h2>
 <div mat-dialog-content>
-  <div class="plan-info" *ngIf="data.planName">
+  <div class="plan-info" *ngIf="!templateMode && data.planName">
     <mat-card>
       <mat-card-content>
         <strong>Phương án:</strong> {{ data.planName }}<br>
@@ -98,7 +98,7 @@
 <div mat-dialog-actions align="end">
   <button mat-button (click)="cancel()">Hủy</button>
   <button mat-flat-button color="primary" (click)="confirm()" [disabled]="selectedParams.length === 0">
-    Lưu cấu hình
+    {{ confirmButtonLabel }}
   </button>
 </div>
 

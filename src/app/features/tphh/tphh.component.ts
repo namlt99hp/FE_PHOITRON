@@ -51,8 +51,8 @@ export class TphhComponent {
   // Cấu hình cột
   readonly columns: TableColumn<TPHHTableModel>[] = [
     { key: 'id', header: 'ID', width: '90px', sortable: true, align: 'start' },
-    { key: 'ma_TPHH', header: 'Mã hóa học', sortable: true, align: 'start' },
     { key: 'ten_TPHH', header: 'Tên hóa học', sortable: true },
+    { key: 'ma_TPHH', header: 'Mã hóa học', sortable: true, align: 'start' },
     { key: 'ghi_Chu', header: 'Ghi chú', sortable: false, align: 'start' },
     {
       key: 'ngay_Tao',

@@ -28,19 +28,21 @@
       </div>
       <div class="info-row">
         <div class="info-item">
-          <span class="info-label">Mã công thức:</span>
-          <span class="info-value">{{
-            maCongThucCtrl.value || "Chưa nhập mã quặng"
-          }}</span>
-        </div>
-        <div class="info-item">
           <span class="info-label">Tên công thức:</span>
           <span class="info-value">{{
             tenCongThucCtrl.value || "Chưa nhập tên quặng"
           }}</span>
         </div>
         <div class="info-item">
-          <!-- Empty space for alignment -->
+          <span class="info-label">Mã công thức:</span>
+          <span class="info-value">{{
+            maCongThucCtrl.value || "Chưa nhập mã quặng"
+          }}</span>
+        </div>
+
+        <div class="info-item">
+          <span class="info-label">Loại quặng thành phẩm:</span>
+          <span class="info-value">{{ outputLoaiQuangLabel }}</span>
         </div>
       </div>
     </div>
@@ -57,33 +59,33 @@
           : 'repeat(3, 1fr)'
       }"
     >
+    <mat-form-field appearance="outline" class="dialog-input">
+      <mat-label>Tên quặng</mat-label>
+      <input
+        matInput
+        [formControl]="oreForm.controls.TenQuang"
+        placeholder="VD: Quặng phối {{ data?.planName || '' }}"
+      />
+    </mat-form-field>
       <mat-form-field appearance="outline" class="dialog-input">
         <mat-label>Mã quặng</mat-label>
         <input
           matInput
           [formControl]="oreForm.controls.MaQuang"
-          placeholder="VD: {{
-            (data?.maGang || 'GANG') + '-' + (data?.planName || 'PA')
-          }}"
+          [readonly]="true"
+          placeholder="Tự động tạo từ tên quặng"
         />
       </mat-form-field>
-      <mat-form-field appearance="outline" class="dialog-input">
-        <mat-label>Tên quặng</mat-label>
-        <input
-          matInput
-          [formControl]="oreForm.controls.TenQuang"
-          placeholder="VD: Quặng phối {{ data?.planName || '' }}"
-        />
-      </mat-form-field>
+      
       <ng-container *ngIf="data?.planId; else noMilestone">
         <mat-form-field appearance="outline" class="dialog-input">
-          <mat-label>Milestone</mat-label>
+          <mat-label>Công đoạn</mat-label>
           <mat-select
             [value]="milestone()"
             (selectionChange)="milestone.set($event.value)"
           >
             <mat-option [value]="MilestoneEnum.Standard"
-              >--- Chọn Milestone ---</mat-option
+              >--- Chọn Công đoạn ---</mat-option
             >
             <mat-option [value]="MilestoneEnum.ThieuKet">Thiêu kết</mat-option>
             <mat-option [value]="MilestoneEnum.LoCao">Lò cao</mat-option>
@@ -142,7 +144,7 @@
           <tr>
             <th class="stub">Ràng buộc</th>
             <th
-              *ngFor="let c of selectedChems(); trackBy: trackChem"
+              *ngFor="let c of displayedChems(); trackBy: trackChem"
               class="chem-col"
             >
               <div class="th-wrap">
@@ -164,7 +166,7 @@
         <tbody>
           <tr>
             <th class="stub">Min (%)</th>
-            <td *ngFor="let c of selectedChems(); trackBy: trackChem">
+            <td *ngFor="let c of displayedChems(); trackBy: trackChem">
               <input
                 type="number"
                 min="0"
@@ -177,7 +179,7 @@
 
           <tr>
             <th class="stub">Max (%)</th>
-            <td *ngFor="let c of selectedChems(); trackBy: trackChem">
+            <td *ngFor="let c of displayedChems(); trackBy: trackChem">
               <input
                 type="number"
                 min="0"
@@ -194,7 +196,6 @@
 
   <!-- Chọn quặng & Bảng phối -->
   <section class="section">
-    
     <div class="section-table-tmp">
       @switch (milestone()) { @case (MilestoneEnum.LoCao) {
       <app-mix-quang-locao-section
@@ -242,16 +243,7 @@
             >
               Thông tin phối
             </th>
-            <th
-              class="group"
-              [attr.colspan]="
-                milestone() === MilestoneEnum.ThieuKet
-                  ? displayedColumns().length - 3
-                  : milestone() === MilestoneEnum.LoCao
-                  ? displayedColumns().length - 3
-                  : displayedColumns().length - 11
-              "
-            >
+            <th class="group" [attr.colspan]="milestone() === MilestoneEnum.LoCao ? displayedColumns().length - 4 : displayedColumns().length - 3">
               Các thành phần hóa học
             </th>
           </tr>
@@ -284,7 +276,7 @@
             <th *ngIf="milestone() === MilestoneEnum.LoCao" class="kl-nhan-col">
               KL nhận
             </th>
-            <th *ngFor="let c of selectedChems()">{{ c.ma_TPHH }}</th>
+            <th *ngFor="let c of displayedChems()">{{ c.ma_TPHH }}</th>
           </tr>
         </thead>
 
@@ -292,7 +284,7 @@
           <!-- Hàng quặng nguồn -->
           <tr
             *ngFor="let r of rows(); let i = index"
-            [class.mixed-ore-row]="r.loaiQuang === 1"
+            [class.mixed-ore-row]="r.loaiQuang === 7"
           >
             <th class="stub">
               <div class="ore-cell">
@@ -313,10 +305,14 @@
 
             <!-- tỷ lệ phối -->
             <td class="ratio-cell">
+              <span
+                *ngIf="r.loaiQuang === 7"
+                class="calculated-value text-center"
+              >{{ getRatioForLoai7() }}</span>
               <input
-                type="number"
-                min="0"
-                step="0.01"
+                *ngIf="r.loaiQuang !== 7"
+                type="text"
+                inputmode="decimal"
                 class="cell-input text-center"
                 [formControl]="r.ratioCtrl"
               />
@@ -327,9 +323,7 @@
               *ngIf="milestone() === MilestoneEnum.ThieuKet"
               class="thieu-ket-cell text-right"
             >
-              <span *ngIf="getThieuKetKhauHaoValue(r) !== 0">{{
-                getThieuKetKhauHaoValue(r) | number : "1.2-2"
-              }}</span>
+              <span *ngIf="getThieuKetKhauHaoValue(r) !== 0">{{ getThieuKetKhauHaoValue(r) | number:'1.2-2' }}</span>
             </td>
 
             <!-- Thiêu kết: Tỷ lệ khấu hao (%) -->
@@ -337,9 +331,7 @@
               *ngIf="milestone() === MilestoneEnum.ThieuKet"
               class="percentage-cell text-right"
             >
-              <span *ngIf="getThieuKetKhauHaoPercentage(r) !== 0">{{
-                getThieuKetKhauHaoPercentage(r) | number : "1.3-3"
-              }}</span>
+              <span *ngIf="getThieuKetKhauHaoPercentage(r) !== 0">{{ getThieuKetKhauHaoPercentage(r) | number:'1.3-3' }}</span>
             </td>
 
             <!-- Lò cao: KL vào lò -->
@@ -352,13 +344,11 @@
                   isLocaoKlVaoLoCalculated(r) && getLocaoKlVaoLoValue(r) !== 0
                 "
                 class="calculated-value"
-                >{{ getLocaoKlVaoLoValue(r) | number : "1.2-2" }}</span
-              >
+              >{{ getLocaoKlVaoLoValue(r) | number:'1.2-2' }}</span>
               <input
                 *ngIf="!isLocaoKlVaoLoCalculated(r)"
-                type="number"
-                min="0"
-                step="0.01"
+                type="text"
+                inputmode="decimal"
                 class="cell-input text-center"
                 [formControl]="r.klVaoLoCtrl"
                 hideZeroInput
@@ -372,10 +362,8 @@
             >
               <input
                 *ngIf="r.loaiQuang !== 3"
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
+                type="text"
+                inputmode="decimal"
                 class="cell-input text-center"
                 [formControl]="r.tyLeHoiQuangCtrl"
                 placeholder="%"
@@ -387,19 +375,18 @@
               *ngIf="milestone() === MilestoneEnum.LoCao"
               class="kl-nhan-cell"
             >
-              <span class="calculated-value text-center">{{
-                r.klNhanCtrl.value | number : "1.2-2"
-              }}</span>
+              <span 
+                class="calculated-value text-center"
+              >{{ r.klNhanCtrl.value | number:'1.2-2' }}</span>
             </td>
 
             <!-- các thành phần hoá học -->
-            <td *ngFor="let c of selectedChems()">
+            <td *ngFor="let c of displayedChems()">
               <input
                 type="number"
                 step="0.001"
                 class="cell-input text-right"
                 [formControl]="getChemCtrl(r, c.id)"
-                hideZeroInput
               />
             </td>
           </tr>
@@ -407,41 +394,39 @@
           <!-- Dòng tổng & kết quả sau tính -->
           <tr *ngIf="milestone() !== MilestoneEnum.ThieuKet" class="result-row">
             <th class="stub">Tổng</th>
-            <td class="text-center">{{ totalRatio() | number : "1.0-1" }}%</td>
+            <td class="text-center">{{ totalRatio() | number:'1.0-1' }}%</td>
             <td
               *ngIf="milestone() === MilestoneEnum.ThieuKet"
               class="text-right"
             >
-              {{ getTotalThieuKetKhauHao() | number : "1.2-2" }}
+              {{ getTotalThieuKetKhauHao() | number:'1.2-2' }}
             </td>
             <td
               *ngIf="milestone() === MilestoneEnum.ThieuKet"
               class="text-right"
             >
-              {{ getTotalThieuKetKhauHaoPercentage() | number : "1.3-3" }}
+              {{ getTotalThieuKetKhauHaoPercentage() | number:'1.3-3' }}
             </td>
             <!-- Các cột tổng cho milestone Lò Cao -->
             <td *ngIf="milestone() === MilestoneEnum.LoCao" class="text-right">
-              {{ getTotalLocaoKlVaoLo() | number : "1.2-2" }}
+              {{ getTotalLocaoKlVaoLo() | number:'1.2-2' }}
             </td>
             <td *ngIf="milestone() === MilestoneEnum.LoCao" class="text-right">
-              {{ getTotalLocaoTyLeHoiQuang() | number : "1.2-2" }}%
+              {{ getTotalLocaoTyLeHoiQuang() | number:'1.2-2' }}%
             </td>
             <td *ngIf="milestone() === MilestoneEnum.LoCao" class="text-right">
-              {{ getTotalLocaoKlNhan() | number : "1.2-2" }}
+              {{ getTotalLocaoKlNhan() | number:'1.2-2' }}
             </td>
             <td
-              *ngFor="let c of selectedChems()"
+              *ngFor="let c of displayedChems()"
               class="text-right"
               [class.out-range]="isOutOfRange(c.id)"
             >
               <span
                 *ngIf="milestone() === MilestoneEnum.LoCao; else defaultTotal"
-              >
-                {{ getChemTotalBySumProduct(c.id) | number : "1.2-2" }}
-              </span>
+              >{{ getChemTotalBySumProduct(c.id) | number:'1.2-2' }}</span>
               <ng-template #defaultTotal>
-                {{ resultRow()[c.id] | number : "1.0-2" }}
+                {{ resultRow()[c.id] | number:'1.0-2' }}
               </ng-template>
             </td>
           </tr>
@@ -457,9 +442,7 @@
               {{ getTotalThieuKetKhauHaoPercentage() | number : "1.3-3" }}
             </td>
             <td *ngFor="let c of selectedChems()" class="text-right">
-              <span *ngIf="!shouldHideInResult1(c.id)">
-                {{ getThieuKetRow1Value(c.id) | number : "1.2-2" }}
-              </span>
+              <span *ngIf="!shouldHideInResult1(c.id)">{{ getThieuKetRow1Value(c.id) | number:'1.2-2' }}</span>
               <span *ngIf="shouldHideInResult1(c.id)"><strong>R2</strong></span>
             </td>
           </tr>
@@ -471,16 +454,12 @@
             <td class="text-right">-</td>
             <td class="text-right">-</td>
             <td
-              *ngFor="let c of selectedChems()"
+              *ngFor="let c of displayedChems()"
               class="text-right"
               [class.out-range]="isOutOfRange(c.id)"
             >
-              <span *ngIf="c.ma_TPHH === 'MKN'">
-                {{ getThieuKetCaOSiO2Ratio() | number : "1.3-3" }}
-              </span>
-              <span *ngIf="c.ma_TPHH !== 'MKN'">
-                {{ getThieuKetRow2Value(c.id) | number : "1.3-3" }}
-              </span>
+              <span *ngIf="c.ma_TPHH === 'MKN'">{{ getThieuKetCaOSiO2Ratio() | number:'1.3-3' }}</span>
+              <span *ngIf="c.ma_TPHH !== 'MKN'">{{ getThieuKetRow2Value(c.id) | number:'1.3-3' }}</span>
             </td>
           </tr>
         </tbody>
@@ -523,24 +502,24 @@
           <tr
             *ngFor="let i of getCostTableItems()"
             [class.parent-ore]="i.isParent"
+            [class.loai-7]="i.loaiQuang === 7"
           >
             <td class="stub">{{ i.ten }}</td>
-            <td class="text-right">{{ i.consumption | number : "1.3-3" }}</td>
-            <td class="text-right">{{ i.unitVnd | number : "1.2-2" }}</td>
-            <td class="text-right">{{ i.unitUsd | number : "1.2-2" }}</td>
+            <td class="text-right">{{ i.consumption | number:'1.3-3' }}</td>
+            <td class="text-right">{{ i.unitVnd | number:'1.2-2' }}</td>
+            <td class="text-right">{{ i.unitUsd | number:'1.2-2' }}</td>
           </tr>
           <!-- Dòng chi phí khác -->
           <tr class="other-cost-row">
             <td class="stub">Chi phí khác</td>
-            <td class="text-right">-</td>
+            <td class="text-right">1</td>
             <td class="text-right">
               <input
-                type="number"
+                type="text"
+                inputmode="decimal"
                 class="cost-input"
                 [(ngModel)]="otherCost"
                 (ngModelChange)="onOtherCostChange()"
-                step="0.01"
-                min="0"
                 placeholder="0.00"
               />
             </td>
@@ -582,7 +561,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let r of rows()">
+          <tr *ngFor="let r of rows()" [class.loai-7]="r.loaiQuang === 7">
             <td class="stub">{{ r.tenQuang }}</td>
             <td class="text-right">
               {{ getLoCaoConsumption(r) | number : "1.3-3" }}
@@ -597,15 +576,14 @@
           <!-- Dòng chi phí sản xuất khác (nhập tay) -->
           <tr class="other-cost-row">
             <td class="stub">Chi phí sản xuất gang lỏng</td>
-            <td class="text-right">-</td>
+            <td class="text-right">1</td>
             <td class="text-right">
               <input
-                type="number"
+                type="text"
+                inputmode="decimal"
                 class="cost-input"
                 [(ngModel)]="otherCostLoCao"
                 (ngModelChange)="onOtherCostLocaoChange()"
-                step="0.01"
-                min="0"
                 placeholder="0.00"
               />
             </td>
@@ -619,17 +597,14 @@
             </td>
             <td class="text-right">
               <input
-                type="number"
+                type="text"
+                inputmode="decimal"
                 class="cost-input"
-                step="0.01"
-                min="0"
                 [(ngModel)]="recycleCostVnd"
                 placeholder="0.00"
               />
             </td>
-            <td class="text-right">
-
-            </td>
+            <td class="text-right"></td>
           </tr>
           <!-- Dòng tổng -->
           <tr class="total-row">

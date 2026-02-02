@@ -1,0 +1,117 @@
+:host {
+  .topbar {
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 8px 16px;
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    z-index: 100;
+  }
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  flex-shrink: 0;
+  padding-right: 8px;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #0f172a;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+.avatar-button {
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  flex-shrink: 0;
+  
+  &:hover {
+    border-color: rgba(27, 95, 214, 0.3);
+    transform: scale(1.05);
+  }
+  
+  &:focus {
+    border-color: #1b5fd6;
+    outline: none;
+  }
+  
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  display: block;
+}
+
+::ng-deep .mat-mdc-menu-panel {
+  min-width: 240px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  margin-top: 8px;
+  
+  .mat-mdc-menu-item {
+    padding: 12px 16px;
+    min-height: 48px;
+    
+    .mat-icon {
+      margin-right: 12px;
+      width: 20px;
+      height: 20px;
+    }
+    
+    span {
+      font-size: 14px;
+    }
+    
+    &.text-danger {
+      color: #dc3545;
+      
+      &:hover {
+        background-color: rgba(220, 53, 69, 0.08);
+      }
+    }
+    
+    &:hover:not(.text-danger) {
+      background-color: rgba(27, 95, 214, 0.06);
+    }
+  }
+  
+  .border-bottom {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+    
+    .fw-semibold {
+      font-size: 15px;
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+    
+    .text-muted.small {
+      font-size: 12px;
+      color: #64748b;
+    }
+  }
+}

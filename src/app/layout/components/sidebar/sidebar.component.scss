@@ -33,13 +33,26 @@
     transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur);
     padding-bottom: 1rem !important;
     padding-top: 1rem !important;
-    i{ font-size: 1.1rem; }    /* icon size default */
-    .label{ font-size: 14px; }
+    i{ 
+      font-size: 1.1rem; 
+      width: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--c-muted);
+      transition: color var(--dur) var(--ease);
+    }
+    .label{ 
+      font-size: 14px; 
+      font-weight: 500;
+      transition: color var(--dur) var(--ease);
+    }
 
     /* HOVER rõ ràng */
     &:hover{
       background: var(--c-hover);
       color: var(--c-accent);
+      i{ color: var(--c-accent); }
       .caret{ color: var(--c-accent); }
     }
 
@@ -49,6 +62,8 @@
       color: var(--c-accent);
       font-weight: 600;
       box-shadow: inset 3px 0 0 var(--c-accent); /* vạch trái */
+      i{ color: var(--c-accent); }
+      .label{ font-weight: 600; }
       .caret{ color: var(--c-accent); }
     }
   }
@@ -60,24 +75,22 @@
   }
 
   /* submenu mượt + thụt vào */
-  .submenu{
-    margin-left: .5rem; padding-left: .75rem;
-    border-left: 1px dashed var(--c-border);
-    overflow: hidden; max-height: 0; opacity: 0;
-    transition: max-height 280ms var(--ease), opacity 180ms var(--ease);
-    &.open{ max-height: 1200px; opacity: 1; }
+    .submenu{ 
+      margin-left: .5rem; padding-left: .75rem;
+      border-left: 1px dashed var(--c-border);
+      overflow: hidden; max-height: 0; opacity: 0;
+      transition: max-height 280ms var(--ease), opacity 180ms var(--ease);
+      &.open{ max-height: 1200px; opacity: 1; }
 
-    .nav-link i{ font-size: 1rem; }   /* icon nhỏ hơn ở cấp sâu */
-    .nav-link .label{ font-size: 13px; }
-  }
+      .nav-link i{ 
+        font-size: 1rem;   /* icon nhỏ hơn ở cấp sâu */
+        width: 1.1rem;
+      }
+      .nav-link .label{ font-size: 13px; }
+    }
 
-  /* LEAF có chấm tròn gợi ý cấp */
-  .leaf{ position: relative; padding-left: 1.25rem !important; }
-  .leaf .label::before{
-    content: ""; position: absolute; left: .75rem; top: 50%;
-    transform: translateY(-50%); width: 4px; height: 4px; border-radius: 50%;
-    background: var(--c-muted);
-  }
+  /* LEAF - bỏ dot, chỉ giữ padding */
+  .leaf{ position: relative; padding-left: 0.75rem !important; }
 
   /* trạng thái THU GỌN: chỉ 1 cột icon to, căn giữa */
   &.collapsed{

@@ -93,14 +93,7 @@
               <td class="center">{{ r.donVi }}</td>
               <td class="right">
                 <ng-container *ngIf="r.isAutoCalculated; else manualInput">
-                  <ng-container [ngSwitch]="r.donVi">
-                    <span *ngSwitchCase="'tấn/ngày'">{{ (statsForm.get(getResultKey(r))?.value) | number:'1.3-3' }}</span>
-                    <span *ngSwitchCase="'kg/tsp'">{{ (statsForm.get(getResultKey(r))?.value) | number:'1.2-2' }}</span>
-                    <span *ngSwitchCase="'g/tsp'">{{ (statsForm.get(getResultKey(r))?.value) | number:'1.0-0' }}</span>
-                    <span *ngSwitchCase="'%'">{{ (statsForm.get(getResultKey(r))?.value) | number:'1.2-2' }}</span>
-                    <span *ngSwitchCase="'Độ C'">{{ (statsForm.get(getResultKey(r))?.value) | number:'1.0-0' }}</span>
-                    <span *ngSwitchDefault>{{ statsForm.get(getResultKey(r))?.value }}</span>
-                  </ng-container>
+                  {{ (statsForm.get(getResultKey(r))?.value) | number:'1.0-4' }}
                 </ng-container>
                 <ng-template #manualInput>
                   <input type="text" inputmode="decimal" pattern="^\\d*(\\.\\d*)?$" class="percent-input" [formControlName]="getResultKey(r)" (input)="computeAndUpdateStatistics()" />

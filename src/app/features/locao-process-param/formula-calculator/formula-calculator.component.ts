@@ -234,11 +234,8 @@ export class FormulaCalculatorComponent implements OnInit {
     // Update calculation mode based on checkbox
     this.calculationMode = event.checked ? 'formula' : 'manual';
     
-    // When switching to manual, clear formula
-    if (this.calculationMode === 'manual') {
-      this.currentDisplayFormula = '';
-      this.currentIdFormula = '';
-    }
+    // Không xóa công thức khi chuyển đổi mode, giữ lại để người dùng có thể quay lại
+    // Chỉ thay đổi mode tính toán, không clear formula
   }
 
   addGangComponentReference(item: GangComposition): void {

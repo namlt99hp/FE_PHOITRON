@@ -1068,26 +1068,26 @@ export class PhoiGangCompareComponent {
     });
 
     // 6. SO SÁNH GIÁ THÀNH Section
-    data.push({
-      name: '6. SO SÁNH GIÁ THÀNH',
-      unit: null,
-      isSectionHeader: true,
-      isBold: true,
-      isYellow: false,
-      backgroundColor: '#E6F3FF',
-      values: {},
-    });
+    // data.push({
+    //   name: '6. SO SÁNH GIÁ THÀNH',
+    //   unit: null,
+    //   isSectionHeader: true,
+    //   isBold: true,
+    //   isYellow: false,
+    //   backgroundColor: '#E6F3FF',
+    //   values: {},
+    // });
 
-    data.push({
-      name: 'Chênh lệch so với PA0',
-      unit: 'VND/tấn',
-      isSectionHeader: false,
-      isBold: false,
-      isYellow: false,
-      values: { PA0: 0, 'PA1-5% AC+ BRBF': -200000 } as {
-        [planId: string]: number;
-      },
-    });
+    // data.push({
+    //   name: 'Chênh lệch so với PA0',
+    //   unit: 'VND/tấn',
+    //   isSectionHeader: false,
+    //   isBold: false,
+    //   isYellow: false,
+    //   values: { PA0: 0, 'PA1-5% AC+ BRBF': -200000 } as {
+    //     [planId: string]: number;
+    //   },
+    // });
 
     this.excelData.set(data);
   }
@@ -1249,10 +1249,25 @@ export class PhoiGangCompareComponent {
       values[planName] = null;
     });
 
-    // TODO: Implement calculation logic
-    // For now, return placeholder data
+    // Tính theo công thức: SUM(tiLePhanTram của các quặng có loại quặng = 5 trong loCao section) x 1% x lC_SAN_LUONG_GANG / 10%
     planSectionsData.forEach((plan) => {
-      values[plan.ten_Phuong_An] = 0; // Placeholder
+      const planName = plan.ten_Phuong_An;
+      const loCao = plan.loCao;
+      
+      if (!loCao || !loCao.components || loCao.lC_SAN_LUONG_GANG == null) {
+        return;
+      }
+
+      // Lọc các quặng có loại quặng = 5 (Quặng sống) và tính tổng tiLePhanTram
+      const componentsWithLoai5 = loCao.components.filter((component) => {
+        return component.loaiQuang === 5;
+      });
+
+      const sumTiLePhanTram = componentsWithLoai5.reduce((sum, comp) => sum + (comp.tiLePhanTram || 0), 0);
+
+      // Công thức: SUM x 1% x lC_SAN_LUONG_GANG / 10%
+      const result = (sumTiLePhanTram / 100 * 0.01 * loCao.lC_SAN_LUONG_GANG) / 0.1;
+      values[planName] = Math.round(result * 100) / 100;
     });
 
     return values;
@@ -1320,14 +1335,35 @@ export class PhoiGangCompareComponent {
     return values;
   }
 
+  // hàm đang chưa tính chuẩn
   private calculateCokeTangDoQuangSong(planSectionsData: PlanSectionDto[]): {
     [planName: string]: number | string | null;
   } {
     const values: { [planName: string]: number | string | null } = {};
     this.planColumns().forEach((p) => (values[p] = null));
+    planSectionsData.forEach((plan) => {
+      const planName = plan.ten_Phuong_An;
+      const loCao = plan.loCao;
+      
+      if (!loCao || !loCao.components || loCao.lC_COKE_25_80 == null) {
+        return;
+      }
+
+      let sumTiLePhanTram = 0;
+      const componentsWithLoai5 = loCao.components.filter((component) => {
+        return component.loaiQuang === 5;
+      });
+
+      sumTiLePhanTram = componentsWithLoai5.reduce((sum, comp) => sum + (comp.tiLePhanTram || 0), 0);
+      // Công thức: SUM x 2% x lC_COKE_25_80 / 10% x 0
+      const result = (sumTiLePhanTram / 100 * 0.02 * loCao.lC_COKE_25_80 / 0.1) * 0;
+      values[planName] = Math.round(result * 100) / 100;
+    });
+
     return values;
   }
 
+// hàm đang chưa tính chuẩn 
   private calculateCokeTangDoTangNhietXi(planSectionsData: PlanSectionDto[]): {
     [planName: string]: number | string | null;
   } {

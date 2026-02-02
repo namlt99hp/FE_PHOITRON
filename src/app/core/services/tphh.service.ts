@@ -10,11 +10,13 @@ import {
 import { TPHHCreateDto, TPHHSelectItemModel, TPHHTableModel, TPHHUpdateDto, TPHHUpsertDto } from '../models/tphh.model';
 import { ApiResponse, HttpResponseModel } from '../models/http-response.model';
 import { map } from 'rxjs/operators';
+import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class ThanhPhanHoaHocService {
   baseApi = `${environment.apiBaseUrl}/TP_HoaHoc`;
   private http = inject(HttpClient);
+  private auth = inject(AuthService);
 
   search(q: TableQuery): Observable<TableResult<TPHHTableModel>> {
     const api = `${this.baseApi}/Search`;
@@ -43,21 +45,31 @@ export class ThanhPhanHoaHocService {
 
   create(dto: TPHHCreateDto): Observable<any> {
     const api = `${this.baseApi}/Create`;
-    return this.http.post<any>(api, dto);
+    const creator = this.auth.getCurrentUserId();
+    const payload = { ...dto, nguoi_Tao: creator } as any;
+    return this.http.post<any>(api, payload);
   }
 
   update(dto: TPHHUpdateDto): Observable<HttpResponseModel> {
     const api = `${this.baseApi}/Update`;
-    return this.http.put<HttpResponseModel>(api, dto);
+    const creator = this.auth.getCurrentUserId();
+    const payload = { ...dto, nguoi_Tao: creator } as any;
+    return this.http.put<HttpResponseModel>(api, payload);
   }
 
   upsert(dto: TPHHUpsertDto): Observable<HttpResponseModel<{ id: number }>> {
     const api = `${this.baseApi}/Upsert`;
-    return this.http.post<HttpResponseModel<{ id: number }>>(api, dto);
+    // upsert wraps create/update at BE; include creator in inner create model if present
+    const creator = this.auth.getCurrentUserId();
+    const payload = {
+      ...dto,
+      tP_HoaHoc: dto.tp_HoaHoc ? { ...dto.tp_HoaHoc, nguoi_Tao: creator } : undefined
+    } as any;
+    return this.http.post<HttpResponseModel<{ id: number }>>(api, payload);
   }
 
-  softDelete(id: number): Observable<HttpResponseModel> {
-    const api = `${this.baseApi}/SoftDelete/${id}`;
+  delete(id: number): Observable<HttpResponseModel> {
+    const api = `${this.baseApi}/Delete/${id}`;
     return this.http.delete<HttpResponseModel>(api);
   }
 
@@ -65,10 +77,7 @@ export class ThanhPhanHoaHocService {
   getDetail(id: number): Observable<TPHHTableModel> {
     return this.getById(id);
   }
-  delete(id: number): Observable<HttpResponseModel> {
-    return this.softDelete(id);
-  }
-
+  
   GetByListIds(ids: number[]): Observable<TPHHSelectItemModel[]> {
     const api = `${this.baseApi}/GetByListIds`;
     return this.http.post<TPHHSelectItemModel[]>(api, ids);

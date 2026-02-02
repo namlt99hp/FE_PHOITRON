@@ -12,11 +12,13 @@ import {
   ClonePlanRequestDto,
   CloneMilestonesRequestDto,
   CloneResponseDto,
+  CloneGangWithAllPlansRequestDto,
   CongThucPhoiDetailResponse,
   DeleteResponseDto
 } from '../models/api-models';
 import { PlanComparisonExcelResponse } from '../models/plan-comparison-excel.model';
 import { PlanThieuKetSectionDto, PlanSectionDto } from '../models/phuong-an-phoi.model';
+import { AuthService } from './auth.service';
 
 export interface PhuongAnPhoiCreateDto {
   Ten_Phuong_An: string;
@@ -26,6 +28,7 @@ export interface PhuongAnPhoiCreateDto {
   Trang_Thai?: number; // 0-2
   Muc_Tieu?: number | null;
   Ghi_Chu?: string | null;
+  CreatedBy?: number | null; // align BE
 }
 
 export interface PhuongAnPhoiUpsertDto {
@@ -37,42 +40,54 @@ export interface PhuongAnPhoiUpsertDto {
 export class PhuongAnPhoiService {
   private http = inject(HttpClient);
   private baseApi = `${environment.apiBaseUrl}/Phuong_An_Phoi`;
+  private auth = inject(AuthService);
 
   upsert(dto: PhuongAnPhoiUpsertDto): Observable<ApiResponse<{ id: number }>> {
-    return this.http.post<ApiResponse<{ id: number }>>(`${this.baseApi}/Upsert`, dto);
+    const creator = this.auth.getCurrentUserId();
+    const payload: PhuongAnPhoiUpsertDto = {
+      ...dto,
+      Phuong_An_Phoi: { ...dto.Phuong_An_Phoi, CreatedBy: creator ?? null }
+    };
+    return this.http.post<ApiResponse<{ id: number }>>(`${this.baseApi}/Upsert`, payload);
   }
 
-  softDelete(id: number): Observable<ApiResponse<DeleteResponseDto>> {
-    return this.http.delete<ApiResponse<DeleteResponseDto>>(`${this.baseApi}/SoftDelete/${id}`);
-  }
+  // softDelete(id: number): Observable<ApiResponse<DeleteResponseDto>> {
+  //   return this.http.delete<ApiResponse<DeleteResponseDto>>(`${this.baseApi}/SoftDelete/${id}`);
+  // }
 
-  delete(id: number): Observable<ApiResponse<DeleteResponseDto>> {
-    return this.http.delete<ApiResponse<DeleteResponseDto>>(`${this.baseApi}/Delete/${id}`);
-  }
+  // delete(id: number): Observable<ApiResponse<DeleteResponseDto>> {
+  //   return this.http.delete<ApiResponse<DeleteResponseDto>>(`${this.baseApi}/Delete/${id}`);
+  // }
 
   getByQuangDich(idQuangDich: number): Observable<ApiResponse<PhuongAnPhoiBasicInfo[]>> {
     return this.http.get<ApiResponse<PhuongAnPhoiBasicInfo[]>>(`${this.baseApi}/GetByQuangDich/quang-dich/${idQuangDich}`);
   }
 
-  mix(dto: MixRequestDto): Observable<ApiResponse<MixResponseDto>> {
-    return this.http.post<ApiResponse<MixResponseDto>>(`${this.baseApi}/Mix`, dto);
-  }
+  // mix(dto: MixRequestDto): Observable<ApiResponse<MixResponseDto>> {
+  //   const creator = this.auth.getCurrentUserId();
+  //   const payload = { ...dto, nguoi_Tao: creator } as any;
+  //   return this.http.post<ApiResponse<MixResponseDto>>(`${this.baseApi}/Mix`, payload);
+  // }
 
   mixWithCompleteData(dto: any): Observable<ApiResponse<MixResponseDto>> {
-    return this.http.post<ApiResponse<MixResponseDto>>(`${this.baseApi}/MixWithCompleteData`, dto);
+    const creator = this.auth.getCurrentUserId();
+    const payload = { ...dto, nguoi_Tao: creator } as any;
+    return this.http.post<ApiResponse<MixResponseDto>>(`${this.baseApi}/MixWithCompleteData`, payload);
   }
 
   mixStandalone(dto: MixRequestDto): Observable<ApiResponse<MixResponseDto>> {
-    return this.http.post<ApiResponse<MixResponseDto>>(`${this.baseApi}/MixStandalone`, dto);
+    const creator = this.auth.getCurrentUserId();
+    const payload = { ...dto, nguoi_Tao: creator } as any;
+    return this.http.post<ApiResponse<MixResponseDto>>(`${this.baseApi}/MixStandalone`, payload);
   }
 
-  getCongThucPhoiDetail(congThucPhoiId: number): Observable<ApiResponse<CongThucPhoiDetailResponse>> {
-    return this.http.get<ApiResponse<CongThucPhoiDetailResponse>>(`${this.baseApi}/GetCongThucPhoiDetail/${congThucPhoiId}`);
-  }
+  // getCongThucPhoiDetail(congThucPhoiId: number): Observable<ApiResponse<CongThucPhoiDetailResponse>> {
+  //   return this.http.get<ApiResponse<CongThucPhoiDetailResponse>>(`${this.baseApi}/GetCongThucPhoiDetail/${congThucPhoiId}`);
+  // }
 
-  getFormulasByPlan(idPhuongAn: number): Observable<ApiResponse<PhuongAnPhoiWithFormulasBasicResponse>> {
-    return this.http.get<ApiResponse<PhuongAnPhoiWithFormulasBasicResponse>>(`${this.baseApi}/GetFormulasByPlan/${idPhuongAn}`);
-  }
+  // getFormulasByPlan(idPhuongAn: number): Observable<ApiResponse<PhuongAnPhoiWithFormulasBasicResponse>> {
+  //   return this.http.get<ApiResponse<PhuongAnPhoiWithFormulasBasicResponse>>(`${this.baseApi}/GetFormulasByPlan/${idPhuongAn}`);
+  // }
 
   getFormulasByPlanWithDetails(idPhuongAn: number): Observable<ApiResponse<PhuongAnPhoiWithFormulasResponse>> {
     return this.http.get<ApiResponse<PhuongAnPhoiWithFormulasResponse>>(`${this.baseApi}/GetFormulasByPlanWithDetails/${idPhuongAn}`);
@@ -87,17 +102,21 @@ export class PhuongAnPhoiService {
     return this.http.post<ApiResponse<CloneResponseDto>>(`${this.baseApi}/ClonePlan`, dto);
   }
 
-  cloneMilestones(dto: CloneMilestonesRequestDto): Observable<ApiResponse<CloneResponseDto>> {
-    return this.http.post<ApiResponse<CloneResponseDto>>(`${this.baseApi}/CloneMilestones`, dto);
+  cloneGangWithAllPlans(dto: CloneGangWithAllPlansRequestDto): Observable<ApiResponse<{ clonedCount: number }>> {
+    return this.http.post<ApiResponse<{ clonedCount: number }>>(`${this.baseApi}/CloneGangWithAllPlans`, dto);
   }
+
+  // cloneMilestones(dto: CloneMilestonesRequestDto): Observable<ApiResponse<CloneResponseDto>> {
+  //   return this.http.post<ApiResponse<CloneResponseDto>>(`${this.baseApi}/CloneMilestones`, dto);
+  // }
 
   deletePlanWithRelatedData(planId: number): Observable<ApiResponse<object>> {
     return this.http.delete<ApiResponse<object>>(`${this.baseApi}/DeletePlanWithRelatedData/${planId}`);
   }
 
-  getPlanComparisonExcelByGangDich(gangDichId: number): Observable<ApiResponse<PlanComparisonExcelResponse>> {
-    return this.http.get<ApiResponse<PlanComparisonExcelResponse>>(`${this.baseApi}/GetPlanComparisonExcelByGangDich/${gangDichId}`);
-  }
+  // getPlanComparisonExcelByGangDich(gangDichId: number): Observable<ApiResponse<PlanComparisonExcelResponse>> {
+  //   return this.http.get<ApiResponse<PlanComparisonExcelResponse>>(`${this.baseApi}/GetPlanComparisonExcelByGangDich/${gangDichId}`);
+  // }
 
   // Combined sections for all plans under a gang target
   getPlanSectionsByGangDich(gangDichId: number, includeThieuKet: boolean = true, includeLoCao: boolean = true): Observable<ApiResponse<PlanSectionDto[]>> {

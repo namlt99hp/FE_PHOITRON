@@ -77,6 +77,7 @@ export interface QuangCreateDto {
   loai_Quang: number;
   dang_Hoat_Dong?: boolean;
   ghi_Chu?: string | null;
+  nguoi_Tao?: number | null;
 }
 
 export interface ThanhPhanQuangDto {
@@ -124,11 +125,60 @@ export interface QuangGiaDto {
   ngay_Chon_TyGia: string; // ISO
 }
 
+export interface ProcessParamTemplateItem {
+  id: number;
+  code: string;
+  ten: string;
+  donVi: string;
+  thuTu: number;
+}
+
+export interface ThongKeTemplateItem {
+  id: number;
+  code: string;
+  ten: string;
+  donVi: string;
+  thuTu: number;
+}
+
+export interface GangTemplateConfigResponse {
+  gang: QuangResponse;
+  gangTPHHs: TPHHOfQuangResponse[];
+  slag: QuangResponse | null;
+  slagTPHHs: TPHHOfQuangResponse[];
+  processParams: ProcessParamTemplateItem[];
+  thongKes: ThongKeTemplateItem[];
+}
+
+export interface GangTemplateConfigItemUpsertDto {
+  id: number;
+  thuTu: number;
+}
+
+export interface GangTemplateConfigUpsertDto {
+  processParams?: GangTemplateConfigItemUpsertDto[] | null;
+  thongKes?: GangTemplateConfigItemUpsertDto[] | null;
+}
+
+export interface GangDichConfigUpsertDto {
+  gang: QuangUpsertWithThanhPhanDto;
+  slag?: QuangUpsertWithThanhPhanDto | null;
+  templateConfig?: GangTemplateConfigUpsertDto | null;
+}
+
+export interface GangDichConfigDetailResponse {
+  gang: QuangDetailResponse;
+  slag: QuangDetailResponse | null;
+  processParams: ProcessParamTemplateItem[];
+  thongKes: ThongKeTemplateItem[];
+}
+
 export enum LoaiQuang {
   Mua = 0,
   Tron = 1,
   Gang = 2,
   Khac = 3,
+  Xi = 4,
 }
 
 // Unified DTO for all ore types (0=Thô, 1=Trung gian, 2=Gang, 3=Khác, 4=Xỉ)
@@ -143,6 +193,9 @@ export interface QuangUpsertWithThanhPhanDto {
   thanhPhanHoaHoc: QuangThanhPhanHoaHocDto[];
   gia?: QuangGiaDto | null; // Required for loai_Quang = 0 (purchased ore)
   id_Quang_Gang?: number | null; // For linking slag to pig iron (loai_Quang = 4)
+  nguoi_Tao?: number | null;
+  saveAsTemplate?: boolean | null;
+  templateConfig?: GangTemplateConfigUpsertDto | null;
 }
 
 export interface QuangUpsertWithThanhPhanResponse {
@@ -150,6 +203,7 @@ export interface QuangUpsertWithThanhPhanResponse {
   message: string;
 }
 
+// DTO for creating/updating Gang/Xỉ result ores with plan mapping
 export interface QuangKetQuaUpsertDto {
   id?: number | null;
   ma_Quang: string;
@@ -160,6 +214,7 @@ export interface QuangKetQuaUpsertDto {
   dang_Hoat_Dong?: boolean;
   ghi_Chu?: string | null;
   id_Quang_Gang?: number | null; // For Xỉ: link to Gang
+  nguoi_Tao?: number | null;
 }
 
 export interface QuangKetQuaUpsertResponse {

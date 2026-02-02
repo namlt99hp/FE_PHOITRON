@@ -48,49 +48,44 @@ export class CongThucPhoiService {
     return this.http.get<CongThucPhoiDetailRespone>(api);
   }
 
-  create(dto: Cong_Thuc_PhoiCreateDto): Observable<any> {
-    const api = `${this.baseApi}/Create`;
-    return this.http.post<any>(api, dto);
+
+  // upsert(dto: Cong_Thuc_PhoiUpsertDto): Observable<any> {
+  //   const api = `${this.baseApi}/Upsert`;
+  //   return this.http.post<any>(api, dto);
+  // }
+
+  getByQuangDauRa(idQuangDauRa: number): Observable<any | null> {
+    const api = `${this.baseApi}/GetByQuangDauRa/quang-daura/${idQuangDauRa}`;
+    return this.http.get<any>(api).pipe(
+      map((response: any) => {
+        // Handle ApiResponse wrapper
+        if (response?.data) {
+          return response.data;
+        }
+        return response;
+      }),
+      catchError(() => of(null))
+    );
   }
 
-  update(dto: Cong_Thuc_PhoiUpdateDto): Observable<any> {
-    const api = `${this.baseApi}/Update`;
-    return this.http.put<any>(api, dto);
-  }
+  // existsByCode(maCongThuc: string): Observable<{ exists: boolean }> {
+  //   const api = `${this.baseApi}/ExistsByCode/${encodeURIComponent(maCongThuc)}`;
+  //   return this.http.get<{ exists: boolean }>(api);
+  // }
 
-  upsert(dto: Cong_Thuc_PhoiUpsertDto): Observable<any> {
-    const api = `${this.baseApi}/Upsert`;
-    return this.http.post<any>(api, dto);
-  }
-
-  softDelete(id: number): Observable<any> {
-    const api = `${this.baseApi}/SoftDelete/${id}`;
-    return this.http.delete<any>(api);
-  }
-
-  getByQuangDauRa(idQuangDauRa: number): Observable<any[]> {
-    const api = `${this.baseApi}/GetByQuangDauRa/${idQuangDauRa}`;
-    return this.http.get<any[]>(api);
-  }
-
-  existsByCode(maCongThuc: string): Observable<{ exists: boolean }> {
-    const api = `${this.baseApi}/ExistsByCode/${encodeURIComponent(maCongThuc)}`;
-    return this.http.get<{ exists: boolean }>(api);
-  }
-
-  getActive(): Observable<any[]> {
-    const api = `${this.baseApi}/GetActive`;
-    return this.http.get<any[]>(api);
-  }
+  // getActive(): Observable<any[]> {
+  //   const api = `${this.baseApi}/GetActive`;
+  //   return this.http.get<any[]>(api);
+  // }
 
   // Backward compatibility
-  getDetail(id: number): Observable<CongThucPhoiDetailRespone>{
+  getDetail(id: number): Observable<CongThucPhoiDetailRespone> {
     return this.getById(id);
   }
-  upsertAndConfirm(payload: UpsertAndConfirmDto){
-    const api = `${this.baseApi}/UpsertAndConfirm`;
-    return this.http.post<UpsertAndConfirmResult>(api, payload);
-  }
+  // upsertAndConfirm(payload: UpsertAndConfirmDto) {
+  //   const api = `${this.baseApi}/UpsertAndConfirm`;
+  //   return this.http.post<UpsertAndConfirmResult>(api, payload);
+  // }
 
   deleteCongThucPhoi(id: number): Observable<any> {
     const api = `${this.baseApi}/DeleteCongThucPhoi/${id}`;

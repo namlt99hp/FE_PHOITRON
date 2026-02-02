@@ -11,6 +11,8 @@
   [showViewAction]="true"
   [showEditAction]="true"
   [showDeleteAction]="true"
+  [showCloneAction]="true"
+  [viewActionText]="'Chi tiết phối trộn'"
   [confirmDelete]="confirmDelete"
   [deleteHandler]="deleteHandler"
   [enableSearch]="true"
@@ -18,4 +20,5 @@
   (create)="onCreate()"
   (view)="onMix($event)"
   (selectEdit)="onEdit($event)"
+  (clone)="onClone($event)"
 ></app-table-common>

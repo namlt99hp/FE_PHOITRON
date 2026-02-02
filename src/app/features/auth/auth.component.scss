@@ -1,0 +1,234 @@
+// Login Styles
+.auth-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 24px;
+  overflow: hidden;
+}
+
+.auth-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/assets/images/backgrounds/backgroundHP.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+  
+  // Tạo hiệu ứng parallax nhẹ
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(0.5px);
+  }
+}
+
+.auth-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(27, 95, 214, 0.35) 0%,
+    rgba(15, 23, 42, 0.45) 100%
+  );
+  z-index: 1;
+}
+
+.auth-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 450px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  border: none;
+}
+
+.auth-header {
+  padding: 0;
+  background: #faf8f3; /* Màu trắng ngà */
+  color: #0f172a;
+  
+  .auth-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 24px 24px 24px;
+    gap: 16px;
+    position: relative;
+  }
+  
+  .auth-header-text {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .logo-container {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-right: 0;
+    
+    .logo-image {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
+      display: block;
+    }
+  }
+  
+  .auth-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: #0f172a;
+    line-height: 1.2;
+  }
+  
+  .auth-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.4;
+  }
+}
+
+.auth-body {
+  padding: 24px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  
+  .mat-mdc-form-field {
+    width: 100%;
+  }
+  
+  .input-icon {
+    color: #64748b;
+    margin-right: 8px;
+  }
+}
+
+.w-100 {
+  width: 100%;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #dc3545;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  margin: -4px 0 8px;
+  
+  i {
+    font-size: 16px;
+  }
+}
+
+.login-button {
+  height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 8px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(27, 95, 214, 0.3);
+  transition: all 0.3s ease;
+  
+  &:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba(27, 95, 214, 0.4);
+    transform: translateY(-1px);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+  }
+  
+  mat-progress-spinner {
+    ::ng-deep circle {
+      stroke: white;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .auth-container {
+    padding: 16px;
+  }
+  
+  .auth-card {
+    border-radius: 12px;
+  }
+  
+  .auth-header {
+    .auth-header-content {
+      padding: 20px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    
+    .logo-container {
+      align-self: flex-end;
+      margin-top: -8px;
+      
+      .logo-image {
+        width: 60px;
+        height: 60px;
+      }
+    }
+    
+    .auth-title {
+      font-size: 22px;
+    }
+    
+    .auth-subtitle {
+      font-size: 12px;
+    }
+  }
+  
+  .auth-body {
+    padding: 24px 20px;
+  }
+}
+

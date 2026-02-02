@@ -236,19 +236,16 @@ export class StatisticsEngineService {
   private calcOreQuality(ctx: CalculationContextDto): number {
     // Phẩm vị quặng vào lò = (TFe ở dòng tổng bảng mix quặng) / melieu
     // TFe tổng dòng tổng tương đương TFe trung bình gia quyền theo KL vào lò
-    const totalWeight = ctx.mixData.reduce((s, r) => s + ( r.klVaoLo), 0);
-    if (totalWeight <= 0) return 0;
+
     const sumTfeTimesWeight = ctx.mixData.reduce((s, r) => {
       const tfe = this.getChem(r, 'tfe');
       return s + tfe * r.klVaoLo;
     }, 0);
-    const tfeTotalRow = sumTfeTimesWeight / totalWeight;
-
     const meLieuParam = ctx.processParams?.find(p => (p.code || '').toLowerCase() === 'melieu');
     const meLieu = Number(meLieuParam?.value) || 0;
     if (meLieu <= 0) return 0;
-
-    return tfeTotalRow / meLieu;
+    const tfeTotalRow = sumTfeTimesWeight / meLieu;
+    return tfeTotalRow;
   }
 
   private calcR2Basicity(ctx: CalculationContextDto): number {

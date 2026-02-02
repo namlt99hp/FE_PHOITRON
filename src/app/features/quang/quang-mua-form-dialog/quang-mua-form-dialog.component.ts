@@ -41,10 +41,10 @@ import {
   SelectTphhDialogComponent,
 } from '../../mix-quang-dialog/select-tphh-dialog/select-tphh-dialog.component';
 import { QuangService } from '../../../core/services/quang.service';
-import { 
+import {
   QuangDetailResponse,
-  QuangDto, 
-  ThanhPhanQuangDto, 
+  QuangDto,
+  ThanhPhanQuangDto,
   UpsertQuangDto,
   QuangUpsertWithThanhPhanDto,
   QuangThanhPhanHoaHocDto,
@@ -53,7 +53,8 @@ import {
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { RateService } from '../../../core/services/rate.service';
-import {MatCheckboxModule} from '@angular/material/checkbox';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+
 @Component({
   selector: 'app-form-dialog',
   standalone: true,
@@ -84,7 +85,7 @@ export class QuangMuaFormDialogComponent {
   // lưu giá trị gần nhất theo chemId, kể cả khi bị bỏ chọn
   private lastValues = new Map<number, number | null>();
 
-  
+
 
   mode: OreMode;
   chemicals: ChemicalOption[];
@@ -107,9 +108,14 @@ export class QuangMuaFormDialogComponent {
   giaVndFromApi = signal<number | null>(null);
   // UI states (Angular signals)
   loading = signal(false);
-  error   = signal<string | null>(null);
-  rate    = signal<number | null>(null);
-  dateUsed= signal<string>(''); // ngày thực tế trả về (có thể lùi)
+  error = signal<string | null>(null);
+  rate = signal<number | null>(null);
+  dateUsed = signal<string>(''); // ngày thực tế trả về (có thể lùi)
+  
+  // Check exists state
+  isChecked = signal<boolean>(false);
+  checking = signal<boolean>(false);
+  checkError = signal<string | null>(null);
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: QuangMuaData,
@@ -126,15 +132,42 @@ export class QuangMuaFormDialogComponent {
 
     // lần đầu load
     this.fetchRate(this.dateCtrl.value);
-    
+
     // Theo dõi thay đổi giá USD để tính VND theo tỷ giá hiện tại
     this.headerForm.controls.giaUSD.valueChanges
       .pipe(debounceTime(150), distinctUntilChanged())
       .subscribe(() => this.recalcVnd());
+
+    // Tự động tạo mã quặng từ tên quặng (luôn luôn, cả khi thêm mới và edit)
+    this.headerForm.controls.tenQuang.valueChanges
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe((tenQuang) => {
+        if (tenQuang) {
+          const maQuangSlug = this.toSlugNoDash(tenQuang);
+          if (maQuangSlug) {
+            this.headerForm.controls.maQuang.setValue(maQuangSlug, { emitEvent: false });
+          }
+        }
+      });
   }
 
-  
-  ngInit(){
+  // Helper: Convert string to slug không có dấu gạch ngang (viết liền)
+  private toSlugNoDash(input: string | null | undefined): string {
+    if (!input) return '';
+    
+    // Remove Vietnamese accents and convert to lowercase
+    const normalized = input.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    // Replace spaces and special chars, remove all non-alphanumeric, viết liền
+    const slug = normalized
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '') // Loại bỏ tất cả ký tự không phải chữ và số, viết liền
+      .replace(/^-+|-+$/g, '');
+    return slug;
+  }
+
+
+  ngInit() {
   }
 
   private async fetchRate(dateISO: string) {
@@ -151,7 +184,7 @@ export class QuangMuaFormDialogComponent {
       // làm tròn 2 số sau dấu phẩy cho tỷ giá
       this.rate.set(Number(rate.toFixed(2)));
       this.dateUsed.set(dateUsed);
-      
+
       // Khi tỷ giá thay đổi, tính lại VND
       this.recalcVnd();
     } catch (e: any) {
@@ -161,24 +194,32 @@ export class QuangMuaFormDialogComponent {
     }
   }
   // ====== common header form ======
-  
+
   headerForm = this.fb.group({
     maQuang: ['', [Validators.required, Validators.maxLength(50)]],
     tenQuang: ['', [Validators.required, Validators.maxLength(200)]],
-    giaUSD: [null as number | null, [Validators.required, Validators.min(0.01)]],
+    giaUSD: [null as number | null], // Không có validation, cho phép null
     ghiChu: ['' as string | null],
-    isPhuLieu: [false],
-    isCo: [false]
+    loaiQuang: [0, Validators.required] // 0=thường, 3=phụ liệu, 5=cỡ
+  });
+
+  // Computed để check xem có thể enable các input khác không
+  canEditOtherFields = computed(() => {
+    // Nếu đang edit (có data.quang.id), cho phép edit luôn
+    if (this.data.quang?.id) return true;
+    // Nếu đang tạo mới, phải check tồn tại trước
+    return this.isChecked();
   });
 
   private recalcVnd() {
     const usd = this.headerForm.controls.giaUSD.value ?? 0;
     const rate = this.rate();
-   
+
     if (rate == null) {
       this.valueConvertToVnd.set(null);
       return;
     }
+    // Nếu giá USD là 0 hoặc null, giá VND cũng là 0
     const vnd = Number(((Number(usd) || 0) * rate).toFixed(2));
     this.valueConvertToVnd.set(vnd);
   }
@@ -208,7 +249,7 @@ export class QuangMuaFormDialogComponent {
     // Tự động preselect MKN để người dùng luôn có thể nhập giá trị MKN
     const currentSelectedIds = this.selectedChems().map((x) => x.id);
     const preselectedIds = [...currentSelectedIds];
-    
+
     // Nếu chưa có MKN trong danh sách và đang là quặng mới (mode MUA)
     // thì tự động preselect MKN để UX tốt hơn
     if (this.mode === 'MUA' && !this.hasMKNSelected()) {
@@ -245,7 +286,7 @@ export class QuangMuaFormDialogComponent {
     const idQuang = this.data.quang?.id || null;
 
     const header = this.headerForm.getRawValue();
-    
+
     // Map chemical composition to new format
     const thanhPhanHoaHoc: QuangThanhPhanHoaHocDto[] = [];
     const currentDate = new Date().toISOString();
@@ -259,45 +300,30 @@ export class QuangMuaFormDialogComponent {
       if (v === null || isNaN(v) || v < 0) return;
       thanhPhanHoaHoc.push({
         ID_TPHH: chemId!,
-        Gia_Tri_PhanTram: +v.toFixed(2),
+        Gia_Tri_PhanTram: +v.toFixed(4),
         ThuTuTPHH: idx + 1
       });
     });
 
-    // Map pricing information - REQUIRED for purchased ore
-    if (!header.giaUSD || !this.rate() || !this.dateCtrl.value) {
-      throw new Error('Giá USD, tỷ giá và ngày mua là bắt buộc');
-    }
+    // Map pricing information - Giá USD không bắt buộc, nếu không nhập thì là 0
+    const giaUSD = header.giaUSD != null && header.giaUSD > 0 ? Number(header.giaUSD) : 0;
+    const tyGia = this.rate() ?? 0; // Nếu không có tỷ giá thì mặc định là 0
+    const giaVND = giaUSD * tyGia; // Nếu giaUSD = 0 thì giaVND = 0
 
-    const giaUSD = Number(header.giaUSD);
-    const tyGia = this.rate()!;
-    const giaVND = giaUSD * tyGia;
-    
-    // Basic validation only - no range constraints
-    if (giaUSD <= 0) {
-      throw new Error('Giá USD phải lớn hơn 0');
-    }
-    
-    if (tyGia <= 0) {
-      throw new Error('Tỷ giá USD/VND phải lớn hơn 0');
-    }
-    
-    if (giaVND <= 0) {
-      throw new Error('Giá VND phải lớn hơn 0');
-    }
-    
+    // Không cần validation vì giá USD có thể là 0 (nguyên liệu xoay vòng không tốn chi phí)
+
     const gia: QuangGiaDto = {
       gia_USD_1Tan: giaUSD,
       ty_Gia_USD_VND: tyGia,
       gia_VND_1Tan: Number(giaVND.toFixed(2)),
-      ngay_Chon_TyGia: this.dateCtrl.value
+      ngay_Chon_TyGia: this.dateCtrl.value || new Date().toISOString()
     };
 
     return {
       id: idQuang,
       ma_Quang: header.maQuang!,
       ten_Quang: header.tenQuang!,
-      loai_Quang: header.isCo ? 5 : (header.isPhuLieu ? 3 : 0), // ưu tiên Cỡ (5), sau đó Phụ liệu (3), mặc định 0
+      loai_Quang: header.loaiQuang ?? 0,
       dang_Hoat_Dong: true,
       ghi_Chu: header.ghiChu ?? null,
       thanhPhanHoaHoc: thanhPhanHoaHoc,
@@ -306,32 +332,89 @@ export class QuangMuaFormDialogComponent {
     };
   }
 
+  onCheckExists() {
+    const maQuang = this.headerForm.controls.maQuang.value?.trim();
+    const tenQuang = this.headerForm.controls.tenQuang.value?.trim();
+
+    if (!maQuang) {
+      this.snack.open('Vui lòng nhập mã quặng trước khi kiểm tra', 'Đóng', {
+        duration: 2000,
+        panelClass: ['snack-warning']
+      });
+      return;
+    }
+
+    if (!tenQuang) {
+      this.snack.open('Vui lòng nhập tên quặng trước khi kiểm tra', 'Đóng', {
+        duration: 2000,
+        panelClass: ['snack-warning']
+      });
+      return;
+    }
+
+    this.checking.set(true);
+    this.checkError.set(null);
+
+    const excludeId = this.data.quang?.id || null;
+    this.quangService.checkExists(maQuang, tenQuang, excludeId).subscribe({
+      next: (res) => {
+        this.checking.set(false);
+        if (res.success && res.data) {
+          if (res.data.exists) {
+            this.isChecked.set(false);
+            this.checkError.set('Mã quặng hoặc tên quặng đã tồn tại trong hệ thống. Vui lòng nhập lại.');
+            this.snack.open('Mã quặng hoặc tên quặng đã tồn tại', 'Đóng', {
+              duration: 3000,
+              panelClass: ['snack-error']
+            });
+          } else {
+            this.isChecked.set(true);
+            this.checkError.set(null);
+            this.snack.open('Mã và tên quặng hợp lệ, có thể tiếp tục nhập thông tin', 'Đóng', {
+              duration: 2000,
+              panelClass: ['snack-success']
+            });
+          }
+        }
+      },
+      error: (error) => {
+        this.checking.set(false);
+        this.isChecked.set(false);
+        this.checkError.set(error.error?.message || error.message || 'Lỗi khi kiểm tra tồn tại');
+        this.snack.open(`Lỗi: ${error.error?.message || error.message || 'Có lỗi xảy ra'}`, 'Đóng', {
+          duration: 3000,
+          panelClass: ['snack-error']
+        });
+      }
+    });
+  }
+
   onSave() {
     try {
       const payload = this.buildPayload();
       this.quangService.upsertWithThanhPhan(payload).subscribe({
         next: (res) => {
-          if(res){
-            if(this.data.mode === 'MUA'){
-              this.snack.open('Thêm quặng mua thành công', 'Đóng', { duration: 1500, panelClass: ['snack-success']  });
+          if (res) {
+            if (this.data.mode === 'MUA') {
+              this.snack.open('Thêm quặng mua thành công', 'Đóng', { duration: 1500, panelClass: ['snack-success'] });
             } else {
-              this.snack.open('Sửa quặng thành công', 'Đóng', { duration: 1500, panelClass: ['snack-info']  });
+              this.snack.open('Sửa quặng thành công', 'Đóng', { duration: 1500, panelClass: ['snack-info'] });
             }
             this.ref.close({ success: true, id: res.data?.id || 0 });
           }
         },
         error: (error) => {
           console.error('Error saving quang:', error);
-          this.snack.open(`Lỗi: ${error.error?.message || error.message || 'Có lỗi xảy ra'}`, 'Đóng', { 
-            duration: 3000, 
-            panelClass: ['snack-error'] 
+          this.snack.open(`Lỗi: ${error.error?.message || error.message || 'Có lỗi xảy ra'}`, 'Đóng', {
+            duration: 3000,
+            panelClass: ['snack-error']
           });
         }
       });
     } catch (error: any) {
-      this.snack.open(`Lỗi: ${error.message}`, 'Đóng', { 
-        duration: 3000, 
-        panelClass: ['snack-error'] 
+      this.snack.open(`Lỗi: ${error.message}`, 'Đóng', {
+        duration: 3000,
+        panelClass: ['snack-error']
       });
     }
     this.headerForm.reset();
@@ -346,7 +429,7 @@ export class QuangMuaFormDialogComponent {
     if (this.data.quang && this.data.quang.id) {
       this.loading.set(true);
       this.error.set(null);
-      
+
       this.quangService.getById(this.data.quang.id).subscribe({
         next: (res) => {
           this.PatchFormValue(res);
@@ -363,9 +446,9 @@ export class QuangMuaFormDialogComponent {
           });
           this.error.set(error.error?.message || error.message || 'Không thể tải thông tin quặng');
           this.loading.set(false);
-          this.snack.open(`Lỗi: ${error.error?.message || error.message || 'Có lỗi xảy ra'}`, 'Đóng', { 
-            duration: 3000, 
-            panelClass: ['snack-error'] 
+          this.snack.open(`Lỗi: ${error.error?.message || error.message || 'Có lỗi xảy ra'}`, 'Đóng', {
+            duration: 3000,
+            panelClass: ['snack-error']
           });
         }
       });
@@ -375,33 +458,46 @@ export class QuangMuaFormDialogComponent {
   PatchFormValue(data: QuangDetailResponse) {
     try {
       console.log('Received data from API:', data);
-      
+
       // Validate API response structure
       if (!this.validateApiResponse(data)) {
         throw new Error('Invalid API response structure');
       }
-      
+
+      // Nếu đang edit, set isChecked = true để cho phép edit các field khác
+      if (this.data.quang?.id) {
+        this.isChecked.set(true);
+      }
+
       // Handle both old and new data formats
       const quangData = data.quang || data;
-      
+
       // Get current pricing information
       const currentPrice = data.giaHienTai || null;
-      
+
       const giaUSD = currentPrice ? this.parseNumber(currentPrice.gia_USD_1Tan) : null;
       const tyGia = currentPrice ? this.parseNumber(currentPrice.ty_Gia_USD_VND) : null;
       const ngayChonTyGia = currentPrice ? currentPrice.ngay_Chon_TyGia : null;
       // Patch header form with quang data (bỏ matKhiNung vì giờ dùng thành phần hóa học)
+      // Lưu ý: mã quặng sẽ được tự động tạo từ tên quặng, không dùng mã cũ
+      const tenQuang = quangData.ten_Quang || quangData.tenQuang || '';
       const formData = {
-        maQuang: quangData.ma_Quang || quangData.maQuang || '',
-        tenQuang: quangData.ten_Quang || quangData.tenQuang || '',
+        tenQuang: tenQuang,
         giaUSD: giaUSD,
         ghiChu: quangData.ghi_Chu || quangData.ghiChu || '',
-        isPhuLieu: quangData.loai_Quang === 3 ? true: false, 
-        isCo: quangData.loai_Quang === 5 ? true: false,
+        loaiQuang: quangData.loai_Quang ?? 0,
       };
-      
+
       this.headerForm.patchValue(formData);
       
+      // Tự động tạo mã quặng từ tên quặng sau khi patch (luôn luôn, cả khi edit)
+      if (tenQuang) {
+        const maQuangSlug = this.toSlugNoDash(tenQuang);
+        if (maQuangSlug) {
+          this.headerForm.controls.maQuang.setValue(maQuangSlug, { emitEvent: false });
+        }
+      }
+
       // Force change detection
       this.cdr.detectChanges();
 
@@ -421,7 +517,7 @@ export class QuangMuaFormDialogComponent {
       }
       // Handle chemical composition data
       const chemicalData = data.tP_HoaHocs || [];
-      
+
       const chemVms: ChemVm[] = chemicalData.map(c => ({
         id: c.id,
         ma_TPHH: c.ma_TPHH,
@@ -435,13 +531,13 @@ export class QuangMuaFormDialogComponent {
       for (const c of chemicalData) {
         const phanTram = c.phanTram;
         if (typeof phanTram !== 'undefined' && phanTram !== null) {
-          seed.set(c.id, Number(phanTram.toFixed(2)));
+          seed.set(c.id, Number(phanTram.toFixed(4)));
         }
       }
-      
+
       // Sync chemical composition form controls
       this.syncThanhPhan(chemVms, seed);
-      
+
       console.log('Form patched successfully with data:', {
         quangData,
         currentPrice,
@@ -452,14 +548,12 @@ export class QuangMuaFormDialogComponent {
         chemicalData: chemicalData.length,
         seedSize: seed.size
       });
-      
+
     } catch (error) {
-      console.error('Error patching form values:', error);
-      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       this.error.set('Lỗi khi tải dữ liệu vào form');
-      this.snack.open('Lỗi khi tải dữ liệu vào form', 'Đóng', { 
-        duration: 3000, 
-        panelClass: ['snack-error'] 
+      this.snack.open('Lỗi khi tải dữ liệu vào form', 'Đóng', {
+        duration: 3000,
+        panelClass: ['snack-error']
       });
     }
   }
@@ -469,7 +563,7 @@ export class QuangMuaFormDialogComponent {
     try {
       const current = this.tp_HoaHocs();
       const next = new Map(current);
-      
+
       // Handle both old format (id) and new format (id_TPHH)
       const selectedIds = new Set(list.map((x) => x.id || x.id_TPHH).filter(id => id !== undefined));
 
@@ -477,16 +571,16 @@ export class QuangMuaFormDialogComponent {
       for (const c of list) {
         const chemId = c.id || c.id_TPHH;
         if (chemId === undefined) continue;
-        
+
         if (!next.has(chemId)) {
           // Priority: seed value > lastValues > null
-          const init = seed?.get(chemId) ?? 
-                      (this.lastValues.has(chemId) ? this.lastValues.get(chemId)! : null);
+          const init = seed?.get(chemId) ??
+            (this.lastValues.has(chemId) ? this.lastValues.get(chemId)! : null);
 
           const ctrl = new FormControl<number | null>(init, {
             validators: [Validators.min(0), Validators.max(100)]
           });
-          
+
           ctrl.valueChanges.subscribe((v) => this.lastValues.set(chemId, v));
           next.set(chemId, { phanTram: ctrl });
         } else {
@@ -512,15 +606,14 @@ export class QuangMuaFormDialogComponent {
       }
 
       this.tp_HoaHocs.set(next);
-      
+
       console.log('Chemical composition synced:', {
         selectedCount: list.length,
         controlsCount: next.size,
         seedCount: seed?.size || 0
       });
-      
+
     } catch (error) {
-      console.error('Error syncing chemical composition:', error);
       this.error.set('Lỗi khi đồng bộ thành phần hóa học');
     }
   }

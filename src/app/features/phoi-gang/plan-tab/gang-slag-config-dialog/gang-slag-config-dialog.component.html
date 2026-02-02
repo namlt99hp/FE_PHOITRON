@@ -1,0 +1,93 @@
+<div class="dialog-container">
+  <div class="dialog-header">
+    <h2 class="dialog-title">
+      {{ data.loaiQuang === 2 ? 'Cấu hình Gang kết quả' : 'Cấu hình Xỉ kết quả' }}
+    </h2>
+    <button mat-icon-button (click)="close()" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="dialog-body">
+    <div *ngIf="loading()" class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Đang tải...</p>
+    </div>
+    
+    <div *ngIf="!loading() && config()" class="content-wrapper">
+      <div class="section-header">
+        <h3>{{ data.loaiQuang === 2 ? 'Gang' : 'Xỉ' }} (Thành phần hóa học)</h3>
+        <button
+          mat-icon-button
+          (click)="editTpHoaHocs()"
+          matTooltip="Sửa thành phần hóa học"
+          class="edit-btn"
+        >
+          <mat-icon>edit</mat-icon>
+        </button>
+      </div>
+      
+      <div class="table-wrapper">
+        <table class="data-table" *ngIf="getTpHoaHocs().length > 0; else noConfig">
+          <thead>
+            <tr>
+              <th class="col-tphh">TPHH</th>
+              <th class="col-formula">Công thức</th>
+              <th class="col-action" style="width: 120px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of getTpHoaHocs(); trackBy: trackByTphhId">
+              <td class="col-tphh">{{ item.ma_TPHH }}</td>
+              <td class="col-formula">
+                <span 
+                  *ngIf="item.calcFormula" 
+                  class="formula-text"
+                >
+                  {{ item.calcFormula }}
+                </span>
+                <span *ngIf="!item.calcFormula" class="formula-empty">Chưa có công thức</span>
+              </td>
+              <td class="col-action">
+                <div class="action-buttons">
+                  <button
+                    type="button"
+                    mat-icon-button
+                    (click)="openFormulaCalculator(item)"
+                    matTooltip="Thiết lập công thức tính toán"
+                    class="formula-btn"
+                  >
+                    <mat-icon>calculate</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    mat-icon-button
+                    (click)="removeTpHoaHoc(item.id)"
+                    matTooltip="Xóa thành phần hóa học"
+                    class="delete-btn"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <ng-template #noConfig>
+          <div class="empty-placeholder">
+            <mat-icon>info_outline</mat-icon>
+            <p>Chưa có thành phần hóa học nào được cấu hình</p>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-footer">
+    <button mat-button (click)="close()" class="btn-cancel">Hủy</button>
+    <button mat-raised-button color="primary" (click)="save()" [disabled]="loading() || !config()" class="btn-save">
+      Lưu
+    </button>
+  </div>
+</div>
+

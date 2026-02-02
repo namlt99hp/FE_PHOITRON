@@ -6,6 +6,7 @@ export interface PhuongAnPhoiCreateDto {
   trang_Thai?: number;
   muc_Tieu?: number | null;
   ghi_Chu?: string | null;
+  createdBy?: number | null;
 }
 
 export interface PhuongAnPhoiUpdateDto extends PhuongAnPhoiCreateDto {
@@ -69,6 +70,7 @@ export interface LoCaoOreComponentDto {
   maQuang: string;
   tenQuang: string;
   tiLePhanTram: number;
+  loaiQuang?: number; // Loại quặng (5 = Quặng sống)
 }
 
 export interface LoCaoSectionDto {

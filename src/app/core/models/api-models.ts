@@ -113,7 +113,7 @@ export interface MixRequestDto {
     KL_Nhan?: number | null;
     TP_HoaHocs?: Array<{
       Id: number;
-      PhanTram: number;
+      PhanTram: number | null;
       ThuTuTPHH?: number;
     }>;
   }>;
@@ -133,6 +133,7 @@ export interface MixRequestDto {
       ThuTuTPHH?: number;
     }>;
   };
+  nguoi_Tao?: number | null;
 }
 
 export interface MixResponseDto {
@@ -166,6 +167,16 @@ export interface CloneResponseDto {
   id: number;
 }
 
+export interface CloneGangWithAllPlansRequestDto {
+  sourceGangId: number;
+  newGangId: number;
+  resetRatiosToZero?: boolean;
+  copySnapshots?: boolean;
+  copyDates?: boolean;
+  copyStatuses?: boolean;
+  cloneDate?: string | null;
+}
+
 // ===== Get Detail API Models =====
 
 export interface CongThucPhoiDetailResponse {
@@ -181,6 +192,9 @@ export interface CongThucPhoiDetailResponse {
     tieuhao: number | null;
     donGiaVND: number | null;
     donGiaUSD: number;
+    iD_Quang_DauRa?: number | null; // Quặng đầu ra của công thức (dùng để map quặng thành phần với quặng loại 7)
+    ten_Quang?: string | null; // Tên quặng (dùng để hiển thị)
+    loai_Quang?: number | null; // Loại quặng (dùng để highlight quặng loại 7)
   }>;
 }
 

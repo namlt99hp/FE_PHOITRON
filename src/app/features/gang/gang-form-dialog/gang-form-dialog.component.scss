@@ -114,3 +114,785 @@
     font-style: italic;
   }
 }
+
+.template-toolbar {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.template-status {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #334155;
+
+  &.error {
+    color: #dc2626;
+    mat-icon {
+      font-size: 18px;
+    }
+  }
+}
+
+.template-preview {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px dashed #cbd5f5;
+  border-radius: 8px;
+  background: #f8fafc;
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+}
+
+.function-buttons {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 140px;
+  }
+
+  .mix-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+
+  h4 {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+}
+
+.tiny-table,
+.mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+
+  th,
+  td {
+    border: 1px solid #d0d5dd;
+    padding: 6px 8px;
+    font-size: 13px;
+    text-align: left;
+  }
+
+  thead th {
+    background: #f1f5f9;
+    font-weight: 600;
+  }
+}
+
+.mini-table {
+  margin-top: 8px;
+}
+
+.empty-placeholder {
+  margin: 8px 0;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #64748b;
+  border: 1px dashed #cbd5f5;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.order-cell {
+  width: 90px;
+  input {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+.section-header mat-form-field {
+  min-width: 260px;
+}
+
+// Configuration Grid Layout
+.config-grid {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.config-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.config-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.config-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+
+  h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  button {
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #64748b;
+    }
+
+    &:hover:not(:disabled) {
+      background: #e2e8f0;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.config-content {
+  padding: 12px 16px;
+  max-height: 300px;
+  overflow-y: auto;
+
+  .tiny-table {
+    table-layout: fixed;
+    
+    th:nth-child(1) {
+      width: 100px; // TPHH column
+    }
+    
+    th:nth-child(2) {
+      width: auto; // Formula column - takes remaining space
+      min-width: 150px;
+    }
+    
+    th:nth-child(3) {
+      width: 50px; // Action column
+    }
+
+    // Style riêng cho bảng Process Params và Thống kê
+    &.param-table {
+      table-layout: auto; // Cho phép cột tự điều chỉnh width
+      width: 100%;
+
+      .code-col {
+        white-space: normal; // Cho phép wrap text
+        word-break: break-word; // Break word nếu quá dài
+        min-width: 120px; // Đảm bảo có đủ không gian cho mã dài
+        max-width: 200px; // Giới hạn tối đa để không quá rộng
+        padding: 6px 8px;
+        font-family: monospace; // Dễ đọc hơn cho mã
+        font-size: 12px;
+      }
+
+      .name-col {
+        white-space: normal;
+        word-break: break-word;
+        padding: 6px 8px;
+        font-size: 13px;
+      }
+
+      .order-col {
+        width: 60px;
+        text-align: center;
+        padding: 6px 8px;
+        font-size: 13px;
+      }
+
+      th.code-col,
+      th.name-col,
+      th.order-col {
+        font-weight: 600;
+        background: #f1f5f9;
+      }
+    }
+  }
+
+  .formula-cell {
+    overflow: hidden;
+    position: relative;
+    padding: 6px 8px;
+  }
+
+  .formula-text {
+    font-family: monospace;
+    font-size: 12px;
+    color: #2e7d32;
+    background: #e8f5e8;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #c8e6c9;
+    display: block;
+    max-width: 100%;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
+    cursor: help; // Indicate tooltip available
+  }
+
+  .formula-empty {
+    color: #999;
+    font-style: italic;
+    font-size: 12px;
+  }
+
+  .formula-btn-small {
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    padding: 0;
+    min-width: 28px;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: #666;
+    }
+
+    &:hover:not(:disabled) {
+      background: #e0e0e0;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .delete-btn-small {
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    padding: 0;
+    min-width: 28px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    background: transparent;
+    color: #dc2626;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: #dc2626;
+    }
+
+    &:hover:not(:disabled) {
+      background: #fee2e2;
+      transform: scale(1.05);
+    }
+
+    &:hover:not(:disabled) mat-icon {
+      color: #b91c1c;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Configuration Buttons
+.config-buttons {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.config-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  min-height: 56px;
+  border: 2px dashed #cbd5e1;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: #94a3b8;
+    background: #f1f5f9;
+  }
+
+  &.configured {
+    border-color: #10b981;
+    background: #ecfdf5;
+    border-style: solid;
+
+    mat-icon {
+      color: #10b981;
+    }
+
+    span {
+      color: #059669;
+      font-weight: 500;
+    }
+  }
+
+  &:not(.configured) {
+    mat-icon {
+      color: #64748b;
+    }
+
+    span {
+      color: #475569;
+    }
+  }
+}
+
+.template-toolbar {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.template-status {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #334155;
+
+  &.error {
+    color: #dc2626;
+    mat-icon {
+      font-size: 18px;
+    }
+  }
+}
+
+.template-preview {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px dashed #cbd5f5;
+  border-radius: 8px;
+  background: #f8fafc;
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+}
+
+.function-buttons {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 140px;
+  }
+
+  .mix-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+
+  h4 {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+}
+
+.tiny-table,
+.mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+
+  th,
+  td {
+    border: 1px solid #d0d5dd;
+    padding: 6px 8px;
+    font-size: 13px;
+    text-align: left;
+  }
+
+  thead th {
+    background: #f1f5f9;
+    font-weight: 600;
+  }
+}
+
+.mini-table {
+  margin-top: 8px;
+}
+
+.empty-placeholder {
+  margin: 8px 0;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #64748b;
+  border: 1px dashed #cbd5f5;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.order-cell {
+  width: 90px;
+  input {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+.section-header mat-form-field {
+  min-width: 260px;
+}
+
+// Configuration Grid Layout
+.config-grid {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.config-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.config-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.config-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+
+  h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  button {
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #64748b;
+    }
+
+    &:hover:not(:disabled) {
+      background: #e2e8f0;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.config-content {
+  padding: 12px 16px;
+  max-height: 300px;
+  overflow-y: auto;
+
+  .tiny-table {
+    table-layout: fixed;
+    
+    th:nth-child(1) {
+      width: 100px; // TPHH column
+    }
+    
+    th:nth-child(2) {
+      width: auto; // Formula column - takes remaining space
+      min-width: 150px;
+    }
+    
+    th:nth-child(3) {
+      width: 50px; // Action column
+    }
+
+    // Style riêng cho bảng Process Params và Thống kê
+    &.param-table {
+      table-layout: auto; // Cho phép cột tự điều chỉnh width
+      width: 100%;
+
+      .code-col {
+        white-space: normal; // Cho phép wrap text
+        word-break: break-word; // Break word nếu quá dài
+        min-width: 120px; // Đảm bảo có đủ không gian cho mã dài
+        max-width: 200px; // Giới hạn tối đa để không quá rộng
+        padding: 6px 8px;
+        font-family: monospace; // Dễ đọc hơn cho mã
+        font-size: 12px;
+      }
+
+      .name-col {
+        white-space: normal;
+        word-break: break-word;
+        padding: 6px 8px;
+        font-size: 13px;
+      }
+
+      .order-col {
+        width: 60px;
+        text-align: center;
+        padding: 6px 8px;
+        font-size: 13px;
+      }
+
+      th.code-col,
+      th.name-col,
+      th.order-col {
+        font-weight: 600;
+        background: #f1f5f9;
+      }
+    }
+  }
+
+  .formula-cell {
+    overflow: hidden;
+    position: relative;
+    padding: 6px 8px;
+  }
+
+  .formula-text {
+    font-family: monospace;
+    font-size: 12px;
+    color: #2e7d32;
+    background: #e8f5e8;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #c8e6c9;
+    display: block;
+    max-width: 100%;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
+    cursor: help; // Indicate tooltip available
+  }
+
+  .formula-empty {
+    color: #999;
+    font-style: italic;
+    font-size: 12px;
+  }
+
+  .formula-btn-small {
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    padding: 0;
+    min-width: 28px;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: #666;
+    }
+
+    &:hover:not(:disabled) {
+      background: #e0e0e0;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .delete-btn-small {
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    padding: 0;
+    min-width: 28px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    background: transparent;
+    color: #dc2626;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: #dc2626;
+    }
+
+    &:hover:not(:disabled) {
+      background: #fee2e2;
+      transform: scale(1.05);
+    }
+
+    &:hover:not(:disabled) mat-icon {
+      color: #b91c1c;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Configuration Buttons
+.config-buttons {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.config-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  min-height: 56px;
+  border: 2px dashed #cbd5e1;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: #94a3b8;
+    background: #f1f5f9;
+  }
+
+  &.configured {
+    border-color: #10b981;
+    background: #ecfdf5;
+    border-style: solid;
+
+    mat-icon {
+      color: #10b981;
+    }
+
+    span {
+      color: #059669;
+      font-weight: 500;
+    }
+  }
+
+  &:not(.configured) {
+    mat-icon {
+      color: #64748b;
+    }
+
+    span {
+      color: #475569;
+    }
+  }
+}

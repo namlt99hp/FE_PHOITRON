@@ -53,8 +53,8 @@ export class LoCaoProcessParamService {
     return this.http.post<LoCaoProcessParamModel>(`${this.baseApi}/Upsert`, dto);
   }
 
-  delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseApi}/SoftDelete/${id}`);
+  delete(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.baseApi}/Delete/${id}`);
   }
 
   configureProcessParamsForPlan(paLuaChonCongThucId: number, processParamIds: number[], thuTuParams: number[]): Observable<any> {
@@ -66,13 +66,13 @@ export class LoCaoProcessParamService {
     });
   }
 
-  upsertValuesForPlan(paLuaChonCongThucId: number, items: { idProcessParam: number; giaTri: number; thuTuParam?: number | null }[]): Observable<any> {
-    const api = `${this.baseApi}/UpsertValuesForPlan`;
-    return this.http.post<any>(api, {
-      paLuaChonCongThucId,
-      items
-    });
-  }
+  // upsertValuesForPlan(paLuaChonCongThucId: number, items: { idProcessParam: number; giaTri: number; thuTuParam?: number | null }[]): Observable<any> {
+  //   const api = `${this.baseApi}/UpsertValuesForPlan`;
+  //   return this.http.post<any>(api, {
+  //     paLuaChonCongThucId,
+  //     items
+  //   });
+  // }
 }
 
 

@@ -31,7 +31,6 @@ import {
   switchMap,
   tap,
 } from 'rxjs';
-import { MixOreService } from '../../../core/services/mix-quang.service';
 import { ThanhPhanHoaHocService } from '../../../core/services/tphh.service';
 import { TPHHTableModel } from '../../../core/models/tphh.model';
 import { ApiResponse } from '../../../core/models/http-response.model';

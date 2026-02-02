@@ -302,7 +302,7 @@ input.cell-input::-moz-focus-inner {
 
   th, td {
     border: 1px solid #d0d5dd;
-    padding: 6px 8px;
+    padding: 4px 3px;
     vertical-align: middle;
   }
 
@@ -399,9 +399,20 @@ input.cell-input::-moz-focus-inner {
     }
   }
 
+  // Highlight loai 7 rows (quặng phối trong phương án)
+  .loai-7 {
+    background-color: #fff3e0 !important;
+    font-weight: 600;
+    border-left: 4px solid #ff9800 !important;
+    
+    td {
+      background-color: #fff3e0 !important;
+    }
+  }
+
   // Cost input styling
   .cost-input {
-    width: 100px;
+    width: 150px;
     text-align: right;
     border: 1px solid #ddd;
     border-radius: 4px;

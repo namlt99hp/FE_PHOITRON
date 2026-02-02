@@ -1,8 +1,8 @@
 <div class="plan-results-container">
   <mat-card>
     <mat-card-header>
-      <mat-card-title>Cấu hình thống kê - {{ planName }}</mat-card-title>
-      <mat-card-subtitle>Phương án ID: {{ planId }}</mat-card-subtitle>
+      <mat-card-title>{{ templateMode ? 'Chọn thông số thống kê' : 'Cấu hình thống kê - ' + planName }}</mat-card-title>
+      <mat-card-subtitle *ngIf="!templateMode">Phương án ID: {{ planId }}</mat-card-subtitle>
     </mat-card-header>
 
     <mat-card-content>
@@ -132,7 +132,7 @@
       <button mat-button (click)="onCancel()">Hủy</button>
       <button mat-raised-button color="primary" (click)="saveResults()">
         <mat-icon>save</mat-icon>
-        Lưu cấu hình
+        {{ confirmButtonLabel }}
       </button>
     </mat-card-actions>
   </mat-card>
