@@ -9,6 +9,7 @@ import { PhuongAnPhoiService } from '../../../core/services/phuong-an-phoi.servi
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { QuangService } from '../../../core/services/quang.service';
 import { MilestoneEnum } from '../../../core/enums/milestone.enum';
+import { LoaiQuangEnum } from '../../../core/enums/loaiquang.enum';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CongThucPhoiDetailMinimal, MixResponseDto } from '../../../core/models/api-models';
 import { PlanResultsComponent } from '../../thongke-function/plan-results/plan-results.component';
@@ -190,16 +191,24 @@ export class PhoiGangPlanTabComponent implements OnInit {
         mat_Khi_Nung: 0, // Not used anymore
         tP_HoaHocs: f.quangDauRa.tP_HoaHocs ?? [],
       },
-      chiTietQuang: (f.chiTietQuang || []).map((x: any) => ({
-        id: 0,
-        id_Cong_Thuc_Phoi: f.congThuc.id,
-        id_Quang_DauVao: x.id_Quang ?? x.iD_Quang ?? x.ID_Quang ?? x.id_Quang_DauVao ?? x.iD_Quang_DauVao ?? x.ID_Quang_DauVao,
-        mat_Khi_Nung: 0, // Not used anymore
-        ti_Le_Phan_Tram: x.ti_Le_Phan_Tram,
-        quang_DauVao_Ten: x.ten_Quang,
-        loai_Quang: x.loai_Quang, // Loại quặng từ BE
-        tP_HoaHocs: x.tP_HoaHocs ?? []
-      })),
+      // Chi tiết quặng: sort theo Thu_Tu (nếu có) để hiển thị đúng thứ tự BA
+      chiTietQuang: (f.chiTietQuang || [])
+        .slice()
+        .sort((a: any, b: any) => {
+          const ta = a.thu_Tu ?? Number.MAX_SAFE_INTEGER;
+          const tb = b.thu_Tu ?? Number.MAX_SAFE_INTEGER;
+          return ta - tb;
+        })
+        .map((x: any) => ({
+          id: 0,
+          id_Cong_Thuc_Phoi: f.congThuc.id,
+          id_Quang_DauVao: x.id_Quang ?? x.iD_Quang ?? x.ID_Quang ?? x.id_Quang_DauVao ?? x.iD_Quang_DauVao ?? x.ID_Quang_DauVao,
+          mat_Khi_Nung: 0, // Not used anymore
+          ti_Le_Phan_Tram: x.ti_Le_Phan_Tram,
+          quang_DauVao_Ten: x.ten_Quang,
+          loai_Quang: x.iD_LoaiQuang ?? x.loai_Quang, // Loại quặng từ BE (ưu tiên ID_LoaiQuang mới)
+          tP_HoaHocs: x.tP_HoaHocs ?? []
+        })),
       rangBuocTPHH: (f.rangBuocTPHH || []).map((r: any) => ({
         id: r.id_TPHH ?? r.iD_TPHH ?? r.ID_TPHH,
         id_Cong_Thuc_Phoi: f.congThuc.id,
@@ -277,10 +286,6 @@ export class PhoiGangPlanTabComponent implements OnInit {
   getChemHeaders(detailId: number) {
     return this.detailChem().get(detailId)?.headers || [];
   }
-  getChemHeadersSorted(detailId: number) {
-    const headers = this.getChemHeaders(detailId).slice();
-    return headers.sort((a, b) => (a.ma || '').localeCompare(b.ma || '', undefined, { sensitivity: 'base' }) || a.id - b.id);
-  }
   getChemRows(detailId: number) {
     return this.detailChem().get(detailId)?.rows || [];
   }
@@ -295,6 +300,27 @@ export class PhoiGangPlanTabComponent implements OnInit {
   }
   // Backward-compatible aliases
   getTotalValue(detailId: number, chemId: number): number { return this.getOutValue(detailId, chemId); }
+
+  // Format số động cho hiển thị (giống mix-quang-dialog):
+  // - Mặc định 2 chữ số thập phân
+  // - Với số rất nhỏ (vd 0.0023) thì tăng số chữ số để không mất thông tin (vd 0.0023 -> 0.002, 0.0049 -> 0.005)
+  formatDynamic(value: number | null | undefined): string {
+    if (value === null || value === undefined) return '';
+    const v = Number(value);
+    if (isNaN(v)) return '';
+    const abs = Math.abs(v);
+    if (abs >= 0.01) {
+      return v.toFixed(2);
+    }
+    const str = abs.toString();
+    const match = str.match(/^0\.0+/);
+    if (match) {
+      const zeroCount = match[0].length - 2;
+      const decimals = zeroCount + 1;
+      return v.toFixed(decimals);
+    }
+    return v.toFixed(2);
+  }
 
   private getDefaultChemSelections(): Array<{ id: number; ma_TPHH: string; ten_TPHH: string }> {
     const firstDetail = this.congThucDetails()[0];
@@ -507,9 +533,9 @@ export class PhoiGangPlanTabComponent implements OnInit {
     this.gangKetQuaId = null;
     this.slagId = null;
     for (const q of quangKetQua) {
-      if (q.loaiQuang === 2) { // Gang
+      if (q.iD_LoaiQuang === LoaiQuangEnum.Gang) {
         this.gangKetQuaId = q.iD_Quang;
-      } else if (q.loaiQuang === 4) { // Xỉ
+      } else if (q.iD_LoaiQuang === LoaiQuangEnum.Xi) {
         this.slagId = q.iD_Quang;
       }
     }
@@ -533,7 +559,7 @@ export class PhoiGangPlanTabComponent implements OnInit {
       disableClose: true,
       data: {
         quangId: this.gangKetQuaId,
-        loaiQuang: 2, // Gang
+        loaiQuang: LoaiQuangEnum.Gang,
         planId: this.plan.id,
         idQuangGang: this.gangId // Gang kết quả không có id_Quang_Gang
       }
@@ -564,7 +590,7 @@ export class PhoiGangPlanTabComponent implements OnInit {
       disableClose: true,
       data: {
         quangId: this.slagId,
-        loaiQuang: 4, // Xỉ
+        loaiQuang: LoaiQuangEnum.Xi,
         planId: this.plan.id,
         idQuangGang: this.gangId // Xỉ kết quả phải link đến gang đích (giống như khi tạo từ template)
       }

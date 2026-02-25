@@ -18,6 +18,7 @@ export interface PhuongAnPhoiUpsertDto {
   phuong_An_Phoi: PhuongAnPhoiCreateDto;
 }
 
+
 export interface PhuongAnPhoiResponse {
   id: number;
   ten_Phuong_An: string;
@@ -43,6 +44,8 @@ export interface ThieuKetOreComponentDto {
 
 export interface ThieuKetSectionDto {
   components: ThieuKetOreComponentDto[];
+  /** Chỉ các quặng con của quặng phối trong công thức thiêu kết (do BE trả về). */
+  childComponents?: ThieuKetOreComponentDto[] | null;
   tK_TIEU_HAO_QTK?: number | null;
   tK_SIO2_QTK?: number | null;
   tK_TFE?: number | null;
@@ -88,6 +91,8 @@ export interface LoCaoSectionDto {
   lC_PHAM_VI_VAO_LO?: number | null;
   lC_TI_TRONG_GANG?: number | null;
   lC_MN_TRONG_GANG?: number | null;
+  /** Tổng chi phí = giá quặng đầu ra Lò cao (cùng giá lưu khi phối trong mix). */
+  tongChiPhi?: number | null;
 }
 
 export interface PlanLoCaoSectionDto {
@@ -115,6 +120,7 @@ export interface BangChiPhiLoCaoDto {
   tenQuang: string;
   tieuhao: number | null;
   lineType: string;
+  loaiQuang?: number | null;
 }
 
 // Combined DTO for both sections
@@ -127,4 +133,14 @@ export interface PlanSectionDto {
   bangChiPhiLoCao?: BangChiPhiLoCaoDto[] | null;
 }
 
-
+/** Quặng liên quan đến các phương án của gang đích (Giá đầu vào summary), trừ loại 2, 4, 7. */
+export interface RelatedOreForSummaryDto {
+  id: number;
+  maQuang: string;
+  tenQuang: string;
+  idLoaiQuang: number;
+  giaUsd?: number | null;
+  giaVnd?: number | null;
+  tyGia?: number | null;
+  ngayTyGia?: string | null;
+}

@@ -34,6 +34,16 @@
       <div class="row">
         <div class="col-lg-12">
           <!-- input -->
+          <mat-label class="f-w-600 m-b-8 d-block">Thứ tự mặc định</mat-label>
+          <mat-form-field appearance="outline" class="w-100" color="primary">
+            <input matInput type="number" placeholder="Thứ tự mặc định" formControlName="thuTuMacDinh"/>
+            <mat-hint>Thứ tự mặc định khi mở phương án phối trộn (để trống nếu không cần)</mat-hint>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <!-- input -->
           <mat-label class="f-w-600 m-b-8 d-block">Ghi chú</mat-label>
           <mat-form-field appearance="outline" class="w-100" color="primary">
            <textarea matInput placeholder="Ghi chú" formControlName="ghi_Chu"></textarea>

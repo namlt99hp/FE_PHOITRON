@@ -54,9 +54,7 @@
     <div
       class="grid"
       [ngStyle]="{
-        'grid-template-columns': data?.planId
-          ? 'repeat(4, 1fr)'
-          : 'repeat(3, 1fr)'
+        'grid-template-columns': getGridColumns()
       }"
     >
     <mat-form-field appearance="outline" class="dialog-input">
@@ -77,49 +75,50 @@
         />
       </mat-form-field>
       
-      <ng-container *ngIf="data?.planId; else noMilestone">
-        <mat-form-field appearance="outline" class="dialog-input">
-          <mat-label>Công đoạn</mat-label>
-          <mat-select
-            [value]="milestone()"
-            (selectionChange)="milestone.set($event.value)"
+      <!-- Hiện select loại quặng khi mở từ Trộn quặng (Tron) hoặc Edit quặng trộn/vê viên (Tron | QuangVeVien) -->
+      <mat-form-field 
+        *ngIf="data?.outputLoaiQuang === LoaiQuangEnum.Tron || data?.outputLoaiQuang === LoaiQuangEnum.QuangVeVien"
+        appearance="outline" 
+        class="dialog-input"
+      >
+        <mat-label>Loại quặng</mat-label>
+        <mat-select
+          [value]="outputLoaiQuang()"
+          (selectionChange)="outputLoaiQuang.set($event.value)"
+        >
+          <mat-option [value]="LoaiQuangEnum.Tron">Quặng trộn</mat-option>
+          <mat-option [value]="LoaiQuangEnum.QuangVeVien">Vê viên</mat-option>
+        </mat-select>
+      </mat-form-field>
+      
+      <!-- Quặng trộn / Vê viên: chỉ hiện Loại quặng (đã có ở trên). Có planId và không phải trộn/vê viên: hiện Công đoạn. -->
+      <mat-form-field
+        *ngIf="data?.planId && outputLoaiQuang() !== LoaiQuangEnum.Tron && outputLoaiQuang() !== LoaiQuangEnum.QuangVeVien"
+        appearance="outline"
+        class="dialog-input"
+      >
+        <mat-label>Công đoạn</mat-label>
+        <mat-select
+          [value]="milestone()"
+          (selectionChange)="milestone.set($event.value)"
+        >
+          <mat-option [value]="MilestoneEnum.Standard"
+            >--- Chọn Công đoạn ---</mat-option
           >
-            <mat-option [value]="MilestoneEnum.Standard"
-              >--- Chọn Công đoạn ---</mat-option
-            >
-            <mat-option [value]="MilestoneEnum.ThieuKet">Thiêu kết</mat-option>
-            <mat-option [value]="MilestoneEnum.LoCao">Lò cao</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="dialog-input">
-          <mat-label>Ngày tạo quặng</mat-label>
-          <input
-            matInput
-            [matDatepicker]="pickerPlan"
-            [formControl]="oreForm.controls.NgayTao"
-          />
-          <mat-datepicker-toggle
-            matSuffix
-            [for]="pickerPlan"
-          ></mat-datepicker-toggle>
-          <mat-datepicker #pickerPlan></mat-datepicker>
-        </mat-form-field>
-      </ng-container>
-      <ng-template #noMilestone>
-        <mat-form-field appearance="outline" class="dialog-input">
-          <mat-label>Ngày tạo quặng</mat-label>
-          <input
-            matInput
-            [matDatepicker]="pickerStd"
-            [formControl]="oreForm.controls.NgayTao"
-          />
-          <mat-datepicker-toggle
-            matSuffix
-            [for]="pickerStd"
-          ></mat-datepicker-toggle>
-          <mat-datepicker #pickerStd></mat-datepicker>
-        </mat-form-field>
-      </ng-template>
+          <mat-option [value]="MilestoneEnum.ThieuKet">Thiêu kết</mat-option>
+          <mat-option [value]="MilestoneEnum.LoCao">Lò cao</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="dialog-input">
+        <mat-label>Ngày tạo quặng</mat-label>
+        <input
+          matInput
+          [matDatepicker]="pickerOre"
+          [formControl]="oreForm.controls.NgayTao"
+        />
+        <mat-datepicker-toggle matSuffix [for]="pickerOre"></mat-datepicker-toggle>
+        <mat-datepicker #pickerOre></mat-datepicker>
+      </mat-form-field>
     </div>
     <div class="grid">
       <mat-form-field appearance="outline" class="dialog-input col-span-3">
@@ -243,8 +242,15 @@
             >
               Thông tin phối
             </th>
-            <th class="group" [attr.colspan]="milestone() === MilestoneEnum.LoCao ? displayedColumns().length - 4 : displayedColumns().length - 3">
+            <th class="group" [attr.colspan]="getChemColumnsSpan()">
               Các thành phần hóa học
+            </th>
+            <th
+              class="group"
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              colspan="5"
+            >
+              Vê viên
             </th>
           </tr>
           <tr>
@@ -276,7 +282,32 @@
             <th *ngIf="milestone() === MilestoneEnum.LoCao" class="kl-nhan-col">
               KL nhận
             </th>
-            <th *ngFor="let c of displayedChems()">{{ c.ma_TPHH }}</th>
+            <th *ngFor="let c of displayedChems()" class="chem-col">{{ c.ma_TPHH }}</th>
+            <th
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="sau-nung-col"
+            >
+              Sau nung
+            </th>
+            <th
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="tieu-hao-col"
+            >
+              Tiêu hao
+            </th>
+            <th
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="don-gia-col"
+            >
+              Đơn giá
+            </th>
+            <th
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="chi-phi-nghien-col"
+              colspan="2"
+            >
+              Chi phí nghiền
+            </th>
           </tr>
         </thead>
 
@@ -284,7 +315,7 @@
           <!-- Hàng quặng nguồn -->
           <tr
             *ngFor="let r of rows(); let i = index"
-            [class.mixed-ore-row]="r.loaiQuang === 7"
+            [class.mixed-ore-row]="r.loaiQuang === LoaiQuangEnum.QuangPA"
           >
             <th class="stub">
               <div class="ore-cell">
@@ -306,11 +337,11 @@
             <!-- tỷ lệ phối -->
             <td class="ratio-cell">
               <span
-                *ngIf="r.loaiQuang === 7"
+                *ngIf="r.loaiQuang === LoaiQuangEnum.QuangPA"
                 class="calculated-value text-center"
-              >{{ getRatioForLoai7() }}</span>
+              >{{ formatDynamic(getRatioForLoai7()) }}</span>
               <input
-                *ngIf="r.loaiQuang !== 7"
+                *ngIf="r.loaiQuang !== LoaiQuangEnum.QuangPA"
                 type="text"
                 inputmode="decimal"
                 class="cell-input text-center"
@@ -323,7 +354,7 @@
               *ngIf="milestone() === MilestoneEnum.ThieuKet"
               class="thieu-ket-cell text-right"
             >
-              <span *ngIf="getThieuKetKhauHaoValue(r) !== 0">{{ getThieuKetKhauHaoValue(r) | number:'1.2-2' }}</span>
+              <span *ngIf="getThieuKetKhauHaoValue(r) !== 0">{{ formatDynamic(getThieuKetKhauHaoValue(r)) }}</span>
             </td>
 
             <!-- Thiêu kết: Tỷ lệ khấu hao (%) -->
@@ -331,7 +362,7 @@
               *ngIf="milestone() === MilestoneEnum.ThieuKet"
               class="percentage-cell text-right"
             >
-              <span *ngIf="getThieuKetKhauHaoPercentage(r) !== 0">{{ getThieuKetKhauHaoPercentage(r) | number:'1.3-3' }}</span>
+              <span *ngIf="getThieuKetKhauHaoPercentage(r) !== 0">{{ formatDynamic(getThieuKetKhauHaoPercentage(r)) }}</span>
             </td>
 
             <!-- Lò cao: KL vào lò -->
@@ -344,14 +375,13 @@
                   isLocaoKlVaoLoCalculated(r) && getLocaoKlVaoLoValue(r) !== 0
                 "
                 class="calculated-value"
-              >{{ getLocaoKlVaoLoValue(r) | number:'1.2-2' }}</span>
+              >{{ formatDynamic(getLocaoKlVaoLoValue(r)) }}</span>
               <input
                 *ngIf="!isLocaoKlVaoLoCalculated(r)"
                 type="text"
                 inputmode="decimal"
                 class="cell-input text-center"
                 [formControl]="r.klVaoLoCtrl"
-                hideZeroInput
               />
             </td>
 
@@ -361,7 +391,7 @@
               class="ty-le-hoi-quang-cell"
             >
               <input
-                *ngIf="r.loaiQuang !== 3"
+                *ngIf="r.loaiQuang !== LoaiQuangEnum.NhienLieu"
                 type="text"
                 inputmode="decimal"
                 class="cell-input text-center"
@@ -377,45 +407,99 @@
             >
               <span 
                 class="calculated-value text-center"
-              >{{ r.klNhanCtrl.value | number:'1.2-2' }}</span>
+              >{{ formatDynamic(r.klNhanCtrl.value) }}</span>
             </td>
 
-            <!-- các thành phần hoá học -->
-            <td *ngFor="let c of displayedChems()">
+            <!-- các thành phần hoá học: hiển thị theo formatDynamic, cập nhật control khi nhập -->
+            <td *ngFor="let c of displayedChems()" class="chem-cell">
               <input
-                type="number"
-                step="0.001"
+                type="text"
+                inputmode="decimal"
                 class="cell-input text-right"
-                [formControl]="getChemCtrl(r, c.id)"
+                [value]="formatDynamic(getChemCtrl(r, c.id).value)"
+                (input)="onChemInput(r, c.id, $event)"
               />
+            </td>
+
+            <!-- Vê viên: Sau nung (tính tự động) -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="sau-nung-cell"
+            >
+              <span class="calculated-value text-center">
+                {{ formatDynamic(getSauNungValue(r)) }}
+              </span>
+            </td>
+
+            <!-- Vê viên: Tiêu hao (tính tự động, cho phép chỉnh sửa) -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="tieu-hao-cell"
+            >
+              <input
+                type="text"
+                inputmode="decimal"
+                class="cell-input text-center"
+                [formControl]="r.tieuHaoCtrl!"
+              />
+            </td>
+
+            <!-- Vê viên: Đơn giá (hiển thị giá quặng) -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="don-gia-cell"
+            >
+              <span class="calculated-value text-center">
+                {{ formatDynamic(getDonGiaValue(r)) }}
+              </span>
+            </td>
+
+            <!-- Vê viên: Chi phí nghiền -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="chem-cell chi-phi-nghien-cell"
+              colspan="2"
+            >
+              <span
+                *ngIf="r.tinhChiPhiNghienCtrl!.value"
+                class="calculated-value text-center"
+              >
+                {{ formatDynamic(r.chiPhiNghienCtrl!.value) }}
+              </span>
+              <mat-slide-toggle
+                class="chi-phi-nghien-toggle"
+                [formControl]="r.tinhChiPhiNghienCtrl!"
+                matTooltip="Bật để tính: Đơn giá nghiền × Tiêu hao"
+                matTooltipPosition="above"
+              ></mat-slide-toggle>
             </td>
           </tr>
 
           <!-- Dòng tổng & kết quả sau tính -->
           <tr *ngIf="milestone() !== MilestoneEnum.ThieuKet" class="result-row">
             <th class="stub">Tổng</th>
-            <td class="text-center">{{ totalRatio() | number:'1.0-1' }}%</td>
+            <td class="text-center">{{ formatDynamic(totalRatio()) }}%</td>
             <td
               *ngIf="milestone() === MilestoneEnum.ThieuKet"
               class="text-right"
             >
-              {{ getTotalThieuKetKhauHao() | number:'1.2-2' }}
+              {{ formatDynamic(getTotalThieuKetKhauHao()) }}
             </td>
             <td
               *ngIf="milestone() === MilestoneEnum.ThieuKet"
               class="text-right"
             >
-              {{ getTotalThieuKetKhauHaoPercentage() | number:'1.3-3' }}
+              {{ formatDynamic(getTotalThieuKetKhauHaoPercentage()) }}
             </td>
             <!-- Các cột tổng cho milestone Lò Cao -->
             <td *ngIf="milestone() === MilestoneEnum.LoCao" class="text-right">
-              {{ getTotalLocaoKlVaoLo() | number:'1.2-2' }}
+              {{ formatDynamic(getTotalLocaoKlVaoLo()) }}
             </td>
             <td *ngIf="milestone() === MilestoneEnum.LoCao" class="text-right">
-              {{ getTotalLocaoTyLeHoiQuang() | number:'1.2-2' }}%
+              {{ formatDynamic(getTotalLocaoTyLeHoiQuang()) }}%
             </td>
             <td *ngIf="milestone() === MilestoneEnum.LoCao" class="text-right">
-              {{ getTotalLocaoKlNhan() | number:'1.2-2' }}
+              {{ formatDynamic(getTotalLocaoKlNhan()) }}
             </td>
             <td
               *ngFor="let c of displayedChems()"
@@ -424,26 +508,82 @@
             >
               <span
                 *ngIf="milestone() === MilestoneEnum.LoCao; else defaultTotal"
-              >{{ getChemTotalBySumProduct(c.id) | number:'1.2-2' }}</span>
+              >{{ formatDynamic(getChemTotalBySumProduct(c.id)) }}</span>
               <ng-template #defaultTotal>
-                {{ resultRow()[c.id] | number:'1.0-2' }}
+                {{ formatDynamic(resultRow()[c.id]) }}
               </ng-template>
+            </td>
+            <!-- Vê viên: Tổng Sau nung -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="text-right"
+            >
+              {{ formatDynamic(getTotalSauNung()) }}
+            </td>
+            <!-- Vê viên: Tổng Tiêu hao (tính từ các giá trị đã nhập) -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="text-right"
+            >
+              {{ formatDynamic(getTotalTieuHao()) }}
+            </td>
+            <!-- Vê viên: Đơn giá (để trống ở dòng tổng) -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="text-right"
+            >
+              {{ formatDynamic(getVeVienTotalDonGia()) }}
+            </td>
+            <!-- Vê viên: Tổng Chi phí nghiền (chiếm 2 cột) -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="text-right"
+              colspan="2"
+            >
             </td>
           </tr>
 
           <!-- Dòng Result 1 cho milestone ThieuKet: tỷ lệ x hàm lượng TPHH -->
           <tr *ngIf="milestone() === MilestoneEnum.ThieuKet" class="result-row">
             <th class="stub"></th>
-            <td class="text-center">{{ totalRatio() | number : "1.0-1" }}%</td>
+            <td class="text-center">{{ formatDynamic(totalRatio()) }}%</td>
             <td class="text-right">
-              {{ getTotalThieuKetKhauHao() | number : "1.2-2" }}
+              {{ formatDynamic(getTotalThieuKetKhauHao()) }}
             </td>
             <td class="text-right">
-              {{ getTotalThieuKetKhauHaoPercentage() | number : "1.3-3" }}
+              {{ formatDynamic(getTotalThieuKetKhauHaoPercentage()) }}
             </td>
             <td *ngFor="let c of selectedChems()" class="text-right">
-              <span *ngIf="!shouldHideInResult1(c.id)">{{ getThieuKetRow1Value(c.id) | number:'1.2-2' }}</span>
+              <span *ngIf="!shouldHideInResult1(c.id)">{{ formatDynamic(getThieuKetRow1Value(c.id)) }}</span>
               <span *ngIf="shouldHideInResult1(c.id)"><strong>R2</strong></span>
+            </td>
+            <!-- Vê viên: Tổng Sau nung (Result 1) -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="text-right"
+            >
+              {{ formatDynamic(getTotalSauNung()) }}
+            </td>
+            <!-- Vê viên: Tổng Tiêu hao (Result 1) -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="text-right"
+            >
+              {{ formatDynamic(getTotalTieuHao()) }}
+            </td>
+            <!-- Vê viên: Đơn giá (Result 1) -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="text-right"
+            >
+              {{ formatDynamic(getVeVienTotalDonGia()) }}
+            </td>
+            <!-- Vê viên: Chi phí nghiền (Result 1, chiếm 2 cột) -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="text-right"
+              colspan="2"
+            >
             </td>
           </tr>
 
@@ -458,12 +598,61 @@
               class="text-right"
               [class.out-range]="isOutOfRange(c.id)"
             >
-              <span *ngIf="c.ma_TPHH === 'MKN'">{{ getThieuKetCaOSiO2Ratio() | number:'1.3-3' }}</span>
-              <span *ngIf="c.ma_TPHH !== 'MKN'">{{ getThieuKetRow2Value(c.id) | number:'1.3-3' }}</span>
+              <span *ngIf="c.ma_TPHH === 'MKN'">{{ formatDynamic(getThieuKetCaOSiO2Ratio()) }}</span>
+              <span *ngIf="c.ma_TPHH !== 'MKN'">{{ formatDynamic(getThieuKetRow2Value(c.id)) }}</span>
+            </td>
+            <!-- Vê viên: Tổng Sau nung (Result 2) -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="text-right"
+            >
+              {{ formatDynamic(getTotalSauNung()) }}
+            </td>
+            <!-- Vê viên: Tổng Tiêu hao (Result 2) -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="text-right"
+            >
+              {{ formatDynamic(getTotalTieuHao()) }}
+            </td>
+            <!-- Vê viên: Đơn giá (Result 2) -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="text-right"
+            >
+              {{ formatDynamic(getVeVienTotalDonGia()) }}
+            </td>
+            <!-- Vê viên: Chi phí nghiền (Result 2, chiếm 2 cột) -->
+            <td
+              *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+              class="text-right"
+              colspan="2"
+            >
             </td>
           </tr>
         </tbody>
       </table>
+      <div 
+        *ngIf="outputLoaiQuang() === LoaiQuangEnum.QuangVeVien"
+        class="vevien-chiphinghien"
+      >
+        <div class="vevien-input-group">
+          <label>Đơn giá nghiền:</label>
+          <input 
+            type="number" 
+            [formControl]="veVienForm.controls.donGiaNghien"
+            class="vevien-input"
+          />
+        </div>
+        <div class="vevien-input-group">
+          <label>Chi phí nghiền cố định:</label>
+          <input 
+            type="number" 
+            [formControl]="veVienForm.controls.chiPhiNghienCoDinh"
+            class="vevien-input"
+          />
+        </div>
+      </div>
     </div>
     <!-- Locao Results Component - Hiển thị dưới bảng mix quặng -->
     <section
@@ -502,12 +691,12 @@
           <tr
             *ngFor="let i of getCostTableItems()"
             [class.parent-ore]="i.isParent"
-            [class.loai-7]="i.loaiQuang === 7"
+            [class.loai-7]="i.loaiQuang === LoaiQuangEnum.QuangPA && i.isParent"
           >
             <td class="stub">{{ i.ten }}</td>
-            <td class="text-right">{{ i.consumption | number:'1.3-3' }}</td>
-            <td class="text-right">{{ i.unitVnd | number:'1.2-2' }}</td>
-            <td class="text-right">{{ i.unitUsd | number:'1.2-2' }}</td>
+            <td class="text-right">{{ formatDynamic(i.consumption) }}</td>
+            <td class="text-right">{{ formatDynamic(i.unitVnd) }}</td>
+            <td class="text-right">{{ formatDynamic(i.unitUsd) }}</td>
           </tr>
           <!-- Dòng chi phí khác -->
           <tr class="other-cost-row">
@@ -529,13 +718,12 @@
           <tr class="total-row">
             <th class="stub">Tổng</th>
             <td class="text-right">
-              {{ getTotalConsumption() | number : "1.3-3" }}
             </td>
             <td class="text-right">
-              {{ getTotalAllCosts() | number : "1.2-2" }}
+              {{ formatDynamic(getTotalAllCosts()) }}
             </td>
             <td class="text-right">
-              {{ getTotalAllCostsUSD() | number : "1.2-2" }}
+              {{ formatDynamic(getTotalAllCostsUSD()) }}
             </td>
           </tr>
         </tbody>
@@ -561,16 +749,16 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let r of rows()" [class.loai-7]="r.loaiQuang === 7">
+          <tr *ngFor="let r of rows()" [class.loai-7]="r.loaiQuang === LoaiQuangEnum.QuangPA">
             <td class="stub">{{ r.tenQuang }}</td>
             <td class="text-right">
-              {{ getLoCaoConsumption(r) | number : "1.3-3" }}
+              {{ formatDynamic(getLoCaoConsumption(r)) }}
             </td>
             <td class="text-right">
-              {{ getUnitPriceVND(r) | number : "1.2-2" }}
+              {{ formatDynamic(getUnitPriceVND(r)) }}
             </td>
             <td class="text-right">
-              {{ getUnitPriceUSD(r) | number : "1.2-2" }}
+              {{ formatDynamic(getUnitPriceUSD(r)) }}
             </td>
           </tr>
           <!-- Dòng chi phí sản xuất khác (nhập tay) -->
@@ -593,7 +781,7 @@
           <tr>
             <td class="stub">Quặng hồi</td>
             <td class="text-right">
-              {{ getLoCaoRecycleConsumption() | number : "1.3-3" }}
+              {{ formatDynamic(getLoCaoRecycleConsumption()) }}
             </td>
             <td class="text-right">
               <input
@@ -601,6 +789,7 @@
                 inputmode="decimal"
                 class="cost-input"
                 [(ngModel)]="recycleCostVnd"
+                (ngModelChange)="onRecycleCostVndChange()"
                 placeholder="0.00"
               />
             </td>
@@ -610,13 +799,12 @@
           <tr class="total-row">
             <th class="stub">Tổng</th>
             <td class="text-right">
-              {{ getTotalConsumption() | number : "1.3-3" }}
             </td>
             <td class="text-right">
-              {{ getTotalAllCosts() | number : "1.2-2" }}
+              {{ formatDynamic(getTotalLoCaoCost()) }}
             </td>
             <td class="text-right">
-              {{ getTotalAllCostsUSD() | number : "1.2-2" }}
+              {{ formatDynamic(getTotalLoCaoCostUSD()) }}
             </td>
           </tr>
         </tbody>

@@ -82,4 +82,18 @@ export class ThanhPhanHoaHocService {
     const api = `${this.baseApi}/GetByListIds`;
     return this.http.post<TPHHSelectItemModel[]>(api, ids);
   }
+
+  getDefaultChems(): Observable<TPHHTableModel[]> {
+    const api = `${this.baseApi}/GetDefaultChems`;
+    return this.http.get<ApiResponse<TPHHTableModel[]>>(api).pipe(
+      map((res) => {
+        if (res.success && res.data) {
+          return res.data;
+        }
+        return [];
+      })
+    );
+
+  }
 }
+

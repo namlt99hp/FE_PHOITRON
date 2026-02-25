@@ -168,6 +168,22 @@
     }
   }
 
+  // Special row: "Tỷ lệ phối Thiêu kết" (nền bình thường, chữ đen đậm, căn giữa)
+  .thieu-ket-sum-row {
+    .excel-cell {
+      text-align: center !important;
+      font-weight: 700 !important;
+      color: #24292f !important;
+    }
+
+    // Override "has-value" styling (không nền xanh / không chữ xanh)
+    .value-cell.has-value {
+      background-color: #fff !important;
+      color: #24292f !important;
+      font-weight: 700 !important;
+    }
+  }
+
   // Hover effects
   tbody tr:hover {
     background-color: #f6f8fa;

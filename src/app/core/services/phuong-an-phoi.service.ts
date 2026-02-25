@@ -17,7 +17,7 @@ import {
   DeleteResponseDto
 } from '../models/api-models';
 import { PlanComparisonExcelResponse } from '../models/plan-comparison-excel.model';
-import { PlanThieuKetSectionDto, PlanSectionDto } from '../models/phuong-an-phoi.model';
+import { PlanThieuKetSectionDto, PlanSectionDto, RelatedOreForSummaryDto } from '../models/phuong-an-phoi.model';
 import { AuthService } from './auth.service';
 
 export interface PhuongAnPhoiCreateDto {
@@ -125,6 +125,11 @@ export class PhuongAnPhoiService {
       .set('includeLoCao', includeLoCao.toString());
     
     return this.http.get<ApiResponse<PlanSectionDto[]>>(`${this.baseApi}/GetPlanSectionsByGangDich/gang-dich/${gangDichId}`, { params });
+  }
+
+  /** Danh sách quặng liên quan đến các phương án của gang đích (Giá đầu vào), trừ loại 2, 4, 7. */
+  getRelatedOresByGangDich(gangDichId: number): Observable<ApiResponse<RelatedOreForSummaryDto[]>> {
+    return this.http.get<ApiResponse<RelatedOreForSummaryDto[]>>(`${this.baseApi}/GetRelatedOresByGangDich/gang-dich/${gangDichId}`);
   }
 
 }

@@ -103,6 +103,18 @@ export class MainLayoutComponent implements OnDestroy {
               path: '/thongke-phuongan',
               icon: 'graph-up',
             },
+            {
+              id: 'dept',
+              label: 'Quản lý loại quặng',
+              path: '/loai-quang',
+              icon: 'graph-up',
+            },
+            {
+              id: 'dept',
+              label: 'Quản lý lô quặng',
+              path: '/lo-quang',
+              icon: 'graph-up',
+            },
           ],
         },
         

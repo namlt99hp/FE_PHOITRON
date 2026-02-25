@@ -26,6 +26,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
@@ -50,8 +51,11 @@ import {
   QuangThanhPhanHoaHocDto,
   QuangGiaDto
 } from '../../../core/models/quang.model';
+import { LoQuangService } from '../../../core/services/loai-quang.service';
+import { LoQuangTableModel } from '../../../core/models/loai-quang.model';
+import { LoaiQuangEnum } from '../../../core/enums/loaiquang.enum';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { debounceTime, distinctUntilChanged, startWith, map, switchMap } from 'rxjs';
 import { RateService } from '../../../core/services/rate.service';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 
@@ -66,6 +70,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatAutocompleteModule,
     MatTableModule,
     MatIconModule,
     MatTooltipModule,
@@ -79,6 +84,7 @@ export class QuangMuaFormDialogComponent {
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private quangService = inject(QuangService);
+  private loQuangService = inject(LoQuangService);
   private snack = inject(MatSnackBar);
   private rateSvc = inject(RateService);
   private cdr = inject(ChangeDetectorRef);
@@ -117,6 +123,20 @@ export class QuangMuaFormDialogComponent {
   checking = signal<boolean>(false);
   checkError = signal<string | null>(null);
 
+  // LoaiQuang: chỉ 3 loại cố định (Mua=8, NhienLieu=3, QuangCo=5)
+  readonly loaiQuangs = [
+    { id: LoaiQuangEnum.Mua, maLoaiQuang: 'MUA', tenLoaiQuang: 'Quặng mua về' },
+    { id: LoaiQuangEnum.NhienLieu, maLoaiQuang: 'NHIENLIEU', tenLoaiQuang: 'Quặng nhiên liệu' },
+    { id: LoaiQuangEnum.QuangCo, maLoaiQuang: 'QUANGCO', tenLoaiQuang: 'Quặng cỡ' }
+  ];
+  
+  // LoQuang autocomplete
+  // Giá trị control có thể là string (user đang gõ) hoặc LoQuangTableModel (đã chọn từ list / patch khi edit)
+  loQuangSearchCtrl = new FormControl<LoQuangTableModel | string | null>(null);
+  filteredLoQuangs = signal<LoQuangTableModel[]>([]);
+  selectedLoQuang: LoQuangTableModel | null = null;
+  newLoQuangName: string | null = null; // Lưu tên lô quặng mới nếu nhập không tìm thấy
+
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: QuangMuaData,
     private ref: MatDialogRef<QuangMuaFormDialogComponent, { success: boolean; id: number } | null>
@@ -149,6 +169,96 @@ export class QuangMuaFormDialogComponent {
           }
         }
       });
+
+    // Setup autocomplete cho lô quặng
+    this.setupLoQuangAutocomplete();
+  }
+
+  // Setup autocomplete cho lô quặng với search
+  private setupLoQuangAutocomplete(): void {
+    this.loQuangSearchCtrl.valueChanges
+      .pipe(
+        startWith<LoQuangTableModel | string | null>(''),
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap(searchTerm => {
+          const raw = typeof searchTerm === 'string'
+            ? searchTerm
+            : searchTerm?.maLoQuang ?? '';
+          const term = raw.trim();
+          if (!term) {
+            // Nếu không có search term, load 50 record đầu tiên
+            return this.loQuangService.search({
+              pageIndex: 0,
+              pageSize: 50,
+              search: '',
+              sortBy: 'maLoQuang',
+              sortDir: 'asc'
+            }).pipe(
+              map(res => res?.data || [])
+            );
+          }
+          // Nếu có search term, search với pageSize 50
+          return this.loQuangService.search({
+            pageIndex: 0,
+            pageSize: 50,
+            search: term,
+            sortBy: 'maLoQuang',
+            sortDir: 'asc'
+          }).pipe(
+            map(res => res?.data || [])
+          );
+        })
+      )
+      .subscribe({
+        next: (results) => {
+          this.filteredLoQuangs.set(results);
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          console.error('Error searching LoQuang:', error);
+          this.filteredLoQuangs.set([]);
+        }
+      });
+  }
+
+  // Khi chọn từ autocomplete
+  onLoQuangSelected(loQuang: LoQuangTableModel): void {
+    this.selectedLoQuang = loQuang;
+    this.headerForm.controls.idLoQuang.setValue(loQuang.id);
+    this.newLoQuangName = null; // Reset tên mới
+  }
+
+  // Khi nhập text mới (không chọn từ list)
+  onLoQuangInputChange(value: string): void {
+    const trimmed = (value || '').trim();
+    if (!trimmed) {
+      this.selectedLoQuang = null;
+      this.newLoQuangName = null;
+      this.headerForm.controls.idLoQuang.setValue(null);
+      return;
+    }
+
+    // Check xem có trong filtered list không
+    const found = this.filteredLoQuangs().find(lo => 
+      lo.maLoQuang.toLowerCase() === trimmed.toLowerCase()
+    );
+
+    if (found) {
+      // Nếu tìm thấy, chọn nó
+      this.onLoQuangSelected(found);
+    } else {
+      // Nếu không tìm thấy, lưu tên mới để tạo sau
+      this.selectedLoQuang = null;
+      this.newLoQuangName = trimmed;
+      this.headerForm.controls.idLoQuang.setValue(null);
+    }
+  }
+
+  // Display function cho autocomplete
+  displayLoQuang(loQuang: LoQuangTableModel | string | null): string {
+    if (!loQuang) return '';
+    return typeof loQuang === 'string' ? loQuang : loQuang.maLoQuang;
   }
 
   // Helper: Convert string to slug không có dấu gạch ngang (viết liền)
@@ -200,7 +310,8 @@ export class QuangMuaFormDialogComponent {
     tenQuang: ['', [Validators.required, Validators.maxLength(200)]],
     giaUSD: [null as number | null], // Không có validation, cho phép null
     ghiChu: ['' as string | null],
-    loaiQuang: [0, Validators.required] // 0=thường, 3=phụ liệu, 5=cỡ
+    idLoaiQuang: [LoaiQuangEnum.Mua, [Validators.required]], // Default: Mua (8)
+    idLoQuang: [null as number | null],
   });
 
   // Computed để check xem có thể enable các input khác không
@@ -233,9 +344,8 @@ export class QuangMuaFormDialogComponent {
   ]);
 
   muaChemCtrl = new FormControl<number | null>(null);
-  muaPercentCtrl = new FormControl<number | null>(null, {
-    validators: [Validators.min(0), Validators.max(100)],
-  });
+  // Cho phép nhập âm / vượt 100, chỉ cần là number (validation sẽ xử lý khi build payload)
+  muaPercentCtrl = new FormControl<number | null>(null);
 
   totalMuaPercent = computed(() => {
     return this.selectedChems().reduce((sum, c) => {
@@ -297,7 +407,8 @@ export class QuangMuaFormDialogComponent {
       const ctrl = this.tp_HoaHocs().get(chemId!);
       if (!ctrl) return;
       const v = ctrl.phanTram.value;
-      if (v === null || isNaN(v) || v < 0) return;
+      // Chỉ bỏ qua nếu null hoặc không phải number; cho phép giá trị âm / vượt 100
+      if (v === null || isNaN(v as any)) return;
       thanhPhanHoaHoc.push({
         ID_TPHH: chemId!,
         Gia_Tri_PhanTram: +v.toFixed(4),
@@ -323,7 +434,8 @@ export class QuangMuaFormDialogComponent {
       id: idQuang,
       ma_Quang: header.maQuang!,
       ten_Quang: header.tenQuang!,
-      loai_Quang: header.loaiQuang ?? 0,
+      id_LoaiQuang: header.idLoaiQuang!,
+      id_LoQuang: header.idLoQuang ?? null,
       dang_Hoat_Dong: true,
       ghi_Chu: header.ghiChu ?? null,
       thanhPhanHoaHoc: thanhPhanHoaHoc,
@@ -391,33 +503,77 @@ export class QuangMuaFormDialogComponent {
 
   onSave() {
     try {
-      const payload = this.buildPayload();
-      this.quangService.upsertWithThanhPhan(payload).subscribe({
-        next: (res) => {
-          if (res) {
-            if (this.data.mode === 'MUA') {
-              this.snack.open('Thêm quặng mua thành công', 'Đóng', { duration: 1500, panelClass: ['snack-success'] });
-            } else {
-              this.snack.open('Sửa quặng thành công', 'Đóng', { duration: 1500, panelClass: ['snack-info'] });
-            }
-            this.ref.close({ success: true, id: res.data?.id || 0 });
-          }
-        },
-        error: (error) => {
-          console.error('Error saving quang:', error);
-          this.snack.open(`Lỗi: ${error.error?.message || error.message || 'Có lỗi xảy ra'}`, 'Đóng', {
-            duration: 3000,
-            panelClass: ['snack-error']
-          });
-        }
-      });
+      // Nếu có tên lô quặng mới (nhập không tìm thấy), tạo mới trước
+      if (this.newLoQuangName && !this.selectedLoQuang) {
+        this.createLoQuangAndSave();
+      } else {
+        // Nếu đã chọn từ list hoặc không có lô quặng, save trực tiếp
+        this.saveQuang();
+      }
     } catch (error: any) {
       this.snack.open(`Lỗi: ${error.message}`, 'Đóng', {
         duration: 3000,
         panelClass: ['snack-error']
       });
     }
-    this.headerForm.reset();
+  }
+
+  // Tạo lô quặng mới rồi mới save quặng
+  private createLoQuangAndSave(): void {
+    const loQuangDto = {
+      id: null,
+      loQuang: {
+        maLoQuang: this.newLoQuangName!,
+        moTa: null,
+        isActive: true,
+        nguoiTao: null
+      }
+    };
+
+    this.loQuangService.upsert(loQuangDto).subscribe({
+      next: (res) => {
+        if (res.success && res.data?.id) {
+          // Set ID lô quặng mới vào form
+          this.headerForm.controls.idLoQuang.setValue(res.data.id);
+          // Save quặng
+          this.saveQuang();
+        } else {
+          this.snack.open('Không thể tạo lô quặng mới', 'Đóng', {
+            duration: 3000,
+            panelClass: ['snack-error']
+          });
+        }
+      },
+      error: (error) => {
+        this.snack.open(`Lỗi tạo lô quặng: ${error.error?.message || error.message}`, 'Đóng', {
+          duration: 3000,
+          panelClass: ['snack-error']
+        });
+      }
+    });
+  }
+
+  // Save quặng
+  private saveQuang(): void {
+    const payload = this.buildPayload();
+    this.quangService.upsertWithThanhPhan(payload).subscribe({
+      next: (res) => {
+        if (res) {
+          if (this.data.mode === 'MUA') {
+            this.snack.open('Thêm quặng mua thành công', 'Đóng', { duration: 1500, panelClass: ['snack-success'] });
+          } else {
+            this.snack.open('Sửa quặng thành công', 'Đóng', { duration: 1500, panelClass: ['snack-info'] });
+          }
+          this.ref.close({ success: true, id: res.data?.id || 0 });
+        }
+      },
+      error: (error) => {
+        this.snack.open(`Lỗi: ${error.error?.message || error.message || 'Có lỗi xảy ra'}`, 'Đóng', {
+          duration: 3000,
+          panelClass: ['snack-error']
+        });
+      }
+    });
   }
 
   onCancel() {
@@ -436,14 +592,7 @@ export class QuangMuaFormDialogComponent {
           this.loading.set(false);
         },
         error: (error) => {
-          console.error('Error loading quang details:', error);
-          console.error('Error details:', {
-            status: error.status,
-            statusText: error.statusText,
-            error: error.error,
-            message: error.message,
-            url: error.url
-          });
+          
           this.error.set(error.error?.message || error.message || 'Không thể tải thông tin quặng');
           this.loading.set(false);
           this.snack.open(`Lỗi: ${error.error?.message || error.message || 'Có lỗi xảy ra'}`, 'Đóng', {
@@ -457,7 +606,6 @@ export class QuangMuaFormDialogComponent {
 
   PatchFormValue(data: QuangDetailResponse) {
     try {
-      console.log('Received data from API:', data);
 
       // Validate API response structure
       if (!this.validateApiResponse(data)) {
@@ -485,7 +633,8 @@ export class QuangMuaFormDialogComponent {
         tenQuang: tenQuang,
         giaUSD: giaUSD,
         ghiChu: quangData.ghi_Chu || quangData.ghiChu || '',
-        loaiQuang: quangData.loai_Quang ?? 0,
+        idLoaiQuang: quangData.iD_LoaiQuang ?? LoaiQuangEnum.Mua,
+        idLoQuang: quangData.iD_LoQuang ?? null,
       };
 
       this.headerForm.patchValue(formData);
@@ -496,6 +645,21 @@ export class QuangMuaFormDialogComponent {
         if (maQuangSlug) {
           this.headerForm.controls.maQuang.setValue(maQuangSlug, { emitEvent: false });
         }
+      }
+
+      // Nếu có idLoQuang, load thông tin lô quặng để hiển thị trong autocomplete
+      if (quangData.iD_LoQuang) {
+        this.loQuangService.getById(quangData.iD_LoQuang).subscribe({
+          next: (loQuang) => {
+            this.selectedLoQuang = loQuang;
+            // Set luôn object vào control để displayWith hoạt động đúng
+            this.loQuangSearchCtrl.setValue(loQuang, { emitEvent: false });
+            this.cdr.markForCheck();
+          },
+          error: (error) => {
+            console.error('Error loading LoQuang:', error);
+          }
+        });
       }
 
       // Force change detection
@@ -538,16 +702,7 @@ export class QuangMuaFormDialogComponent {
       // Sync chemical composition form controls
       this.syncThanhPhan(chemVms, seed);
 
-      console.log('Form patched successfully with data:', {
-        quangData,
-        currentPrice,
-        giaUSD,
-        tyGia,
-        ngayChonTyGia,
-        giaVndFromApi: this.giaVndFromApi(),
-        chemicalData: chemicalData.length,
-        seedSize: seed.size
-      });
+      
 
     } catch (error) {
       this.error.set('Lỗi khi tải dữ liệu vào form');
@@ -577,9 +732,8 @@ export class QuangMuaFormDialogComponent {
           const init = seed?.get(chemId) ??
             (this.lastValues.has(chemId) ? this.lastValues.get(chemId)! : null);
 
-          const ctrl = new FormControl<number | null>(init, {
-            validators: [Validators.min(0), Validators.max(100)]
-          });
+          // Không giới hạn min/max, cho phép âm – chỉ cần là số
+          const ctrl = new FormControl<number | null>(init);
 
           ctrl.valueChanges.subscribe((v) => this.lastValues.set(chemId, v));
           next.set(chemId, { phanTram: ctrl });
@@ -607,11 +761,7 @@ export class QuangMuaFormDialogComponent {
 
       this.tp_HoaHocs.set(next);
 
-      console.log('Chemical composition synced:', {
-        selectedCount: list.length,
-        controlsCount: next.size,
-        seedCount: seed?.size || 0
-      });
+ 
 
     } catch (error) {
       this.error.set('Lỗi khi đồng bộ thành phần hóa học');

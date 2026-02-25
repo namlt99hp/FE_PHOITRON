@@ -1,7 +1,7 @@
 <div class="dialog-container">
   <div class="dialog-header">
     <h2 class="dialog-title">
-      {{ data.loaiQuang === 2 ? 'Cấu hình Gang kết quả' : 'Cấu hình Xỉ kết quả' }}
+      {{ data.loaiQuang === LoaiQuangEnum.Gang ? 'Cấu hình Gang kết quả' : 'Cấu hình Xỉ kết quả' }}
     </h2>
     <button mat-icon-button (click)="close()" class="close-btn">
       <mat-icon>close</mat-icon>
@@ -16,7 +16,7 @@
     
     <div *ngIf="!loading() && config()" class="content-wrapper">
       <div class="section-header">
-        <h3>{{ data.loaiQuang === 2 ? 'Gang' : 'Xỉ' }} (Thành phần hóa học)</h3>
+        <h3>{{ data.loaiQuang === LoaiQuangEnum.Gang ? 'Gang' : 'Xỉ' }} (Thành phần hóa học)</h3>
         <button
           mat-icon-button
           (click)="editTpHoaHocs()"

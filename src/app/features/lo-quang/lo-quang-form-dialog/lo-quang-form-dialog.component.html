@@ -1,0 +1,49 @@
+<mat-card class="cardWithShadow theme-card">
+  <mat-card-header>
+    <mat-card-title class="m-b-0">{{ formTitle }}</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="b-t-1">
+    <form [formGroup]="form">
+      <div class="row">
+        <div class="col-lg-12">
+          <mat-label class="f-w-600 m-b-8 d-block">Mã lô quặng</mat-label>
+          <mat-form-field appearance="outline" class="w-100" color="primary">
+            <input matInput placeholder="Mã lô quặng" formControlName="maLoQuang" />
+            <mat-error *ngIf="showError('maLoQuang')">
+              {{
+                hasError('maLoQuang', 'required')
+                  ? 'Bắt buộc'
+                  : hasError('maLoQuang', 'minlength')
+                  ? 'Tối thiểu 1 ký tự'
+                  : ''
+              }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-lg-12">
+          <mat-label class="f-w-600 m-b-8 d-block">Mô tả</mat-label>
+          <mat-form-field appearance="outline" class="w-100" color="primary">
+            <textarea matInput placeholder="Mô tả" formControlName="moTa"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="m-t-12">
+        <button
+          mat-flat-button
+          color="primary"
+          class="m-r-8"
+          [disabled]="form.invalid || form.pending"
+          (click)="onSave()"
+        >
+          Lưu
+        </button>
+        <button mat-stroked-button color="warn" (click)="cancel()">Hủy</button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+

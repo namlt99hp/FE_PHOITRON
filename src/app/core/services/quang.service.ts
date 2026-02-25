@@ -32,7 +32,7 @@ export class QuangService {
   private http = inject(HttpClient);
   private auth = inject(AuthService);
 
-  search(q: TableQuery & { loaiQuang?: number[] | null; isGangTarget?: boolean | null }): Observable<TableResult<QuangTableModel>> {
+  search(q: TableQuery & { idLoaiQuang?: number[] | null; isGangTarget?: boolean | null }): Observable<TableResult<QuangTableModel>> {
     const api = `${this.baseApi}/Search`;
 
     const body: any = {
@@ -41,7 +41,7 @@ export class QuangService {
       search: q.search ?? null,
       sortBy: q.sortBy ?? null,
       sortDir: q.sortDir ?? null,
-      loaiQuang: q.loaiQuang ?? null,
+      loaiQuang: q.idLoaiQuang ?? null, 
       isGangTarget: q.isGangTarget ?? null,
     };
 
@@ -54,7 +54,9 @@ export class QuangService {
               id: x.id,
               maQuang: x.ma_Quang,
               tenQuang: x.ten_Quang,
-              loaiQuang: x.loai_Quang,
+              iD_LoaiQuang: x.iD_LoaiQuang,
+              iD_LoQuang: x.iD_LoQuang ?? null,
+              tenLoaiQuang: x.tenLoaiQuang ?? x.ten_LoaiQuang ?? null,
               gia: x.gia_USD_1Tan ?? 0,
               giaUSD: x.gia_USD_1Tan ?? 0,
               giaVND: x.gia_VND_1Tan ?? 0,
@@ -84,7 +86,7 @@ export class QuangService {
       ma_Cong_Thuc: string;
       ten_Cong_Thuc: string;
       ngay_Tao: string;
-      items: Array<{ id: number; ma_Quang: string; ten_Quang: string; loai_Quang: number; gia_USD_1Tan: number; ty_Gia_USD_VND: number; gia_VND_1Tan: number; ti_Le_PhanTram: number; }>
+      items: Array<{ id: number; ma_Quang: string; ten_Quang: string; iD_LoaiQuang: number; gia_USD_1Tan: number; ty_Gia_USD_VND: number; gia_VND_1Tan: number; ti_Le_PhanTram: number; }>
     }>>>(api, outputOreIds).pipe(map(res => res.data ?? []));
   }
 
@@ -305,7 +307,7 @@ export class QuangService {
         id: x.id,
         tenQuang: x.ten_Quang,
         maQuang: x.ma_Quang,
-        loaiQue: x.loai_Quang,
+        loaiQue: x.iD_LoaiQuang,
         matKhiNung: x.mat_Khi_Nung ?? 0
       })) as QuangSelectItemModel[])
     );

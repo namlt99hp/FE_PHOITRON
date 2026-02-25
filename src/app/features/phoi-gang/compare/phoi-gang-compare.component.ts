@@ -10,6 +10,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { PhuongAnPhoiService } from '../../../core/services/phuong-an-phoi.service';
+import { LoaiQuangEnum } from '../../../core/enums/loaiquang.enum';
 import {
   PlanThieuKetSectionDto,
   PlanSectionDto,
@@ -22,6 +23,8 @@ interface ExcelRow {
   isSectionHeader: boolean;
   isBold: boolean;
   isYellow: boolean;
+  /** Dòng đặc biệt: Tỷ lệ phối Thiêu kết (sum childComponents) */
+  isThieuKetSumRow?: boolean;
   backgroundColor?: string;
   values: { [planName: string]: number | string | null };
 }
@@ -71,12 +74,12 @@ export class PhoiGangCompareComponent {
   readonly planSectionsData = signal<PlanSectionDto[]>([]);
 
   // Form controls for calculation parameters
-  readonly tyleTFE = new FormControl<number>(0);
-  readonly tyleTong = new FormControl<number>(0);
-  readonly sanluongGiamTFE = new FormControl<number>(0);
-  readonly sanluongGiamTong = new FormControl<number>(0);
-  readonly tieuhaoTangTFE = new FormControl<number>(0);
-  readonly tieuhaoTangTong = new FormControl<number>(0);
+  readonly tyleTFE = new FormControl<number>(1);
+  readonly tyleTong = new FormControl<number>(100);
+  readonly sanluongGiamTFE = new FormControl<number>(2.5);
+  readonly sanluongGiamTong = new FormControl<number>(7);
+  readonly tieuhaoTangTFE = new FormControl<number>(1.5);
+  readonly tieuhaoTangTong = new FormControl<number>(15);
 
   constructor() {}
 
@@ -156,12 +159,10 @@ export class PhoiGangCompareComponent {
     const currentData = this.excelData();
     let updatedData = [...currentData];
 
-    // Update Thiêu Kết section if available
+    // Update Thiêu Kết section if available (chỉ dùng childComponents = quặng thành phần của quặng loại 7)
     const plansWithThieuKet = planSectionsData.filter(
       (plan) =>
-        plan.thieuKet &&
-        plan.thieuKet.components &&
-        plan.thieuKet.components.length > 0
+        plan.thieuKet != null
     );
     if (plansWithThieuKet.length > 0) {
       updatedData = this.updateThieuKetSection(updatedData, plansWithThieuKet);
@@ -199,11 +200,11 @@ export class PhoiGangCompareComponent {
       return updatedData;
     }
 
-    // Get all unique ore names from all plans
+    // Get all unique ore names from childComponents (quặng thành phần của quặng loại 7)
     const allOreNames = new Set<string>();
     plansWithThieuKet.forEach((plan) => {
-      if (plan.thieuKet?.components) {
-        plan.thieuKet.components.forEach((component: any) => {
+      if (plan.thieuKet?.childComponents) {
+        plan.thieuKet.childComponents.forEach((component: any) => {
           allOreNames.add(component.tenQuang);
         });
       }
@@ -219,10 +220,10 @@ export class PhoiGangCompareComponent {
         values[planName] = null;
       });
 
-      // Fill in actual values from the data
+      // Fill in actual values from childComponents
       plansWithThieuKet.forEach((plan) => {
-        if (plan.thieuKet?.components) {
-          const component = plan.thieuKet.components.find(
+        if (plan.thieuKet?.childComponents) {
+          const component = plan.thieuKet.childComponents.find(
             (c: any) => c.tenQuang === oreName
           );
           if (component) {
@@ -243,6 +244,29 @@ export class PhoiGangCompareComponent {
 
     // Sort ore rows by name
     oreRows.sort((a, b) => a.name.localeCompare(b.name));
+
+    // Row đầu tiên: Tỷ lệ phối Thiêu kết = sum các quặng phối trong section thiêu kết (childComponents)
+    const tiLePhoiThieuKetValues: { [planName: string]: number | string | null } = {};
+    this.planColumns().forEach((planName) => {
+      tiLePhoiThieuKetValues[planName] = null;
+    });
+    plansWithThieuKet.forEach((plan) => {
+      const childComps = plan.thieuKet?.childComponents ?? [];
+      const sum = childComps.reduce(
+        (acc: number, c: any) => acc + (Number(c?.tiLePhanTram) || 0),
+        0
+      );
+      tiLePhoiThieuKetValues[plan.ten_Phuong_An] = sum > 0 ? sum : null;
+    });
+    const tiLePhoiThieuKetRow: ExcelRow = {
+      name: 'Tỷ lệ phối Thiêu kết',
+      unit: '%',
+      isSectionHeader: false,
+      isBold: true,
+      isYellow: false,
+      isThieuKetSumRow: true,
+      values: tiLePhoiThieuKetValues,
+    };
 
     // Add KPI rows after ore components
     const kpiRows: ExcelRow[] = [
@@ -320,6 +344,7 @@ export class PhoiGangCompareComponent {
     // Replace the content between section header and next section
     const newData = [
       ...updatedData.slice(0, insertIndex),
+      tiLePhoiThieuKetRow,
       ...oreRows,
       ...kpiRows,
       ...updatedData.slice(endIndex),
@@ -341,29 +366,49 @@ export class PhoiGangCompareComponent {
       return updatedData;
     }
 
-    // Get all unique ore names from all plans
+    // Quặng loại 7 (QuangPA): không hiển thị riêng, gom vào một dòng "Quặng Thiêu kết", render hàng đầu tiên. Các quặng khác: một dòng theo tên.
+    const DISPLAY_NAME_THIEU_KET = 'Quặng Thiêu kết';
+    const hasAnyQuangPA = plansWithLoCao.some(
+      (plan) => plan.loCao?.components?.some((c: any) => c.loaiQuang === LoaiQuangEnum.QuangPA || c.loaiQuang === 7)
+    );
     const allOreNames = new Set<string>();
+    if (hasAnyQuangPA) {
+      allOreNames.add(DISPLAY_NAME_THIEU_KET);
+    }
     plansWithLoCao.forEach((plan) => {
       if (plan.loCao?.components) {
         plan.loCao.components.forEach((component: any) => {
+          if (component.loaiQuang === LoaiQuangEnum.QuangPA || component.loaiQuang === 7) {
+            return; // QuangPA: không thêm tên riêng, đã gom vào Quặng Thiêu kết
+          }
           allOreNames.add(component.tenQuang);
         });
       }
     });
 
-    // Create ore rows for each unique ore
     const oreRows: ExcelRow[] = [];
     allOreNames.forEach((oreName) => {
       const values: { [planName: string]: number | string | null } = {};
-
-      // Initialize all plan columns with null
       this.planColumns().forEach((planName) => {
         values[planName] = null;
       });
 
-      // Fill in actual values from the data
+      const isThieuKetRow = oreName === DISPLAY_NAME_THIEU_KET;
+
       plansWithLoCao.forEach((plan) => {
-        if (plan.loCao?.components) {
+        if (!plan.loCao?.components) return;
+        if (isThieuKetRow) {
+          const thieuKetComponents = plan.loCao.components.filter(
+            (c: any) => c.loaiQuang === LoaiQuangEnum.QuangPA || c.loaiQuang === 7
+          );
+          const sum = thieuKetComponents.reduce(
+            (acc: number, c: any) => acc + (Number(c.tiLePhanTram) || 0),
+            0
+          );
+          if (thieuKetComponents.length > 0) {
+            values[plan.ten_Phuong_An] = sum;
+          }
+        } else {
           const component = plan.loCao.components.find(
             (c: any) => c.tenQuang === oreName
           );
@@ -383,8 +428,12 @@ export class PhoiGangCompareComponent {
       });
     });
 
-    // Sort ore rows by name
-    oreRows.sort((a, b) => a.name.localeCompare(b.name));
+    // Hàng "Quặng Thiêu kết" đầu tiên, các hàng còn lại sort theo tên
+    oreRows.sort((a, b) => {
+      if (a.name === DISPLAY_NAME_THIEU_KET) return -1;
+      if (b.name === DISPLAY_NAME_THIEU_KET) return 1;
+      return a.name.localeCompare(b.name);
+    });
 
     // Add KPI rows after ore components
     const kpiRows: ExcelRow[] = [
@@ -833,7 +882,9 @@ export class PhoiGangCompareComponent {
     const existingIndex = updatedData.findIndex(
       (r) => r.name === '5. GIÁ THÀNH GANG' && r.isSectionHeader
     );
-    const rows = this.createGiaThanhGangRows(planSectionsData);
+    const rowsGiaThanh = this.createGiaThanhGangRows(planSectionsData);
+    const rowsSoSanh = this.createSoSanhGiaThanhRows(planSectionsData);
+    const rows = [...rowsGiaThanh, ...rowsSoSanh];
     if (existingIndex === -1) {
       return [...updatedData, ...rows];
     }
@@ -865,21 +916,47 @@ export class PhoiGangCompareComponent {
       }
     });
 
+    const DISPLAY_NAME_THIEU_KET = 'Quặng Thiêu kết';
+    const hasAnyQuangPA = Array.from(planDataMap.values()).some(data =>
+      data.some((item: any) => item.loaiQuang === LoaiQuangEnum.QuangPA || item.loaiQuang === 7)
+    );
+
     // Lấy tất cả tên quặng unique từ tất cả plans
     const allQuangNames = new Set<string>();
+    if (hasAnyQuangPA) {
+      allQuangNames.add(DISPLAY_NAME_THIEU_KET);
+    }
     planDataMap.forEach(data => {
       data.forEach(item => {
+        if (item.loaiQuang === LoaiQuangEnum.QuangPA || item.loaiQuang === 7) {
+          return; // QuangPA: gom vào Quặng Thiêu kết
+        }
         allQuangNames.add(item.tenQuang);
       });
     });
 
     // Tạo các dòng quặng từ dữ liệu thực tế
-    Array.from(allQuangNames).sort().forEach(quangName => {
+    Array.from(allQuangNames).sort((a, b) => {
+      if (a === DISPLAY_NAME_THIEU_KET) return -1;
+      if (b === DISPLAY_NAME_THIEU_KET) return 1;
+      return a.localeCompare(b);
+    }).forEach(quangName => {
       const values: { [planName: string]: number | string | null } = {};
       this.planColumns().forEach((planName) => {
         const planData = planDataMap.get(planName);
-        const quangData = planData?.find(item => item.tenQuang === quangName);
-        values[planName] = quangData?.tieuhao || null;
+        if (!planData) {
+          values[planName] = null;
+          return;
+        }
+
+        if (quangName === DISPLAY_NAME_THIEU_KET) {
+          const thieuKetItems = planData.filter((item: any) => item.loaiQuang === LoaiQuangEnum.QuangPA || item.loaiQuang === 7);
+          const sum = thieuKetItems.reduce((acc: number, it: any) => acc + (Number(it.tieuhao) || 0), 0);
+          values[planName] = thieuKetItems.length > 0 ? sum : null;
+        } else {
+          const quangData = planData.find(item => item.tenQuang === quangName);
+          values[planName] = quangData?.tieuhao ?? null;
+        }
       });
       
       rows.push({
@@ -892,24 +969,25 @@ export class PhoiGangCompareComponent {
       });
     });
 
-    // Các dòng cố định khác
+    // Các dòng cố định thuộc section 5. GIÁ THÀNH GANG
     const fixedItems: { name: string; unit: string | null; bold?: boolean }[] = [
       { name: 'Chi phí SX chung (Nhân công, bảo trì, sửa chữa, tiêu hao khác...)', unit: 'VNĐ/tsp' },
       { name: 'Tổng', unit: 'VNĐ/tsp', bold: true },
       { name: 'Chi phí cơ hội (lợi nhuận/ tấn thép)', unit: 'VNĐ/tsp' },
-      { name: 'So sánh giá thành các phương án', unit: null, bold: true },
-      { name: 'Chênh lệch PA0', unit: 'VNĐ/tsp' },
-      { name: 'Chi phí SX chung tăng thêm', unit: 'VNĐ/tsp' },
-      { name: 'Giá thành chênh thực so PA0', unit: 'VNĐ/tsp', bold: true },
-      { name: 'Giá thành sản xuất', unit: 'VNĐ/tsp', bold: true },
-      { name: 'Chi phí cơ hội giảm', unit: 'VNĐ/tsp' },
-      { name: 'Giá thành Gang xuất xưởng', unit: 'VNĐ/tsp', bold: true },
-      { name: 'Chênh lệch', unit: 'VNĐ/tsp' },
     ];
 
     fixedItems.forEach((item) => {
       const values: { [planName: string]: number | string | null } = {};
-      this.planColumns().forEach((p) => (values[p] = null));
+      this.planColumns().forEach((planName) => {
+        if (item.name === 'Chi phí SX chung (Nhân công, bảo trì, sửa chữa, tiêu hao khác...)') {
+          values[planName] = 1;
+        } else if (item.name === 'Tổng') {
+          const plan = planSectionsData.find((p) => p.ten_Phuong_An === planName);
+          values[planName] = plan?.loCao?.tongChiPhi ?? null;
+        } else {
+          values[planName] = null;
+        }
+      });
       rows.push({
         name: item.name,
         unit: item.unit,
@@ -920,6 +998,47 @@ export class PhoiGangCompareComponent {
       });
     });
 
+    return rows;
+  }
+
+  /** Section riêng: So sánh giá thành các phương án (header + các dòng so sánh). */
+  private createSoSanhGiaThanhRows(planSectionsData: PlanSectionDto[]): ExcelRow[] {
+    const rows: ExcelRow[] = [];
+    rows.push({
+      name: '6. SO SÁNH GIÁ THÀNH CÁC PHƯƠNG ÁN',
+      unit: null,
+      isSectionHeader: true,
+      isBold: true,
+      isYellow: false,
+      backgroundColor: '#E6F3FF',
+      values: {},
+    });
+    const soSanhItems: { name: string; unit: string | null; bold?: boolean }[] = [
+      { name: 'Chênh lệch PA0', unit: 'VNĐ/tsp' },
+      { name: 'Chi phí SX chung tăng thêm', unit: 'VNĐ/tsp' },
+      { name: 'Giá thành chênh thực so PA0', unit: 'VNĐ/tsp', bold: true },
+      { name: 'Giá thành sản xuất', unit: 'VNĐ/tsp', bold: true },
+      { name: 'Chi phí cơ hội giảm', unit: 'VNĐ/tsp' },
+      { name: 'Giá thành Gang xuất xưởng', unit: 'VNĐ/tsp', bold: true },
+      { name: 'Chênh lệch', unit: 'VNĐ/tsp' },
+    ];
+    const chiPhiSXChungTangThem = this.calculateChiPhiSXChungTangThem(planSectionsData);
+    soSanhItems.forEach((item) => {
+      const values: { [planName: string]: number | string | null } = {};
+      if (item.name === 'Chi phí SX chung tăng thêm') {
+        this.planColumns().forEach((p) => (values[p] = chiPhiSXChungTangThem[p] ?? null));
+      } else {
+        this.planColumns().forEach((p) => (values[p] = null));
+      }
+      rows.push({
+        name: item.name,
+        unit: item.unit,
+        isSectionHeader: false,
+        isBold: !!item.bold,
+        isYellow: false,
+        values,
+      });
+    });
     return rows;
   }
 
@@ -1123,12 +1242,30 @@ export class PhoiGangCompareComponent {
     if (value === null || value === undefined) return '';
     if (typeof value === 'number') {
       if (unit === '%') {
-        return value === 0 ? '' : `${value}%`;
+        return value === 0 ? '' : `${value.toFixed(2)}%`;
       }
-      if (unit === 'VNĐ/tsp') {
-        return value === 0 ? '' : value.toLocaleString('vi-VN');
+      if (value === 0) return '';
+
+      const unitNorm = (unit ?? '').toLowerCase().replace(/\s+/g, '');
+      const isVnd = unitNorm.includes('vnd') || unitNorm.includes('vnđ');
+      const isPerTon = unitNorm.includes('/tấn') || unitNorm.includes('/tan');
+
+      // VND/tấn: làm tròn, không thập phân
+      if (isVnd && isPerTon) {
+        return Math.round(value).toLocaleString('vi-VN');
       }
-      return value.toString();
+
+      // Các unit tiền tệ khác (VNĐ/...) cũng không cần thập phân
+      if (isVnd) {
+        return Math.round(value).toLocaleString('vi-VN');
+      }
+
+      // Các unit khác %: format có phân tách hàng nghìn (cách 3 chữ số), giữ 2 chữ số thập phân như hiện tại
+      return new Intl.NumberFormat('vi-VN', {
+        useGrouping: true,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value);
     }
     return value.toString();
   }
@@ -1258,9 +1395,9 @@ export class PhoiGangCompareComponent {
         return;
       }
 
-      // Lọc các quặng có loại quặng = 5 (Quặng sống) và tính tổng tiLePhanTram
+      // Lọc các quặng có loại quặng = QuangCo (5) và tính tổng tiLePhanTram
       const componentsWithLoai5 = loCao.components.filter((component) => {
-        return component.loaiQuang === 5;
+        return component.loaiQuang === LoaiQuangEnum.QuangCo;
       });
 
       const sumTiLePhanTram = componentsWithLoai5.reduce((sum, comp) => sum + (comp.tiLePhanTram || 0), 0);
@@ -1351,7 +1488,7 @@ export class PhoiGangCompareComponent {
 
       let sumTiLePhanTram = 0;
       const componentsWithLoai5 = loCao.components.filter((component) => {
-        return component.loaiQuang === 5;
+        return component.loaiQuang === LoaiQuangEnum.QuangCo;
       });
 
       sumTiLePhanTram = componentsWithLoai5.reduce((sum, comp) => sum + (comp.tiLePhanTram || 0), 0);
@@ -1483,5 +1620,41 @@ export class PhoiGangCompareComponent {
     });
 
     return result;
+  }
+
+  /**
+   * Chi phí SX chung tăng thêm = (Tổng sản lượng giảm của PA - Tổng sản lượng giảm PA đầu) * 600000 / Sản lượng thực PA đầu.
+   * Phương án đầu tiên không tính (null).
+   */
+  private calculateChiPhiSXChungTangThem(planSectionsData: PlanSectionDto[]): {
+    [planName: string]: number | string | null;
+  } {
+    const values: { [planName: string]: number | string | null } = {};
+    const firstPlan = planSectionsData[0];
+    if (!firstPlan) {
+      this.planColumns().forEach((p) => (values[p] = null));
+      return values;
+    }
+    const firstPlanName = firstPlan.ten_Phuong_An;
+    const tongSanLuongGiam = this.calculateTongSanLuongGiam(planSectionsData);
+    const sanLuongThuc = this.calculateSanLuongThuc(planSectionsData);
+
+    const giam0 = typeof tongSanLuongGiam[firstPlanName] === 'number' ? (tongSanLuongGiam[firstPlanName] as number) : 0;
+    const thuc0 = typeof sanLuongThuc[firstPlanName] === 'number' ? (sanLuongThuc[firstPlanName] as number) : 0;
+
+    this.planColumns().forEach((planName) => {
+      if (planName === firstPlanName) {
+        values[planName] = null;
+        return;
+      }
+      const giam = typeof tongSanLuongGiam[planName] === 'number' ? (tongSanLuongGiam[planName] as number) : 0;
+      if (thuc0 <= 0) {
+        values[planName] = null;
+        return;
+      }
+      const tangThem = (giam - giam0) * 600000 / thuc0;
+      values[planName] = Math.round(tangThem * 100) / 100;
+    });
+    return values;
   }
 }

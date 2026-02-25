@@ -40,6 +40,7 @@ import {
 import { QuangService } from '../../../core/services/quang.service';
 import { TableQuery } from '../../../shared/components/table-common/table-types';
 import { QuangSelectItemModel } from '../../../core/models/quang.model';
+import { LoaiQuangEnum } from '../../../core/enums/loaiquang.enum';
 
 export interface OreVm {
   id: number;
@@ -53,6 +54,7 @@ export interface OreVm {
   ngayTyGia?: string | null;
   matKhiNung?: number;
   tiLePhoi?: number; // tỷ lệ phối (khi load từ công thức)
+  thuTu?: number; // Thứ tự khi chọn quặng
 }
 
 @Component({
@@ -78,7 +80,7 @@ export class SelectQuangDialogComponent implements OnInit {
   private quangService = inject(QuangService);
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { preselectedIds?: number[]; multiple?: boolean } | null
+    @Inject(MAT_DIALOG_DATA) public data: { preselectedIds?: number[]; multiple?: boolean,  outputLoaiQuang?: number} | null
   ) {}
 
   cols = ['sel', 'code', 'name', 'price'] as const;
@@ -113,7 +115,18 @@ export class SelectQuangDialogComponent implements OnInit {
         pageSize: size,
         search: q,
       } as any;
-      payload.loaiQuang = [0,1,3,5,6,7];
+      // Lọc theo ID_LoaiQuang (idLoaiQuang) để QuangService.search map sang body.loaiQuang đúng chuẩn
+      payload.idLoaiQuang = [
+        LoaiQuangEnum.Mua,
+        LoaiQuangEnum.Tron,
+        LoaiQuangEnum.NhienLieu,
+        LoaiQuangEnum.QuangCo,
+        // LoaiQuangEnum.QuangPA
+      ];
+      if(this.data?.outputLoaiQuang !== LoaiQuangEnum.Tron) {
+        payload.idLoaiQuang.push(LoaiQuangEnum.QuangPA);
+        payload.idLoaiQuang.push(LoaiQuangEnum.QuangVeVien);
+      }
       return this.quangService.search(payload).pipe(
         tap((res) => this.total.set(res.total)),
         map((res) => res.data),
@@ -121,7 +134,24 @@ export class SelectQuangDialogComponent implements OnInit {
       );
     }),
     tap((list: any) => {
-      list.forEach((x: any) => this.cache.set(x.id, x));
+      list.forEach((x: any) => {
+        // Map dữ liệu từ search sang OreVm format
+        const oreVm: OreVm = {
+          id: x.id,
+          maQuang: x.maQuang || x.ma_Quang || '',
+          tenQuang: x.tenQuang || x.ten_Quang || '',
+          loaiQuang: x.loaiQuang ?? x.iD_LoaiQuang,
+          gia: x.gia ?? null,
+          giaUSD: x.giaUSD ?? x.gia_USD_1Tan ?? null,
+          tyGia: x.tyGia ?? x.ty_Gia_USD_VND ?? null,
+          giaVND: x.giaVND ?? x.gia_VND_1Tan ?? null,
+          ngayTyGia: x.ngayTyGia ?? x.ngay_Ty_Gia ?? x.ngay_Chon_TyGia ?? null,
+          matKhiNung: x.matKhiNung ?? x.mat_Khi_Nung ?? 0,
+          tiLePhoi: x.tiLePhoi,
+          thuTu: x.thuTu
+        };
+        this.cache.set(x.id, oreVm);
+      });
     }),
     tap(() => this.loading.set(false))
   );
@@ -131,6 +161,27 @@ export class SelectQuangDialogComponent implements OnInit {
   ngOnInit(): void {
     if (this.data?.preselectedIds?.length) {
       this.selectedIds = new Set(this.data.preselectedIds);
+      // Load dữ liệu cho các quặng đã chọn trước đó vào cache
+      this.quangService.GetByListIds(Array.from(this.selectedIds)).subscribe((list: QuangSelectItemModel[]) => {
+        list.forEach((x: QuangSelectItemModel) => {
+          // Map QuangSelectItemModel sang OreVm
+          const oreVm: OreVm = {
+            id: x.id,
+            maQuang: x.maQuang,
+            tenQuang: x.tenQuang,
+            loaiQuang: (x as any).iD_LoaiQuang ?? (x as any).loaiQuang,
+            gia: x.gia ?? null,
+            giaUSD: x.gia_USD_1Tan ?? null,
+            tyGia: x.ty_Gia_USD_VND ?? null,
+            giaVND: x.gia_VND_1Tan ?? null,
+            ngayTyGia: x.ngay_Chon_TyGia ?? null,
+            matKhiNung: x.matKhiNung ?? 0,
+            tiLePhoi: (x as any).tiLePhoi,
+            thuTu: (x as any).thuTu
+          };
+          this.cache.set(x.id, oreVm);
+        });
+      });
     }
     this.q.valueChanges
       .pipe(debounceTime(300), distinctUntilChanged())
@@ -171,14 +222,32 @@ export class SelectQuangDialogComponent implements OnInit {
     const ids = Array.from(this.selectedIds);
     const missing = ids.filter((id) => !this.cache.has(id));
     if (missing.length === 0) {
-      const out = ids.map((id) => this.cache.get(id)!);
+      // Thêm thứ tự (thuTu) dựa trên thứ tự trong selectedIds
+      const out = ids.map((id, index) => ({ ...this.cache.get(id)!, thuTu: index + 1 }));
       this.enrichWithCurrentPrice(out).then((enriched) => this.dlgRef.close(enriched));
-      console.log('out', out);
       return;
     }
     this.quangService.GetByListIds(missing).subscribe((list: QuangSelectItemModel[]) => {
-      list.forEach((x: QuangSelectItemModel) => this.cache.set(x.id, x));
-      const out = ids.map((id) => this.cache.get(id)!).filter(Boolean);
+      list.forEach((x: QuangSelectItemModel) => {
+        // Map QuangSelectItemModel sang OreVm
+        const oreVm: OreVm = {
+          id: x.id,
+          maQuang: x.maQuang,
+          tenQuang: x.tenQuang,
+          loaiQuang: (x as any).iD_LoaiQuang ?? (x as any).loaiQuang,
+          gia: x.gia ?? null,
+          giaUSD: x.gia_USD_1Tan ?? null,
+          tyGia: x.ty_Gia_USD_VND ?? null,
+          giaVND: x.gia_VND_1Tan ?? null,
+          ngayTyGia: x.ngay_Chon_TyGia ?? null,
+          matKhiNung: x.matKhiNung ?? 0,
+          tiLePhoi: (x as any).tiLePhoi,
+          thuTu: (x as any).thuTu
+        };
+        this.cache.set(x.id, oreVm);
+      });
+      // Thêm thứ tự (thuTu) dựa trên thứ tự trong selectedIds
+      const out = ids.map((id, index) => ({ ...this.cache.get(id)!, thuTu: index + 1 })).filter(Boolean);
       this.enrichWithCurrentPrice(out).then((enriched) => this.dlgRef.close(enriched));
     });
   }

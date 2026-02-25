@@ -4,6 +4,7 @@ export interface TPHHTableModel{
     ten_TPHH: string;
     don_Vi?: string | null;
     thu_Tu?: number | null;
+    thuTuMacDinh?: number | null; // Thứ tự mặc định khi mở phương án phối trộn
     ghi_Chu?: string | null;
     ngay_Tao?: string;
     nguoi_Tao?: number | null;
@@ -15,6 +16,7 @@ export interface TPHHCreateDto{
     ten_TPHH: string;
     don_Vi?: string | null;
     thu_Tu?: number | null;
+    thuTuMacDinh?: number | null;
     ghi_Chu?: string | null;
     nguoi_Tao?: number | null;
 }

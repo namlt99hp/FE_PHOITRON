@@ -1,13 +1,13 @@
-<h2 mat-dialog-title>{{ data.loaiQuang === 4 ? (data.id ? 'Sửa xỉ' : 'Thêm xỉ') : (data.id ? 'Sửa gang' : 'Thêm gang') }}</h2>
+<h2 mat-dialog-title>{{ data.loaiQuang === LoaiQuangEnum.Xi ? (data.id ? 'Sửa xỉ' : 'Thêm xỉ') : (data.id ? 'Sửa gang' : 'Thêm gang') }}</h2>
 
 <div mat-dialog-content class="dialog-body">
   <div class="grid">
     <mat-form-field appearance="outline">
-      <mat-label>{{ data.loaiQuang === 4 ? 'Tên xỉ' : 'Tên gang' }}</mat-label>
+      <mat-label>{{ data.loaiQuang === LoaiQuangEnum.Xi ? 'Tên xỉ' : 'Tên gang' }}</mat-label>
       <input matInput [formControl]="form.controls.tenGang" />
     </mat-form-field>
     <mat-form-field appearance="outline">
-      <mat-label>{{ data.loaiQuang === 4 ? 'Mã xỉ' : 'Mã gang' }}</mat-label>
+      <mat-label>{{ data.loaiQuang === LoaiQuangEnum.Xi ? 'Mã xỉ' : 'Mã gang' }}</mat-label>
       <input matInput [formControl]="form.controls.maGang" placeholder="Tự động tạo từ tên gang" readonly />
     </mat-form-field>
     <mat-form-field appearance="outline" class="span-2">

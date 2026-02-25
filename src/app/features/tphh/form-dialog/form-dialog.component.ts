@@ -98,6 +98,7 @@ export class FormDialogComponent {
       id: [id ?? null],
       ma_TPHH: [null, [Validators.required, Validators.minLength(1)]],
       ten_TPHH: [null, [Validators.required, Validators.minLength(1)]],
+      thuTuMacDinh: [null],
       ghi_Chu: [null],
     });
   }
@@ -107,6 +108,7 @@ export class FormDialogComponent {
       id: tphh.id,
       ma_TPHH: tphh.ma_TPHH,
       ten_TPHH: tphh.ten_TPHH,
+      thuTuMacDinh: tphh.thuTuMacDinh ?? null,
       ghi_Chu: tphh.ghi_Chu ?? null,
     });
   }
@@ -123,6 +125,7 @@ export class FormDialogComponent {
       ma_TPHH: this.form.controls['ma_TPHH'].value,
       don_Vi: '%', // Mặc định là %
       thu_Tu: null, // Không cần thiết
+      thuTuMacDinh: this.form.controls['thuTuMacDinh'].value,
       ghi_Chu: this.form.controls['ghi_Chu'].value,
     } as any;
     const id = this.form.controls['id'].value;

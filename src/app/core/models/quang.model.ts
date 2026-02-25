@@ -9,13 +9,17 @@ export interface QuangTableModel {
   ngaySua?: string;
   iD_NguoiSua?: number;
   tien_Te: string;
+  iD_LoaiQuang?: number | null;
+  iD_LoQuang?: number | null;
+  tenLoaiQuang?: string | null;
 }
 
 export interface QuangResponse {
   id: number;
   ma_Quang: string;
   ten_Quang: string;
-  loai_Quang: number;
+  iD_LoaiQuang: number;
+  iD_LoQuang?: number | null;
   mat_Khi_Nung?: number | null;
   dang_Hoat_Dong: boolean;
   da_Xoa: boolean;
@@ -40,8 +44,8 @@ export interface QuangResponse {
   ngaySua?: string | null;
   iD_NguoiSua?: number | null;
   matKhiNung?: number | null;
-  loaiQuang?: number | null;
   id_CongThucPhoi?: number | null;
+  tenLoaiQuang?: string | null;
 }
 
 export interface TPHHOfQuangResponse {
@@ -74,7 +78,8 @@ export interface QuangSelectItemModel {
 export interface QuangCreateDto {
   ma_Quang: string;
   ten_Quang: string;
-  loai_Quang: number;
+  iD_LoaiQuang: number;
+  iD_LoQuang?: number | null;
   dang_Hoat_Dong?: boolean;
   ghi_Chu?: string | null;
   nguoi_Tao?: number | null;
@@ -181,18 +186,19 @@ export enum LoaiQuang {
   Xi = 4,
 }
 
-// Unified DTO for all ore types (0=Thô, 1=Trung gian, 2=Gang, 3=Khác, 4=Xỉ)
+// Unified DTO for all ore types
 export interface QuangUpsertWithThanhPhanDto {
   id?: number | null;
   ma_Quang: string;
   ten_Quang: string;
-  loai_Quang: number; // 0=Thô, 1=Trung gian, 2=Gang, 3=Khác, 4=Xỉ
+  id_LoaiQuang: number;
+  id_LoQuang?: number | null;
   mat_Khi_Nung?: number | null;
   dang_Hoat_Dong?: boolean;
   ghi_Chu?: string | null;
   thanhPhanHoaHoc: QuangThanhPhanHoaHocDto[];
-  gia?: QuangGiaDto | null; // Required for loai_Quang = 0 (purchased ore)
-  id_Quang_Gang?: number | null; // For linking slag to pig iron (loai_Quang = 4)
+  gia?: QuangGiaDto | null; // Required for purchased ore
+  id_Quang_Gang?: number | null; // For linking slag to pig iron
   nguoi_Tao?: number | null;
   saveAsTemplate?: boolean | null;
   templateConfig?: GangTemplateConfigUpsertDto | null;
@@ -208,7 +214,7 @@ export interface QuangKetQuaUpsertDto {
   id?: number | null;
   ma_Quang: string;
   ten_Quang: string;
-  loai_Quang: 2 | 4; // 2=Gang, 4=Xỉ
+  id_LoaiQuang: number; // FK to LoaiQuang (Gang or Xi)
   thanhPhanHoaHoc: QuangThanhPhanHoaHocDto[];
   id_PhuongAn: number; // Required plan ID for mapping
   dang_Hoat_Dong?: boolean;

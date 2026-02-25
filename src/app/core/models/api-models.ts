@@ -26,7 +26,7 @@ export interface PhuongAnPhoiWithFormulasResponse {
 
 export interface QuangKetQuaInfo {
   id_Quang: number;
-  loaiQuang: number;
+  iD_LoaiQuang: number;
   ma_Quang: string;
   ten_Quang: string;
 }
@@ -44,6 +44,7 @@ export interface QuangDauRaBasic {
   id: number;
   ma_Quang: string;
   ten_Quang: string;
+  iD_LoaiQuang?: number; // Loại quặng đầu ra (1=Tron, 6=Vê viên) để móc vào select loại quặng
   tP_HoaHocs?: TPHHValue[];
 }
 
@@ -59,8 +60,9 @@ export interface ChiTietQuangChem {
   id_Quang: number;
   ten_Quang: string;
   ti_Le_Phan_Tram: number;
+  thu_Tu?: number | null; // Thứ tự phối của quặng trong công thức
   tP_HoaHocs: TPHHValue[];
-  loai_Quang?: number;
+  iD_LoaiQuang?: number;
   gia_USD_1Tan?: number;
   ty_Gia_USD_VND?: number;
   gia_VND_1Tan?: number;
@@ -70,6 +72,8 @@ export interface ChiTietQuangChem {
   kL_VaoLo?: number | null;
   ti_Le_HoiQuang?: number | null;
   kL_Nhan?: number | null;
+  /** Quặng thành phần cần nghiền (Vê viên) → set slide toggle cột chi phí nghiền */
+  isNghien?: boolean;
 }
 
 export interface RangBuocTPHHValue {
@@ -125,7 +129,7 @@ export interface MixRequestDto {
   QuangThanhPham: {
     Ma_Quang: string;
     Ten_Quang: string;
-    Loai_Quang: number;
+    iD_LoaiQuang: number;
     Mat_Khi_Nung?: number | null;
     ThanhPhanHoaHoc: Array<{
       ID_TPHH: number;
@@ -194,7 +198,7 @@ export interface CongThucPhoiDetailResponse {
     donGiaUSD: number;
     iD_Quang_DauRa?: number | null; // Quặng đầu ra của công thức (dùng để map quặng thành phần với quặng loại 7)
     ten_Quang?: string | null; // Tên quặng (dùng để hiển thị)
-    loai_Quang?: number | null; // Loại quặng (dùng để highlight quặng loại 7)
+    iD_LoaiQuang?: number | null; // ID LoaiQuang (dùng để highlight quặng loại 7)
   }>;
 }
 

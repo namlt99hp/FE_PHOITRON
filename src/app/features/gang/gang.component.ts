@@ -7,6 +7,7 @@ import { TableColumn, TableQuery, TableResult } from '../../shared/components/ta
 import { VnTimePipe } from '../../shared/pipes/datetime.pipe';
 import { GangTableModel } from '../../core/models/gang.model';
 import { QuangService } from '../../core/services/quang.service';
+import { LoaiQuangEnum } from '../../core/enums/loaiquang.enum';
 import { Observable } from 'rxjs';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { GangFormDialogComponent } from './gang-form-dialog/gang-form-dialog.component';
@@ -47,7 +48,7 @@ export class GangComponent {
   fetcher = (q: TableQuery): Observable<TableResult<GangTableModel>> =>
     this.quangService.search({
       ...q,
-      loaiQuang: [2], // Loại quặng Gang
+      idLoaiQuang: [LoaiQuangEnum.Gang], // Loại quặng Gang
       isGangTarget: true, // Chỉ hiển thị gang đích (ID_Quang_Gang = null), không hiển thị gang kết quả
     }) as unknown as Observable<TableResult<GangTableModel>>;
 

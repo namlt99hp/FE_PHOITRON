@@ -52,7 +52,8 @@ export class LoCaoProcessParamUpsertDialog {
     id_Quang_LienKet: [null as number | null],
     thuTu: [0, Validators.required],
     isCalculated: [false],
-    calcFormula: ['']
+    calcFormula: [''],
+    giaTriMacDinh: [null as number | null]
   });
 
   linkedOre?: { id: number; ma: string; ten: string } | null;
@@ -72,6 +73,7 @@ export class LoCaoProcessParamUpsertDialog {
         thuTu: data.thuTu,
         isCalculated: data.isCalculated,
         calcFormula: data.calcFormula,
+        giaTriMacDinh: data.giaTriMacDinh ?? null,
       });
       // Use linkedOre provided from BE detail if present
       const anyData = data as any;
@@ -206,6 +208,7 @@ export class LoCaoProcessParamUpsertDialog {
       thuTu: this.form.value.thuTu ?? 0,
       isCalculated: this.form.value.isCalculated ?? false,
       calcFormula: this.form.value.calcFormula || null,
+      giaTriMacDinh: this.form.value.giaTriMacDinh ?? null,
     };
     this.svc.upsert(dto).subscribe(() => this.dlgRef.close(true));
   }

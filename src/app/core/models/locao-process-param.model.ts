@@ -9,6 +9,7 @@ export interface LoCaoProcessParamModel {
   thuTu: number;
   isCalculated: boolean | null;
   calcFormula?: string | null;
+  giaTriMacDinh?: number | null;
 }
 
 export interface LoCaoProcessParamUpsertDto {
@@ -21,6 +22,7 @@ export interface LoCaoProcessParamUpsertDto {
   thuTu: number;
   isCalculated: boolean | null;
   calcFormula?: string | null;
+  giaTriMacDinh?: number | null;
 }
 
 // Scope definition for process parameters

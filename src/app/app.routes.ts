@@ -35,6 +35,16 @@ export const routes: Routes = [
         data: { roles: ['admin'] , title: 'THÀNH PHẦN HÓA HỌC'}
       },
       {
+        path: 'loai-quang',
+        loadChildren: () => import('./features/loai-quang/loai-quang.routes').then(m => m.LOAI_QUANG_ROUTES),
+        data: { roles: ['admin'] , title: 'QUẢN LÝ LOẠI QUẶNG'}
+      },
+      {
+        path: 'lo-quang',
+        loadChildren: () => import('./features/lo-quang/lo-quang.routes').then(m => m.LO_QUANG_ROUTES),
+        data: { roles: ['admin'] , title: 'QUẢN LÝ LÔ QUẶNG'}
+      },
+      {
         path: 'quang-gang',
         loadChildren: () => import('./features/gang/gang.routes').then(m => m.GANG_ROUTES),
         data: { roles: ['admin'] , title: 'QUẶNG GANG'}

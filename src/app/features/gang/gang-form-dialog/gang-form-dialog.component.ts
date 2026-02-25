@@ -8,7 +8,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {
   QuangUpsertWithThanhPhanDto,
-  LoaiQuang,
   QuangThanhPhanHoaHocDto,
   QuangKetQuaUpsertDto,
   ProcessParamTemplateItem,
@@ -19,6 +18,7 @@ import {
   GangDichConfigUpsertDto,
   QuangDetailResponse
 } from '../../../core/models/quang.model';
+import { LoaiQuangEnum } from '../../../core/enums/loaiquang.enum';
 import { QuangService } from '../../../core/services/quang.service';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
@@ -68,6 +68,9 @@ export class GangFormDialogComponent {
   private locaoProcessParamService = inject(LoCaoProcessParamService);
   private thongKeFunctionService = inject(ThongKeFunctionService);
   private paService = inject(PhuongAnPhoiService);
+  
+  // Expose enum for template
+  readonly LoaiQuangEnum = LoaiQuangEnum;
 
   form = this.fb.group({
     maGang: ['', [Validators.required, Validators.maxLength(50)]],
@@ -697,7 +700,7 @@ export class GangFormDialogComponent {
     // Xử lý theo từng trường hợp
     if (this.data?.planId) {
       this.saveKetQua(thanhPhanHoaHoc);
-    } else if (this.data?.loaiQuang === LoaiQuang.Xi) {
+    } else if (this.data?.loaiQuang === LoaiQuangEnum.Xi) {
       this.saveSlag(thanhPhanHoaHoc);
     } else {
       this.saveGangDich(thanhPhanHoaHoc, saveAsTemplate, templateConfig);
@@ -709,7 +712,7 @@ export class GangFormDialogComponent {
       id: this.data?.id ?? null,
       ma_Quang: this.form.controls.maGang.value!,
       ten_Quang: this.form.controls.tenGang.value!,
-      loai_Quang: this.data?.loaiQuang === LoaiQuang.Xi ? 4 : 2,
+      id_LoaiQuang: this.data?.loaiQuang === LoaiQuangEnum.Xi ? LoaiQuangEnum.Xi : LoaiQuangEnum.Gang,
       thanhPhanHoaHoc,
       id_PhuongAn: this.data!.planId!,
       dang_Hoat_Dong: true,
@@ -720,7 +723,7 @@ export class GangFormDialogComponent {
     this.quangService.upsertKetQuaWithThanhPhan(ketQuaDto).subscribe({
       next: (res) => {
         if (res?.success && res.data?.id) {
-          const message = this.data?.loaiQuang === LoaiQuang.Xi
+          const message = this.data?.loaiQuang === LoaiQuangEnum.Xi
             ? (this.data?.id ? 'Cập nhật xỉ kết quả thành công' : 'Thêm xỉ kết quả thành công')
             : (this.data?.id ? 'Cập nhật gang kết quả thành công' : 'Thêm gang kết quả thành công');
           this.snack.open(message, 'Đóng', { duration: 1500, panelClass: ['snack-success'] });
@@ -738,7 +741,7 @@ export class GangFormDialogComponent {
       id: this.data?.id ?? null,
       ma_Quang: this.form.controls.maGang.value!,
       ten_Quang: this.form.controls.tenGang.value!,
-      loai_Quang: LoaiQuang.Xi,
+      id_LoaiQuang: LoaiQuangEnum.Xi,
       dang_Hoat_Dong: true,
       ghi_Chu: this.form.controls.ghiChu.value ?? null,
       thanhPhanHoaHoc,
@@ -773,7 +776,7 @@ export class GangFormDialogComponent {
       id: this.data?.id ?? null,
       ma_Quang: maGang,
       ten_Quang: tenGang,
-      loai_Quang: LoaiQuang.Gang,
+      id_LoaiQuang: LoaiQuangEnum.Gang,
       dang_Hoat_Dong: true,
       ghi_Chu: this.form.controls.ghiChu.value ?? null,
       thanhPhanHoaHoc,
@@ -798,7 +801,7 @@ export class GangFormDialogComponent {
         id: this.data?.id ? (this.existingSlagId() ?? null) : null,
         ma_Quang: `xi-${maGang}`,
         ten_Quang: `xỉ - ${tenGang}`,
-        loai_Quang: LoaiQuang.Xi,
+        id_LoaiQuang: LoaiQuangEnum.Xi,
         dang_Hoat_Dong: true,
         ghi_Chu: `Xỉ tự động tạo cho gang ${tenGang}`,
         thanhPhanHoaHoc: slagThanhPhanHoaHoc,
@@ -1230,7 +1233,7 @@ export class GangFormDialogComponent {
   }
 
   private isGangTarget(): boolean {
-    return !this.data?.planId && (this.data?.loaiQuang ?? LoaiQuang.Gang) !== 4;
+    return !this.data?.planId && (this.data?.loaiQuang ?? LoaiQuangEnum.Gang) !== LoaiQuangEnum.Xi;
   }
 
   private buildTemplateConfig(): GangTemplateConfigUpsertDto | null {

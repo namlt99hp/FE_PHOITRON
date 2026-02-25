@@ -274,15 +274,19 @@ export class StatisticsEngineService {
   }
   private calcPulverizedCoal(ctx: CalculationContextDto): number {
     const totalGangMass = ctx.gangData.reduce((sum, item) => sum + (Number(item.mass) || 0), 0);
+    console.log('totalGangMass', totalGangMass);
+    console.log('ctx.processParams', ctx.processParams);
     if (totalGangMass <= 0) return 0;
     // Support both English code and Vietnamese alias just in case
+    
+    const tocDoLieu = ctx.processParams?.find(p => (p.code || '').toLowerCase() === 'tocdolieu')?.value || 0;
     const param = ctx.processParams?.find(p => {
       const c = (p.code || '').toLowerCase();
       return c === 'pulverizedcoal' || c === 'thanphun';
     });
     const pulverized = Number(param?.value) || 0;
     // (than phun / tổng KL Gang) × 100 × 1000
-    return (pulverized / totalGangMass) * 100 * 1000;
+    return ((pulverized / tocDoLieu) / totalGangMass) * 100 * 1000;
   }
   private calcSlagOutput(ctx: CalculationContextDto): number {
     const totalSlagMass = ctx.xaData.reduce((sum, item) => sum + (Number(item.mass) || 0), 0);

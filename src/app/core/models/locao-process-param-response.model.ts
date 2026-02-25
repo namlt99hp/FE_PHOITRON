@@ -13,6 +13,7 @@ export interface LoCaoProcessParamResponse {
   calcFormula: string | null;
   giaTri?: number | null; // configured value from PA_ProcessParamValue
   thuTuParam?: number | null;
+  giaTriMacDinh?: number | null; // default value from LoCao_ProcessParam
 }
 
 export enum ProcessParamScope {

@@ -23,6 +23,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MixQuangDialogComponent } from '../mix-quang-dialog/mix-quang-dialog.component';
 import { QuangMuaFormDialogComponent } from './quang-mua-form-dialog/quang-mua-form-dialog.component';
 import { MilestoneEnum } from '../../core/enums/milestone.enum';
+import { LoaiQuangEnum } from '../../core/enums/loaiquang.enum';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { tap, map, switchMap, catchError } from 'rxjs/operators';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -46,24 +47,6 @@ export class QuangComponent {
   table!: TableCommonComponent<QuangTableModel>;
   public tableTitle: string = 'Quặng mua về';
 
-  // Object model để map loại quặng (1-7) sang tên hiển thị
-  private readonly loaiQuangLabels: Record<number, string> = {
-    0: 'Quặng thường',
-    1: 'Quặng phối',
-    2: 'Gang',
-    3: 'Quặng nhiên liệu (Coke, than phun...)',
-    4: 'Xỉ',
-    5: 'Quặng cỡ',
-    6: 'Quặng vê viên',
-    7: 'Loại quặng phối trong Phương án',
-  };
-
-  // Helper function để lấy tên loại quặng
-  getLoaiQuangLabel(loaiQuang: number | null | undefined): string {
-    const t = loaiQuang ?? 0;
-    return this.loaiQuangLabels[t] ?? 'Không xác định';
-  }
-
   // Cấu hình cột
   readonly columns: TableColumn<QuangTableModel>[] = [
     { key: 'id', header: 'ID', width: '90px', sortable: true, align: 'start' },
@@ -74,14 +57,10 @@ export class QuangComponent {
       cell: (r) => r.gia ? r.gia + ' ' + r.tien_Te : '',
     },
     {
-      key: 'loaiQuang',
+      key: 'tenLoaiQuang',
       header: 'Loại quặng',
       sortable: true,
-      align: 'start',
-      cell: (r) => {
-        const loai = (r as any).loaiQuang ?? (r as any).loai_Quang;
-        return this.getLoaiQuangLabel(loai);
-      },
+      align: 'start'
     },
     { key: 'ghiChu', header: 'Ghi chú', sortable: false, align: 'start' },
     {
@@ -95,7 +74,13 @@ export class QuangComponent {
   fetcher = (q: TableQuery): Observable<TableResult<QuangTableModel>> =>
     this.quangService.search({
       ...q,
-      loaiQuang: [0, 1, 3, 5, 6], // Loại quặng khác 1,2,4 (loại 0 và các loại khác)
+      idLoaiQuang: [
+        LoaiQuangEnum.Mua,
+        LoaiQuangEnum.Tron,
+        LoaiQuangEnum.NhienLieu,
+        LoaiQuangEnum.QuangCo,
+        LoaiQuangEnum.QuangVeVien
+      ], // Quặng mua về, phối, nhiên liệu, cỡ, vê viên
     }) as unknown as Observable<TableResult<QuangTableModel>>;
 
   // Xoá quặng
@@ -126,10 +111,9 @@ export class QuangComponent {
     );
 
   onEdit(row: QuangTableModel) {
-    // Nếu là quặng trộn (1) hoặc quặng vê viên (6) thì mở mix-quang-dialog để chỉnh sửa
-    const loai = (row as any).loaiQuang ?? (row as any).loai_Quang;
-    console.log(loai);
-    if (loai === 1 || loai === 6) {
+    // Nếu là quặng trộn hoặc quặng vê viên thì mở mix-quang-dialog để chỉnh sửa
+    const loai = (row as any).loaiQuang ?? (row as any).loai_Quang ?? row.iD_LoaiQuang ?? (row as any).iD_LoaiQuang;
+    if (loai === LoaiQuangEnum.Tron || loai === LoaiQuangEnum.QuangVeVien) {
       // Lấy ID công thức phối từ ID_Quang_DauRa
       this.congThucPhoiService
         .getByQuangDauRa(row.id)
@@ -160,13 +144,15 @@ export class QuangComponent {
             return;
           }
 
+          // Cùng layout như khi bấm "Trộn quặng" (width, maxWidth) và truyền outputLoaiQuang để fill select loại quặng
           this.dialog
             .open(MixQuangDialogComponent, {
-              width: '1700px',
+              width: '1850px',
+              maxWidth: '99vw',
               disableClose: true,
               data: {
                 existingOreId: row.id,
-                outputLoaiQuang: loai ?? 1,
+                outputLoaiQuang: loai ?? LoaiQuangEnum.Tron,
                 congThucPhoiId: congThucPhoiId,
               },
             })
@@ -198,12 +184,13 @@ export class QuangComponent {
   openMixDialog(neoOreId?: number, existingOreId?: number) {
     this.dialog
       .open(MixQuangDialogComponent, {
-        width: '1700px',
+        width: '1850px',
+        maxWidth: '99vw',
         disableClose: true,
         data: {
           neoOreId,
           existingOreId,
-          outputLoaiQuang: 1,
+          outputLoaiQuang: LoaiQuangEnum.Tron,
         },
       })
       .afterClosed()

@@ -105,10 +105,10 @@
                   <tr>
                     <th rowspan="2" class="ore-col">Quặng</th>
                     <th rowspan="2" class="ratio-col">Tỷ lệ (%)</th>
-                    <th [attr.colspan]="getChemHeadersSorted(detail.id).length" class="chem-header">Thành phần hóa học</th>
+                    <th [attr.colspan]="getChemHeaders(detail.id).length" class="chem-header">Thành phần hóa học</th>
                   </tr>
                   <tr>
-                    <ng-container *ngFor="let h of getChemHeadersSorted(detail.id)">
+                    <ng-container *ngFor="let h of getChemHeaders(detail.id)">
                       <th class="chem-col">{{ h.ma }}</th>
                     </ng-container>
                   </tr>
@@ -119,16 +119,16 @@
                       <span class="ore-name">{{ r.oreName }}</span>
                       <span *ngIf="isMixedOre(r)" class="mixed-badge">Phối</span>
                     </td>
-                    <td class="ratio-cell">{{ r.ratio | number:'1.1-1' }}</td>
-                    <ng-container *ngFor="let h of getChemHeadersSorted(detail.id)">
-                      <td class="chem-cell">{{ getValue(detail.id, r, h.id) | number:'1.2-2' }}</td>
+                    <td class="ratio-cell">{{ formatDynamic(r.ratio) }}</td>
+                    <ng-container *ngFor="let h of getChemHeaders(detail.id)">
+                      <td class="chem-cell">{{ formatDynamic(getValue(detail.id, r, h.id)) }}</td>
                     </ng-container>
                   </tr>
                   <tr class="result-row">
                     <td class="result-cell">{{ getOutName(detail.id) }}</td>
                     <td class="result-cell">100.0</td>
-                    <ng-container *ngFor="let h of getChemHeadersSorted(detail.id)">
-                      <td class="result-cell">{{ getOutValue(detail.id, h.id) | number:'1.2-2' }}</td>
+                    <ng-container *ngFor="let h of getChemHeaders(detail.id)">
+                      <td class="result-cell">{{ formatDynamic(getOutValue(detail.id, h.id)) }}</td>
                     </ng-container>
                   </tr>
                 </tbody>

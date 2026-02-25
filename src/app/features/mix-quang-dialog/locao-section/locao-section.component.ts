@@ -70,8 +70,13 @@ export class MixQuangLoCaoSectionComponent implements OnInit, OnDestroy {
         const formControls: { [key: string]: FormControl } = {};
         
         params.forEach((param: LoCaoProcessParamResponse) => {
-          // Khởi tạo control với giá trị đã lưu (giaTri) nếu có
-          const initial = typeof param.giaTri === 'number' ? param.giaTri : 0;
+          // Khởi tạo control với giá trị đã lưu (giaTri) nếu có, nếu không thì dùng giá trị mặc định (giaTriMacDinh)
+          let initial = 0;
+          if (typeof param.giaTri === 'number') {
+            initial = param.giaTri;
+          } else if (typeof param.giaTriMacDinh === 'number') {
+            initial = param.giaTriMacDinh;
+          }
           formControls[param.code] = new FormControl(initial);
         });
         

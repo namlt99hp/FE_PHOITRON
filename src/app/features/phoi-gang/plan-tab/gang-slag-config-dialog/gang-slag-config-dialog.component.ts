@@ -11,6 +11,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { QuangService } from '../../../../core/services/quang.service';
+import { LoaiQuangEnum } from '../../../../core/enums/loaiquang.enum';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { QuangUpsertWithThanhPhanDto, QuangThanhPhanHoaHocDto } from '../../../../core/models/quang.model';
 import { SelectTphhDialogComponent } from '../../../mix-quang-dialog/select-tphh-dialog/select-tphh-dialog.component';
@@ -20,7 +21,7 @@ import { ThanhPhanHoaHocService } from '../../../../core/services/tphh.service';
 
 export interface GangSlagConfigDialogData {
     quangId: number | null;
-    loaiQuang: number; // 2 = Gang, 4 = Xỉ
+    loaiQuang: number; // LoaiQuangEnum.Gang = 2, LoaiQuangEnum.Xi = 4
     planId?: number;
     idQuangGang?: number | null;
 }
@@ -50,6 +51,9 @@ export class GangSlagConfigDialogComponent {
     private dialogRef = inject(MatDialogRef<GangSlagConfigDialogComponent>);
     private dialog = inject(MatDialog);
     private tphhService = inject(ThanhPhanHoaHocService);
+    
+    // Expose enum for template
+    readonly LoaiQuangEnum = LoaiQuangEnum;
 
     loading = signal(false);
     config = signal<{
@@ -199,7 +203,7 @@ export class GangSlagConfigDialogComponent {
             id: this.data.quangId,
             ma_Quang: config.quang.ma_Quang,
             ten_Quang: config.quang.ten_Quang,
-            loai_Quang: this.data.loaiQuang,
+            id_LoaiQuang: this.data.loaiQuang,
             dang_Hoat_Dong: true,
             ghi_Chu: config.quang.ghi_Chu ?? null,
             thanhPhanHoaHoc: thanhPhanHoaHoc,

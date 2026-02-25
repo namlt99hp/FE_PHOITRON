@@ -1,32 +1,22 @@
 <div class="page-header">
-  <h3 class="title">Quặng</h3>
-  <div class="actions">
-    <button
-      class="mix-btn"
-      mat-flat-button
-      color="primary"
-      (click)="openMixDialog()"
-      matTooltip="Trộn quặng "
-    >
-      <mat-icon>science</mat-icon>
-      <span>Trộn quặng</span>
-    </button>
-  </div>
+  <h3 class="title">Quản lý lô quặng</h3>
 </div>
+
 <app-table-common
   [columns]="columns"
   [fetcher]="fetcher"
   [pageSizeOptions]="[5, 10, 20, 50]"
   [defaultPageSize]="10"
   [enableActions]="true"
-  [showCreateAction]="true"
   [showViewAction]="false"
   [showEditAction]="true"
   [showDeleteAction]="true"
+  [showCreateAction]="true"
   [confirmDelete]="confirmDelete"
   [deleteHandler]="deleteHandler"
   [enableSearch]="true"
-  [searchPlaceholder]="'Tìm kiếm quặng mua về'"
-  (create)="onCreate()"
+  [searchPlaceholder]="'Tìm kiếm lô quặng'"
   (selectEdit)="onEdit($event)"
+  (create)="onCreate()"
 ></app-table-common>
+
