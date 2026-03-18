@@ -30,6 +30,7 @@ import { catchError, debounceTime, EMPTY, finalize, merge, of, startWith, switch
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   DataFetcher,
+  SearchFieldConfig,
   SortDir,
   TableColumn,
   TableQuery,
@@ -37,7 +38,11 @@ import {
 } from './table-types';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { MatSelectModule } from '@angular/material/select';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatMenuModule } from '@angular/material/menu';
 
@@ -64,6 +69,10 @@ export interface productsData {
     MatProgressBarModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatAutocompleteModule,
     ReactiveFormsModule,
     MatCardModule,
     MatMenuModule,
@@ -117,7 +126,23 @@ export class TableCommonComponent<T = any> implements OnInit, AfterViewInit {
   /** search từ parent (optional). Nếu có, sẽ làm giá trị khởi tạo */
   @Input() search: string | null = null;
 
+  /** cấu hình các field multi-search (input / select) */
+  @Input() searchFields: SearchFieldConfig[] = [];
+
   readonly searchCtrl = new FormControl<string>('', { nonNullable: true });
+
+  /** FormGroup chứa các control cho searchFields (input/select/date) */
+  readonly searchForm = new FormGroup<Record<string, FormControl>>({});
+
+  /** Map FormGroup riêng cho từng rangeDate field: key → FormGroup{start, end} */
+  readonly rangeDateGroups = new Map<string, FormGroup>();
+
+  /** FormControl text-input cho từng autocomplete field */
+  readonly autocompleteControls = new Map<string, FormControl>();
+  /** Options hiển thị trong dropdown — dùng signal để hoạt động với OnPush */
+  readonly autocompleteOptionsMap = signal<Record<string, any[]>>({});
+  /** Giá trị đã chọn (sau valueWith) để đưa vào filters */
+  private readonly autocompleteSelectedValues = new Map<string, any>();
 
   /** bật/tắt cột actions */
   @Input() enableActions = true;
@@ -163,6 +188,41 @@ export class TableCommonComponent<T = any> implements OnInit, AfterViewInit {
   ]);
 
   ngOnInit(): void {
+    // Build dynamic controls cho searchFields
+    this.searchFields.forEach((field) => {
+      if (field.type === 'rangeDate') {
+        this.rangeDateGroups.set(
+          field.key,
+          new FormGroup({
+            start: new FormControl<Date | null>(null),
+            end: new FormControl<Date | null>(null),
+          })
+        );
+      } else if (field.type === 'autocomplete') {
+        const ctrl = new FormControl<any>(null);
+        this.autocompleteControls.set(field.key, ctrl);
+
+        ctrl.valueChanges
+          .pipe(
+            startWith(''),
+            debounceTime(300),
+            switchMap((val) => {
+              const term = typeof val === 'string' ? val.trim() : '';
+              return field.dataSource ? field.dataSource(term) : of([]);
+            }),
+            takeUntilDestroyed(this.destroyRef)
+          )
+          .subscribe((results) => {
+            this.autocompleteOptionsMap.update((m) => ({ ...m, [field.key]: results }));
+          });
+      } else {
+        this.searchForm.addControl(
+          field.key,
+          new FormControl(field.defaultValue ?? null)
+        );
+      }
+    });
+
     if (!this.fetcher && this.apiUrl) {
       this.fetcher = (q: TableQuery) => {
         let params = new HttpParams()
@@ -218,6 +278,59 @@ export class TableCommonComponent<T = any> implements OnInit, AfterViewInit {
     if (this.paginator) this.paginator.pageIndex = 0;
     this.loadData();
   }
+
+  resetSearch(): void {
+    this.searchCtrl.setValue('');
+    this.searchFields.forEach((f) => {
+      if (f.type === 'rangeDate') {
+        this.rangeDateGroups.get(f.key)?.reset();
+      } else if (f.type === 'autocomplete') {
+        this.autocompleteControls.get(f.key)?.setValue(null);
+        this.autocompleteSelectedValues.delete(f.key);
+      } else {
+        this.searchForm.get(f.key)?.setValue(f.defaultValue ?? null);
+      }
+    });
+    if (this.paginator) this.paginator.pageIndex = 0;
+    this.loadData();
+  }
+
+  getSearchControl(key: string): FormControl {
+    return this.searchForm.get(key) as FormControl;
+  }
+
+  getRangeDateGroup(key: string): FormGroup {
+    return this.rangeDateGroups.get(key)!;
+  }
+
+  getAutocompleteControl(key: string): FormControl {
+    return this.autocompleteControls.get(key)!;
+  }
+
+  getAutocompleteOptions(key: string): any[] {
+    return this.autocompleteOptionsMap()[key] ?? [];
+  }
+
+  displayAutocomplete(field: SearchFieldConfig): (item: any) => string {
+    return (item: any) => {
+      if (!item) return '';
+      if (field.displayWith) return field.displayWith(item);
+      return item?.label ?? item?.name ?? String(item);
+    };
+  }
+
+  onAutocompleteSelected(field: SearchFieldConfig, item: any): void {
+    const value = field.valueWith ? field.valueWith(item) : (item?.id ?? item);
+    this.autocompleteSelectedValues.set(field.key, value);
+    this.triggerSearch();
+  }
+
+  onAutocompleteClear(key: string): void {
+    this.autocompleteControls.get(key)?.setValue(null);
+    this.autocompleteSelectedValues.delete(key);
+    this.triggerSearch();
+  }
+
   // ===== Internals =====
   private loadData() {
     if (!this.fetcher) {
@@ -226,6 +339,30 @@ export class TableCommonComponent<T = any> implements OnInit, AfterViewInit {
     }
     this.isLoading.set(true);
     this.errorMsg.set(null);
+
+    // Gom giá trị searchForm (bỏ null/undefined/'')
+    const extraFilters: Record<string, any> = {};
+    this.searchFields.forEach((field) => {
+      if (field.type === 'rangeDate') {
+        const group = this.rangeDateGroups.get(field.key);
+        const startVal: Date | null = group?.get('start')?.value ?? null;
+        const endVal: Date | null = group?.get('end')?.value ?? null;
+        const startKey = field.startKey ?? `${field.key}Start`;
+        const endKey = field.endKey ?? `${field.key}End`;
+        if (startVal) extraFilters[startKey] = this.toIsoDate(startVal);
+        if (endVal) extraFilters[endKey] = this.toIsoDate(endVal);
+      } else if (field.type === 'autocomplete') {
+        const val = this.autocompleteSelectedValues.get(field.key);
+        if (val !== null && val !== undefined) {
+          extraFilters[field.key] = val;
+        }
+      } else {
+        const val = this.searchForm.get(field.key)?.value;
+        if (val !== null && val !== undefined && val !== '') {
+          extraFilters[field.key] = val;
+        }
+      }
+    });
 
     const q: TableQuery = {
       pageIndex: this.paginator?.pageIndex ? this.paginator?.pageIndex : 0,
@@ -236,6 +373,7 @@ export class TableCommonComponent<T = any> implements OnInit, AfterViewInit {
         const txt = (this.searchCtrl?.value ?? this.search ?? '').trim();
         return txt ? txt : null;
       })(),
+      filters: Object.keys(extraFilters).length ? extraFilters : undefined,
     };
 
     this.fetcher(q)
@@ -281,6 +419,12 @@ export class TableCommonComponent<T = any> implements OnInit, AfterViewInit {
     }
     // Fallback: no data
     return { data: [], total: 0 } as TableResult<T>;
+  }
+
+  private toIsoDate(d: Date): string {
+    // Format: YYYY-MM-DD
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
   // ===== Actions =====

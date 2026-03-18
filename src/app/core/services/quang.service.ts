@@ -32,7 +32,7 @@ export class QuangService {
   private http = inject(HttpClient);
   private auth = inject(AuthService);
 
-  search(q: TableQuery & { idLoaiQuang?: number[] | null; isGangTarget?: boolean | null }): Observable<TableResult<QuangTableModel>> {
+  search(q: TableQuery & { idLoaiQuang?: number[] | null; isGangTarget?: boolean | null; tuNgay?: string | null; denNgay?: string | null; loQuang?: string | null; planId?: number | null }): Observable<TableResult<QuangTableModel>> {
     const api = `${this.baseApi}/Search`;
 
     const body: any = {
@@ -41,8 +41,12 @@ export class QuangService {
       search: q.search ?? null,
       sortBy: q.sortBy ?? null,
       sortDir: q.sortDir ?? null,
-      loaiQuang: q.idLoaiQuang ?? null, 
+      loaiQuang: q.idLoaiQuang ?? null,
       isGangTarget: q.isGangTarget ?? null,
+      tuNgay: q.tuNgay ?? null,
+      denNgay: q.denNgay ?? null,
+      loQuang: q.loQuang ?? null,
+      planId: q.planId ?? null,
     };
 
     return this.http.post<ApiResponse<TableResult<QuangTableModel>>>(api, body).pipe(

@@ -172,7 +172,7 @@ export class MixQuangDialogComponent implements OnInit {
   private tphhService = inject(ThanhPhanHoaHocService);
 
 
-  data = inject<{ neoOreId?: number; existingOreId?: number; formulaId?: number; gangId?: number; maGang?: string; milestone?: MilestoneEnum; planId?: number; planName?: string; planNgayTao?: string; congThucPhoiId?: number; outputLoaiQuang?: number; defaultChems?: ChemVm[] } | null>(
+  data = inject<{ neoOreId?: number; existingOreId?: number; formulaId?: number; gangId?: number; maGang?: string; milestone?: MilestoneEnum; planId?: number; planName?: string; planNgayTao?: string; congThucPhoiId?: number; outputLoaiQuang?: number; defaultChems?: ChemVm[]; cloneMode?: boolean } | null>(
     MAT_DIALOG_DATA,
     { optional: true }
   );
@@ -873,7 +873,7 @@ export class MixQuangDialogComponent implements OnInit {
     const dlg = this.dialog.open(SelectQuangDialogComponent, {
       width: '960px',
       disableClose: true,
-      data: { preselectedIds: this.rows().map((r) => r.idQuang), outputLoaiQuang: this.data?.outputLoaiQuang },
+      data: { preselectedIds: this.rows().map((r) => r.idQuang), outputLoaiQuang: this.data?.outputLoaiQuang, planId: this.data?.planId ?? null },
     });
 
     dlg.afterClosed().subscribe(async (list: OreVm[] | undefined) => {
@@ -2053,7 +2053,7 @@ export class MixQuangDialogComponent implements OnInit {
     // Build Mix DTO theo yêu cầu mới
     const payload = {
       CongThucPhoi: {
-        ID: this.data?.congThucPhoiId ?? null, // null nếu tạo mới, có ID nếu edit
+        ID: this.data?.cloneMode ? null : (this.data?.congThucPhoiId ?? null), // null nếu tạo mới/clone, có ID nếu edit
         ID_Phuong_An: this.data?.planId!,
         Ma_Cong_Thuc: this.maCongThucCtrl.value ?? '',
         Ten_Cong_Thuc: this.tenCongThucCtrl.value ?? '',
@@ -2126,7 +2126,7 @@ export class MixQuangDialogComponent implements OnInit {
         Gia: this.getOutputOrePriceData()
       },
       // Gửi kèm bảng chi phí trong cùng payload để BE lưu trong MixAsync (1 API)
-      BangChiPhi: this.buildBangChiPhiPayload(this.data?.congThucPhoiId ?? 0)
+      BangChiPhi: this.buildBangChiPhiPayload(this.data?.cloneMode ? 0 : (this.data?.congThucPhoiId ?? 0))
     };
     // eslint-disable-next-line no-console
 
@@ -2153,7 +2153,7 @@ export class MixQuangDialogComponent implements OnInit {
     // Base payload như cũ
     const basePayload = {
       CongThucPhoi: {
-        ID: this.data?.congThucPhoiId ?? null,
+        ID: this.data?.cloneMode ? null : (this.data?.congThucPhoiId ?? null), // null nếu clone
         ID_Phuong_An: this.data?.planId!,
         Ma_Cong_Thuc: this.maCongThucCtrl.value ?? '',
         Ten_Cong_Thuc: this.tenCongThucCtrl.value ?? '',

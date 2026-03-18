@@ -18,17 +18,18 @@ export class ThanhPhanHoaHocService {
   private http = inject(HttpClient);
   private auth = inject(AuthService);
 
-  search(q: TableQuery): Observable<TableResult<TPHHTableModel>> {
+  search(q: TableQuery & { tuNgay?: string | null; denNgay?: string | null }): Observable<TableResult<TPHHTableModel>> {
     const api = `${this.baseApi}/Search`;
-    return this.http.get<ApiResponse<TableResult<TPHHTableModel>>>(api, {
-      params: {
-        page: q.pageIndex,
-        pageSize: q.pageSize, 
-        search: q.search ?? '',
-        sortBy: q.sortBy ?? '',
-        sortDir: q.sortDir ?? '',
-      } as any,
-    }).pipe(
+    const params: any = {
+      page: q.pageIndex,
+      pageSize: q.pageSize,
+      search: q.search ?? '',
+      sortBy: q.sortBy ?? '',
+      sortDir: q.sortDir ?? '',
+    };
+    if (q.tuNgay) params['tuNgay'] = q.tuNgay;
+    if (q.denNgay) params['denNgay'] = q.denNgay;
+    return this.http.get<ApiResponse<TableResult<TPHHTableModel>>>(api, { params }).pipe(
       map((apiRes) => {
         if (apiRes.success && apiRes.data) {
           return apiRes.data;

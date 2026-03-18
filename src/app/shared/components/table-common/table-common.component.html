@@ -2,8 +2,11 @@
   <mat-card-content>
 
     <div class="table-header-container">
-      <div class="search-container" *ngIf="enableSearch">
-        <mat-form-field appearance="outline">
+      <!-- Search row: global search + multi-search fields -->
+      <div class="search-container" *ngIf="enableSearch || searchFields.length > 0">
+
+        <!-- Global text search -->
+        <mat-form-field appearance="outline" *ngIf="enableSearch">
           <mat-label>{{ searchPlaceholder }}</mat-label>
           <input
             matInput
@@ -20,6 +23,108 @@
             <mat-icon>search</mat-icon>
           </button>
         </mat-form-field>
+
+        <!-- Dynamic search fields -->
+        <ng-container *ngFor="let field of searchFields">
+
+          <!-- Input field -->
+          <mat-form-field
+            *ngIf="field.type === 'input'"
+            appearance="outline"
+            [style.width]="field.width ?? '180px'">
+            <mat-label>{{ field.label }}</mat-label>
+            <input
+              matInput
+              [formControl]="getSearchControl(field.key)"
+              (keyup.enter)="triggerSearch()" />
+          </mat-form-field>
+
+          <!-- Select field -->
+          <mat-form-field
+            *ngIf="field.type === 'select'"
+            appearance="outline"
+            [style.width]="field.width ?? '180px'">
+            <mat-label>{{ field.label }}</mat-label>
+            <mat-select [formControl]="getSearchControl(field.key)">
+              <mat-option [value]="null">-- Tất cả --</mat-option>
+              <mat-option *ngFor="let opt of field.options" [value]="opt.value">
+                {{ opt.label }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Date field (single) -->
+          <mat-form-field
+            *ngIf="field.type === 'date'"
+            appearance="outline"
+            [style.width]="field.width ?? '160px'">
+            <mat-label>{{ field.label }}</mat-label>
+            <input matInput [matDatepicker]="singlePicker" [formControl]="getSearchControl(field.key)" />
+            <mat-datepicker-toggle matIconSuffix [for]="singlePicker" />
+            <mat-datepicker #singlePicker />
+          </mat-form-field>
+
+          <!-- Autocomplete field -->
+          <mat-form-field
+            *ngIf="field.type === 'autocomplete'"
+            appearance="outline"
+            [style.width]="field.width ?? '220px'">
+            <mat-label>{{ field.label }}</mat-label>
+            <input
+              matInput
+              [formControl]="getAutocompleteControl(field.key)"
+              [matAutocomplete]="auto" />
+            <button
+              *ngIf="getAutocompleteControl(field.key).value"
+              mat-icon-button matSuffix type="button"
+              (click)="onAutocompleteClear(field.key); $event.stopPropagation()">
+              <mat-icon>close</mat-icon>
+            </button>
+            <mat-autocomplete
+              #auto="matAutocomplete"
+              [displayWith]="displayAutocomplete(field)"
+              (optionSelected)="onAutocompleteSelected(field, $event.option.value)">
+              <mat-option *ngFor="let opt of getAutocompleteOptions(field.key)" [value]="opt">
+                {{ field.displayWith ? field.displayWith(opt) : (opt?.label ?? opt?.name ?? opt) }}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <!-- Range date field -->
+          <mat-form-field
+            *ngIf="field.type === 'rangeDate'"
+            appearance="outline"
+            [style.width]="field.width ?? '280px'">
+            <mat-label>{{ field.label }}</mat-label>
+            <mat-date-range-input [formGroup]="getRangeDateGroup(field.key)" [rangePicker]="rangePicker">
+              <input matStartDate formControlName="start" placeholder="Từ ngày" />
+              <input matEndDate formControlName="end" placeholder="Đến ngày" />
+            </mat-date-range-input>
+            <mat-datepicker-toggle matIconSuffix [for]="rangePicker" />
+            <mat-date-range-picker #rangePicker />
+          </mat-form-field>
+
+        </ng-container>
+
+        <!-- Search / Reset buttons (chỉ hiện khi có searchFields) -->
+        <div class="search-actions" *ngIf="searchFields.length > 0">
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="isLoading()"
+            (click)="triggerSearch()">
+            <mat-icon>search</mat-icon> Tìm
+          </button>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="isLoading()"
+            (click)="resetSearch()">
+            <mat-icon>refresh</mat-icon> Xoá lọc
+          </button>
+        </div>
+
       </div>
 
       <div class="action-container" *ngIf="showCreateAction">

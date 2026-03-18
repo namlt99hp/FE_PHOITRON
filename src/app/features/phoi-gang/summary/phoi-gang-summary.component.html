@@ -33,11 +33,6 @@
             <mat-icon class="card-title-icon">local_offer</mat-icon>
             Giá đầu vào
           </h2>
-          <div class="card-meta ty-gia-bar">
-            <span class="ty-gia-label">Tỷ giá USD/VNĐ</span>
-            <span class="ty-gia-value">{{ tyGiaUsdVnd() != null ? (tyGiaUsdVnd() | number:'1.0-0') : '—' }}</span>
-            <span class="ty-gia-update" *ngIf="ngayTyGia()">{{ ngayTyGia() }}</span>
-          </div>
         </div>
         <div class="card-body">
           <div class="table-scroll">

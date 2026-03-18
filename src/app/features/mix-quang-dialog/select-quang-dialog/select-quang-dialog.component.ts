@@ -19,6 +19,9 @@ import {
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
+import { MatSelectModule } from '@angular/material/select';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatIconModule } from '@angular/material/icon';
 import {
   BehaviorSubject,
   catchError,
@@ -41,6 +44,8 @@ import { QuangService } from '../../../core/services/quang.service';
 import { TableQuery } from '../../../shared/components/table-common/table-types';
 import { QuangSelectItemModel } from '../../../core/models/quang.model';
 import { LoaiQuangEnum } from '../../../core/enums/loaiquang.enum';
+import { LoQuangService } from '../../../core/services/loai-quang.service';
+import { LoQuangTableModel } from '../../../core/models/loai-quang.model';
 
 export interface OreVm {
   id: number;
@@ -67,6 +72,9 @@ export interface OreVm {
     MatCheckboxModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
+    MatAutocompleteModule,
+    MatIconModule,
     ReactiveFormsModule,
     MatButtonModule,
     MatPaginatorModule,
@@ -78,13 +86,27 @@ export interface OreVm {
 export class SelectQuangDialogComponent implements OnInit {
   private dlgRef = inject(MatDialogRef<SelectQuangDialogComponent>);
   private quangService = inject(QuangService);
+  private loQuangService = inject(LoQuangService);
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { preselectedIds?: number[]; multiple?: boolean,  outputLoaiQuang?: number} | null
+    @Inject(MAT_DIALOG_DATA) public data: { preselectedIds?: number[]; multiple?: boolean; outputLoaiQuang?: number; planId?: number | null } | null
   ) {}
 
   cols = ['sel', 'code', 'name', 'price'] as const;
   q = new FormControl<string>('', { nonNullable: true });
+
+  readonly loaiQuangOptions = [
+    { label: 'Quặng đơn', value: LoaiQuangEnum.Mua },
+    { label: 'Quặng phối trong PA', value: LoaiQuangEnum.QuangPA },
+    { label: 'Quặng trộn', value: LoaiQuangEnum.Tron },
+    { label: 'Quặng nhiên liệu', value: LoaiQuangEnum.NhienLieu },
+    { label: 'Quặng cỡ', value: LoaiQuangEnum.QuangCo },
+    { label: 'Quặng vê viên', value: LoaiQuangEnum.QuangVeVien },
+  ];
+  loaiQuangCtrl = new FormControl<number | null>(null);
+  loQuangInputCtrl = new FormControl<string>('', { nonNullable: true });
+  loQuangItems = signal<LoQuangTableModel[]>([]);
+  private selectedLoQuang: string | null = null;
 
   searchPayload: TableQuery = {
     pageIndex: 0,
@@ -100,32 +122,49 @@ export class SelectQuangDialogComponent implements OnInit {
     index: 0,
     size: this.searchPayload.pageSize,
   });
+  private loaiQuang$ = new BehaviorSubject<number | null>(null);
+  private loQuang$ = new BehaviorSubject<string | null>(null);
 
   private cache = new Map<number, OreVm>();
   selectedIds = new Set<number>();
 
   rows$: Observable<OreVm[]> = combineLatest([
-    this.q$.pipe(debounceTime(300), distinctUntilChanged(), startWith('')),
+    this.q$.pipe(debounceTime(300), startWith(''), distinctUntilChanged()),
     this.page$,
+    this.loaiQuang$,
+    this.loQuang$,
   ]).pipe(
+    // Batch các emission đồng bộ (vd: loaiQuang$ + page$ cùng tick), chỉ gọi API 1 lần
+    debounceTime(0),
     tap(() => this.loading.set(true)),
-    switchMap(([q, { index, size }]) => {
+    switchMap(([q, { index, size }, loaiQuang, loQuang]) => {
       const payload: any = this.searchPayload = {
         pageIndex: index,
         pageSize: size,
         search: q,
       } as any;
-      // Lọc theo ID_LoaiQuang (idLoaiQuang) để QuangService.search map sang body.loaiQuang đúng chuẩn
-      payload.idLoaiQuang = [
-        LoaiQuangEnum.Mua,
-        LoaiQuangEnum.Tron,
-        LoaiQuangEnum.NhienLieu,
-        LoaiQuangEnum.QuangCo,
-        // LoaiQuangEnum.QuangPA
-      ];
-      if(this.data?.outputLoaiQuang !== LoaiQuangEnum.Tron) {
-        payload.idLoaiQuang.push(LoaiQuangEnum.QuangPA);
-        payload.idLoaiQuang.push(LoaiQuangEnum.QuangVeVien);
+      // Lọc theo loại quặng
+      if (loaiQuang !== null) {
+        payload.idLoaiQuang = [loaiQuang];
+        // Khi chọn QuangPA, gửi kèm planId hiện tại để BE lọc đúng phương án
+        if (loaiQuang === LoaiQuangEnum.QuangPA && this.data?.planId) {
+          payload.planId = this.data.planId;
+        }
+      } else {
+        payload.idLoaiQuang = [
+          LoaiQuangEnum.Mua,
+          LoaiQuangEnum.Tron,
+          LoaiQuangEnum.NhienLieu,
+          LoaiQuangEnum.QuangCo,
+        ];
+        if (this.data?.outputLoaiQuang !== LoaiQuangEnum.Tron) {
+          payload.idLoaiQuang.push(LoaiQuangEnum.QuangPA);
+          payload.idLoaiQuang.push(LoaiQuangEnum.QuangVeVien);
+        }
+      }
+      // Lọc theo lô quặng
+      if (loQuang) {
+        payload.loQuang = loQuang;
       }
       return this.quangService.search(payload).pipe(
         tap((res) => this.total.set(res.total)),
@@ -190,7 +229,43 @@ export class SelectQuangDialogComponent implements OnInit {
         this.q$.next(v ?? '');
         this.page$.next({ index: 0, size: this.searchPayload.pageSize });
       });
-    this.q$.next('');
+
+    // Loại quặng filter
+    this.loaiQuangCtrl.valueChanges.subscribe((val) => {
+      this.loaiQuang$.next(val);
+      this.page$.next({ index: 0, size: this.searchPayload.pageSize });
+    });
+
+    // Autocomplete lô quặng
+    this.loQuangInputCtrl.valueChanges
+      .pipe(
+        startWith(''),
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((term) => {
+          const search = typeof term === 'string' ? term.trim() : '';
+          return this.loQuangService
+            .search({ pageIndex: 0, pageSize: 50, search, sortBy: 'maLoQuang', sortDir: 'asc' })
+            .pipe(map((res) => res.data), catchError(() => of([])));
+        })
+      )
+      .subscribe((results) => this.loQuangItems.set(results));
+
+  }
+
+  displayLoQuang = (item: LoQuangTableModel | null): string => item?.maLoQuang ?? '';
+
+  onLoQuangSelected(item: LoQuangTableModel): void {
+    this.selectedLoQuang = item?.maLoQuang ?? null;
+    this.loQuang$.next(this.selectedLoQuang);
+    this.page$.next({ index: 0, size: this.searchPayload.pageSize });
+  }
+
+  onLoQuangClear(): void {
+    this.selectedLoQuang = null;
+    this.loQuangInputCtrl.setValue('');
+    this.loQuang$.next(null);
+    this.page$.next({ index: 0, size: this.searchPayload.pageSize });
   }
 
   onPage(e: PageEvent) {

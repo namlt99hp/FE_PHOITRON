@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>{{ (mode==='MUA' ? 'Thêm quặng mua' : 'Sửa quặng') }}</h2>
+<h2 mat-dialog-title>{{ (mode === 'CLONE' ? 'Sao chép quặng' : (mode==='MUA' ? 'Thêm quặng mua' : 'Sửa quặng')) }}</h2>
 
 <div mat-dialog-content class="dialog-body">
   <!-- Loading state for data fetching -->

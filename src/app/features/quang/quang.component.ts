@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { TableCommonComponent } from '../../shared/components/table-common/table-common.component';
 import { QuangService } from '../../core/services/quang.service';
 import {
+  SearchFieldConfig,
   TableColumn,
   TableQuery,
   TableResult,
@@ -28,6 +29,8 @@ import { ConfirmDialogService } from '../../core/services/confirm-dialog.service
 import { tap, map, switchMap, catchError } from 'rxjs/operators';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CongThucPhoiService } from '../../core/services/congthucphoi.service';
+import { LoQuangService } from '../../core/services/loai-quang.service';
+import { LoQuangTableModel } from '../../core/models/loai-quang.model';
 
 @Component({
   selector: 'app-quang',
@@ -42,10 +45,41 @@ export class QuangComponent {
   private confirmDialogService = inject(ConfirmDialogService);
   private snack = inject(MatSnackBar);
   private congThucPhoiService = inject(CongThucPhoiService);
+  private loQuangService = inject(LoQuangService);
   vnTime = inject(VnTimePipe);
   @ViewChild(TableCommonComponent)
   table!: TableCommonComponent<QuangTableModel>;
   public tableTitle: string = 'Quặng mua về';
+
+  // Cấu hình multi-search
+  readonly searchFields: SearchFieldConfig[] = [
+    {
+      key: 'loaiQuang',
+      label: 'Loại quặng',
+      type: 'select',
+      width: '180px',
+      options: [
+        { label: 'Quặng đơn', value: LoaiQuangEnum.Mua },
+        { label: 'Quặng phối', value: LoaiQuangEnum.Tron },
+        { label: 'Quặng Nhiên liệu', value: LoaiQuangEnum.NhienLieu },
+        { label: 'Quặng cỡ', value: LoaiQuangEnum.QuangCo },
+        { label: 'Quặng vê viên', value: LoaiQuangEnum.QuangVeVien },
+      ],
+    },
+    { key: 'ngayTao', label: 'Ngày tạo', type: 'rangeDate', width: '280px', startKey: 'tuNgay', endKey: 'denNgay' },
+    {
+      key: 'loQuang',
+      label: 'Lô quặng',
+      type: 'autocomplete',
+      width: '200px',
+      dataSource: (term) => this.loQuangService.search({
+        pageIndex: 0, pageSize: 50, search: term, sortBy: 'maLoQuang', sortDir: 'asc',
+      }).pipe(map((res) => res.data)),
+      displayWith: (item: LoQuangTableModel) => item?.maLoQuang ?? '',
+      // Lưu luôn mã lô quặng để gửi thẳng lên BE (lọc theo MaLoQuang)
+      valueWith: (item: LoQuangTableModel) => item?.maLoQuang ?? null,
+    },
+  ];
 
   // Cấu hình cột
   readonly columns: TableColumn<QuangTableModel>[] = [
@@ -71,17 +105,26 @@ export class QuangComponent {
     },
   ];
 
-  fetcher = (q: TableQuery): Observable<TableResult<QuangTableModel>> =>
-    this.quangService.search({
+  fetcher = (q: TableQuery): Observable<TableResult<QuangTableModel>> => {
+    const loaiQuangFilter = q.filters?.['loaiQuang'];
+    const idLoaiQuang = loaiQuangFilter
+      ? [loaiQuangFilter]
+      : [
+          LoaiQuangEnum.Mua,
+          LoaiQuangEnum.Tron,
+          LoaiQuangEnum.NhienLieu,
+          LoaiQuangEnum.QuangCo,
+          LoaiQuangEnum.QuangVeVien,
+        ];
+
+    return this.quangService.search({
       ...q,
-      idLoaiQuang: [
-        LoaiQuangEnum.Mua,
-        LoaiQuangEnum.Tron,
-        LoaiQuangEnum.NhienLieu,
-        LoaiQuangEnum.QuangCo,
-        LoaiQuangEnum.QuangVeVien
-      ], // Quặng mua về, phối, nhiên liệu, cỡ, vê viên
+      idLoaiQuang,
+      tuNgay: q.filters?.['tuNgay'] ?? null,
+      denNgay: q.filters?.['denNgay'] ?? null,
+      loQuang: q.filters?.['loQuang'] ?? null,
     }) as unknown as Observable<TableResult<QuangTableModel>>;
+  };
 
   // Xoá quặng
   deleteHandler = (row: QuangTableModel): Observable<void> =>
@@ -201,6 +244,51 @@ export class QuangComponent {
       });
   }
 
+  onClone(row: QuangTableModel) {
+    const loai = (row as any).loaiQuang ?? (row as any).loai_Quang ?? row.iD_LoaiQuang ?? (row as any).iD_LoaiQuang;
+    if (loai === LoaiQuangEnum.Tron || loai === LoaiQuangEnum.QuangVeVien) {
+      this.congThucPhoiService
+        .getByQuangDauRa(row.id)
+        .pipe(
+          map((formula) => formula?.id ?? formula?.ID ?? null),
+          catchError((err) => {
+            this.snack.open('Không thể tải thông tin công thức phối', 'Đóng', { duration: 3000, panelClass: ['snack-error'] });
+            return of(null);
+          })
+        )
+        .subscribe((congThucPhoiId) => {
+          if (congThucPhoiId === null) {
+            this.snack.open('Không tìm thấy công thức phối cho quặng này', 'Đóng', { duration: 3000, panelClass: ['snack-warning'] });
+            return;
+          }
+          this.dialog
+            .open(MixQuangDialogComponent, {
+              width: '1850px',
+              maxWidth: '99vw',
+              disableClose: true,
+              data: {
+                existingOreId: row.id,
+                outputLoaiQuang: loai ?? LoaiQuangEnum.Tron,
+                congThucPhoiId: congThucPhoiId,
+                cloneMode: true,
+              },
+            })
+            .afterClosed()
+            .subscribe((res) => { if (res) this.table?.refresh(); });
+        });
+      return;
+    }
+
+    this.dialog
+      .open(QuangMuaFormDialogComponent, {
+        width: '1500px',
+        disableClose: true,
+        data: { mode: 'CLONE', quang: row },
+      })
+      .afterClosed()
+      .subscribe((res) => { if (res && res.success) this.table?.refresh(); });
+  }
+
   onCreate() {
     this.dialog
       .open(QuangMuaFormDialogComponent, {
@@ -225,4 +313,5 @@ export class QuangComponent {
       confirmColor: 'warn',
       icon: 'delete',
     });
+    
 }

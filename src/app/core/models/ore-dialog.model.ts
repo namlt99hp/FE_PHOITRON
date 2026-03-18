@@ -1,6 +1,6 @@
 import { QuangTableModel } from "./quang.model";
 
-export type OreMode = 'MUA' | 'TRON';
+export type OreMode = 'MUA' | 'TRON' | 'EDIT' | 'CLONE';
 
 export interface ChemicalOption {
   id: number;

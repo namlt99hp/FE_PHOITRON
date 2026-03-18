@@ -393,7 +393,8 @@ export class QuangMuaFormDialogComponent {
 
   // ====== submit -> map ra DTO ======
   buildPayload(): QuangUpsertWithThanhPhanDto {
-    const idQuang = this.data.quang?.id || null;
+    // CLONE mode: luôn tạo mới, không dùng id hiện có
+    const idQuang = (this.data.mode === 'CLONE') ? null : (this.data.quang?.id || null);
 
     const header = this.headerForm.getRawValue();
 
@@ -561,6 +562,8 @@ export class QuangMuaFormDialogComponent {
         if (res) {
           if (this.data.mode === 'MUA') {
             this.snack.open('Thêm quặng mua thành công', 'Đóng', { duration: 1500, panelClass: ['snack-success'] });
+          } else if (this.data.mode === 'CLONE') {
+            this.snack.open('Sao chép quặng thành công', 'Đóng', { duration: 1500, panelClass: ['snack-success'] });
           } else {
             this.snack.open('Sửa quặng thành công', 'Đóng', { duration: 1500, panelClass: ['snack-info'] });
           }
@@ -582,7 +585,7 @@ export class QuangMuaFormDialogComponent {
 
   // ====== patch initial (edit) ======
   ngOnInit(): void {
-    if (this.data.quang && this.data.quang.id) {
+    if ((this.data.mode === 'EDIT' || this.data.mode === 'CLONE') && this.data.quang && this.data.quang.id) {
       this.loading.set(true);
       this.error.set(null);
 

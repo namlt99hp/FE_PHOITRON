@@ -1,5 +1,49 @@
 export type SortDir = 'asc' | 'desc' | '';
 
+// ===== Multi-search config =====
+export interface SearchFieldOption {
+  label: string;
+  value: any;
+}
+
+export type SearchFieldType = 'input' | 'select' | 'date' | 'rangeDate' | 'autocomplete';
+
+export interface SearchFieldConfig {
+  /** key dùng làm định danh field */
+  key: string;
+  /** label hiển thị */
+  label: string;
+  /** loại field: 'input' | 'select' | 'date' | 'rangeDate' */
+  type: SearchFieldType;
+  /** options dành cho type = 'select' */
+  options?: SearchFieldOption[];
+  /** giá trị mặc định */
+  defaultValue?: any;
+  /** width của field, vd '180px' */
+  width?: string;
+  /**
+   * Chỉ dùng cho type = 'rangeDate'.
+   * Tên key đưa vào filters cho ngày bắt đầu (mặc định: `${key}Start`)
+   */
+  startKey?: string;
+  /**
+   * Chỉ dùng cho type = 'rangeDate'.
+   * Tên key đưa vào filters cho ngày kết thúc (mặc định: `${key}End`)
+   */
+  endKey?: string;
+
+  // ===== autocomplete =====
+  /**
+   * Chỉ dùng cho type = 'autocomplete'.
+   * Hàm nhận search term, trả về Observable<any[]> danh sách gợi ý.
+   */
+  dataSource?: (searchTerm: string) => import('rxjs').Observable<any[]>;
+  /** Hàm trả về text hiển thị trong input sau khi chọn (mặc định: item?.label ?? String(item)) */
+  displayWith?: (item: any) => string;
+  /** Hàm trả về value đưa vào filters (mặc định: item?.id ?? item) */
+  valueWith?: (item: any) => any;
+}
+
 export interface TableColumn<T = any> {
   /** property key (cho phép 'a.b.c') hoặc bất kỳ string */
   key: string;

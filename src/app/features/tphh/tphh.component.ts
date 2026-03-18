@@ -3,6 +3,7 @@ import { Component, inject, ViewChild } from '@angular/core';
 import { TableCommonComponent } from '../../shared/components/table-common/table-common.component';
 import { ThanhPhanHoaHocService } from '../../core/services/tphh.service';
 import {
+  SearchFieldConfig,
   TableColumn,
   TableQuery,
   TableResult,
@@ -48,6 +49,10 @@ export class TphhComponent {
   public tableTitle: string = 'Thành phần hóa học';
   @ViewChild(TableCommonComponent) table!: TableCommonComponent<TPHHTableModel>;
 
+  readonly searchFields: SearchFieldConfig[] = [
+    { key: 'ngayTao', label: 'Ngày tạo', type: 'rangeDate', width: '280px', startKey: 'tuNgay', endKey: 'denNgay' },
+  ];
+
   // Cấu hình cột
   readonly columns: TableColumn<TPHHTableModel>[] = [
     { key: 'id', header: 'ID', width: '90px', sortable: true, align: 'start' },
@@ -65,7 +70,11 @@ export class TphhComponent {
   constructor(private confirmDialogService: ConfirmDialogService) {}
 
   fetcher = (q: TableQuery): Observable<TableResult<TPHHTableModel>> =>
-    this.tphhService.search(q);
+    this.tphhService.search({
+      ...q,
+      tuNgay: q.filters?.['tuNgay'] ?? null,
+      denNgay: q.filters?.['denNgay'] ?? null,
+    });
 
   confirmDelete = (row: TPHHTableModel) =>
     this.confirmDialogService.open({
