@@ -1,8 +1,33 @@
-import { Component, inject, signal, ViewEncapsulation } from '@angular/core';
+import { Component, inject, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MaterialModule } from '../../material.module';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { QuangService } from '../../core/services/quang.service';
+import { PhuongAnPhoiService } from '../../core/services/phuong-an-phoi.service';
+import { ThanhPhanHoaHocService } from '../../core/services/tphh.service';
+import { LoCaoProcessParamService } from '../../core/services/locao-process-param.service';
+import { ThongKeFunctionService } from '../../core/services/thongke-function.service';
+import { LoaiQuangEnum } from '../../core/enums/loaiquang.enum';
+import { VnTimePipe } from '../../shared/pipes/datetime.pipe';
+import { QuangTableModel } from '../../core/models/quang.model';
+import { LoCaoProcessParamModel } from '../../core/models/locao-process-param.model';
+import { PlanSectionDto } from '../../core/models/phuong-an-phoi.model';
+import { forkJoin, of } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
+
+interface DashboardKpi {
+  label: string;
+  value: string | number;
+}
+
+const QUANG_NHAP_LOAI = [
+  LoaiQuangEnum.Mua,
+  LoaiQuangEnum.Tron,
+  LoaiQuangEnum.NhienLieu,
+  LoaiQuangEnum.QuangCo,
+  LoaiQuangEnum.QuangVeVien,
+];
 
 @Component({
   selector: 'app-home',
@@ -15,17 +40,29 @@ import { AuthService } from '../../core/services/auth.service';
   styleUrl: './home.component.scss',
   encapsulation: ViewEncapsulation.None,
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit {
   private router = inject(Router);
   private auth = inject(AuthService);
+  private quangService = inject(QuangService);
+  private phuongAnService = inject(PhuongAnPhoiService);
+  private tphhService = inject(ThanhPhanHoaHocService);
+  private locaoParamService = inject(LoCaoProcessParamService);
+  private thongKeService = inject(ThongKeFunctionService);
+  private vnTime = inject(VnTimePipe);
 
-  // Mock KPIs for blast furnace blending management
-  kpis = [
-    { label: 'Sản lượng gang (tấn/ngày)', value: 5850, trend: '+2.1%' },
-    { label: 'Tỉ lệ quặng sống', value: '18.5%', trend: '-0.4%' },
-    { label: 'Coke tiêu hao (kg/tấn)', value: 420, trend: '-5' },
-    { label: 'Chi phí phối trộn (đ/tấn)', value: '1.250.000', trend: '-1.8%' },
-    { label: 'PA đang tối ưu', value: 4, trend: '' },
+  loadingKpis = true;
+  loadingGangDich = true;
+  loadingQuangNhap = true;
+  loadingPlans = true;
+  loadingParams = true;
+
+  // Tổng quan hệ thống - đếm thực từ dữ liệu hiện có
+  kpis: DashboardKpi[] = [
+    { label: 'Quặng Gang đích', value: '-' },
+    { label: 'Quặng nhập đang quản lý', value: '-' },
+    { label: 'Thành phần hóa học', value: '-' },
+    { label: 'Tham số Lò Cao', value: '-' },
+    { label: 'Hàm thống kê', value: '-' },
   ];
 
   // Quick actions
@@ -37,48 +74,122 @@ export class HomeComponent {
     { icon: 'graph-up', label: 'Hàm thống kê', click: () => this.router.navigate(['/thongke-phuongan']) },
   ];
 
-  // Mock recent plans
-  recentPlans = [
-    { name: 'PA_2025-11-04_1', coke: 418, oreLivePct: 19.0, cost: 1248000, status: 'Đang chạy' },
-    { name: 'PA_2025-11-03_A', coke: 425, oreLivePct: 18.2, cost: 1260000, status: 'Đã lưu' },
-    { name: 'PA_Test_LC2', coke: 415, oreLivePct: 20.1, cost: 1235000, status: 'Đang chạy' },
-  ];
+  // Danh sách Quặng Gang đích tạo gần đây
+  recentGangDich: QuangTableModel[] = [];
 
-  // Mock furnace status
-  furnaces = [
-    { name: 'LC1', prod: 1950, target: 2000, temp: 1520, oreLivePct: 18.2 },
-    { name: 'LC2', prod: 1920, target: 2000, temp: 1514, oreLivePct: 19.1 },
-    { name: 'LC3', prod: 1980, target: 2000, temp: 1527, oreLivePct: 17.9 },
-  ];
+  // Danh sách Quặng nhập tạo gần đây
+  recentQuangNhap: QuangTableModel[] = [];
 
-  // Mock current blend composition (top items)
-  blend = [
-    { ore: 'Q.Sống A', pct: 6.5, type: 'QS' },
-    { ore: 'Q.Sống B', pct: 11.5, type: 'QS' },
-    { ore: 'Q.Nung C', pct: 24.0, type: 'QN' },
-    { ore: 'Pellet D', pct: 38.0, type: 'Pellet' },
-    { ore: 'Khác', pct: 20.0, type: 'Mix' },
-  ];
+  // Phương án phối gần đây - của Gang đích mới tạo gần nhất (không có endpoint lấy toàn hệ thống)
+  recentGangName = '';
+  recentPlans: PlanSectionDto[] = [];
 
-  // Mock ore inventory
-  inventory = [
-    { code: 'ORE_A', name: 'Q.Sống A', stock: 12500, days: 7.2 },
-    { code: 'ORE_B', name: 'Q.Sống B', stock: 8200, days: 4.3 },
-    { code: 'PEL_D', name: 'Pellet D', stock: 21000, days: 10.5 },
-  ];
+  // Tham số Lò Cao đang khai báo trong hệ thống
+  locaoParams: LoCaoProcessParamModel[] = [];
 
-  // Mock quality targets vs actual
-  quality = [
-    { el: 'Fe', target: 55.0, actual: 54.6 },
-    { el: 'SiO2', target: 5.5, actual: 5.2 },
-    { el: 'Al2O3', target: 2.1, actual: 2.3 },
-    { el: 'S', target: 0.035, actual: 0.038 },
-  ];
+  ngOnInit(): void {
+    this.loadKpis();
+    this.loadRecentGangDichAndPlans();
+    this.loadRecentQuangNhap();
+    this.loadLoCaoParams();
+  }
 
-  // Mock alerts/suggestions
-  alerts = [
-    { level: 'warning', text: 'Tồn kho Q.Sống B dưới 5 ngày. Cân nhắc giảm 1-2%.' },
-    { level: 'info', text: 'PA_2025-11-04_1 giảm coke 7kg/t nếu SiO2 mix < 5.1%.' },
-    { level: 'danger', text: 'Lò LC2 nhiệt độ giảm 12°C trong 1h qua.' },
-  ];
+  private loadKpis(): void {
+    this.loadingKpis = true;
+    forkJoin({
+      gangDich: this.quangService
+        .search({ pageIndex: 0, pageSize: 1, idLoaiQuang: [LoaiQuangEnum.Gang], isGangTarget: true })
+        .pipe(catchError(() => of({ data: [], total: 0 }))),
+      quangNhap: this.quangService
+        .search({ pageIndex: 0, pageSize: 1, idLoaiQuang: QUANG_NHAP_LOAI })
+        .pipe(catchError(() => of({ data: [], total: 0 }))),
+      tphh: this.tphhService
+        .search({ pageIndex: 0, pageSize: 1 })
+        .pipe(catchError(() => of({ data: [], total: 0 }))),
+      thamSo: this.locaoParamService.getAll().pipe(catchError(() => of([]))),
+      thongKe: this.thongKeService.getAllFunctions().pipe(catchError(() => of([]))),
+    }).subscribe((res) => {
+      this.kpis = [
+        { label: 'Quặng Gang đích', value: res.gangDich.total },
+        { label: 'Quặng nhập đang quản lý', value: res.quangNhap.total },
+        { label: 'Thành phần hóa học', value: res.tphh.total },
+        { label: 'Tham số Lò Cao', value: res.thamSo.length },
+        { label: 'Hàm thống kê', value: res.thongKe.length },
+      ];
+      this.loadingKpis = false;
+    });
+  }
+
+  private loadRecentGangDichAndPlans(): void {
+    this.loadingGangDich = true;
+    this.loadingPlans = true;
+    this.quangService
+      .search({
+        pageIndex: 0,
+        pageSize: 5,
+        sortBy: 'ngayTao',
+        sortDir: 'desc',
+        idLoaiQuang: [LoaiQuangEnum.Gang],
+        isGangTarget: true,
+      })
+      .pipe(
+        catchError(() => of({ data: [] as QuangTableModel[], total: 0 })),
+        switchMap((res) => {
+          this.recentGangDich = res.data;
+          this.loadingGangDich = false;
+          const latest = res.data[0];
+          if (!latest) {
+            this.loadingPlans = false;
+            return of(null);
+          }
+          this.recentGangName = latest.tenQuang;
+          return this.phuongAnService.getPlanSectionsByGangDich(latest.id).pipe(
+            catchError(() => of({ success: false, data: [] as PlanSectionDto[] }))
+          );
+        })
+      )
+      .subscribe((res) => {
+        const plans = res?.data ?? [];
+        this.recentPlans = [...plans]
+          .sort((a, b) => (b.ngay_Tinh_Toan ?? '').localeCompare(a.ngay_Tinh_Toan ?? ''))
+          .slice(0, 5);
+        this.loadingPlans = false;
+      });
+  }
+
+  private loadRecentQuangNhap(): void {
+    this.loadingQuangNhap = true;
+    this.quangService
+      .search({
+        pageIndex: 0,
+        pageSize: 5,
+        sortBy: 'ngayTao',
+        sortDir: 'desc',
+        idLoaiQuang: QUANG_NHAP_LOAI,
+      })
+      .pipe(catchError(() => of({ data: [] as QuangTableModel[], total: 0 })))
+      .subscribe((res) => {
+        this.recentQuangNhap = res.data;
+        this.loadingQuangNhap = false;
+      });
+  }
+
+  private loadLoCaoParams(): void {
+    this.loadingParams = true;
+    this.locaoParamService
+      .getAll()
+      .pipe(catchError(() => of([] as LoCaoProcessParamModel[])))
+      .subscribe((res) => {
+        this.locaoParams = res.slice(0, 5);
+        this.loadingParams = false;
+      });
+  }
+
+  fmtDate(value?: string | null): string {
+    return value ? this.vnTime.transform(value, 'dd/MM/yyyy HH:mm') : '-';
+  }
+
+  goToGangDetail(id: number): void {
+    this.router.navigate(['/phoi-gang', id]);
+  }
 }

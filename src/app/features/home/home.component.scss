@@ -83,32 +83,19 @@
   margin-bottom: 12px;
 }
 
-.furnaces { display: flex; flex-direction: column; gap: 16px; }
-.furnace .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-.furnace .name { font-weight: 700; }
-.furnace .prod { font-size: 12px; color: #64748b; }
-.furnace .bar { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
-.furnace .bar-fill { height: 100%; background: linear-gradient(90deg,#1b5fd6,#22c55e); }
-.furnace .meta { display: flex; gap: 16px; font-size: 12px; color: #475569; margin-top: 6px; }
+.panel-header .sub { font-weight: 400; font-size: 12px; color: #64748b; margin-left: 6px; }
 
 .table { display: grid; gap: 8px; }
-.table .thead, .table .row { display: grid; grid-template-columns: 1.2fr 0.8fr 0.8fr 1fr 0.8fr; align-items: center; gap: 8px; }
+.table .thead, .table .row { display: grid; grid-template-columns: repeat(3, 1fr); align-items: center; gap: 8px; }
 .table .thead { font-size: 12px; color: #64748b; }
 .table .row { padding: 8px 0; border-top: 1px dashed #e2e8f0; }
-.status { padding: 4px 8px; border-radius: 999px; font-size: 12px; background: #e2e8f0; color: #0f172a; }
-.status.running { background: #dcfce7; color: #166534; }
 
-/* narrow tables reuse */
-.panel .table .thead, .panel .table .row { grid-template-columns: repeat(3, 1fr); }
-.panel .table .thead.quality, .panel .table .row.quality { grid-template-columns: 0.8fr 1fr 1fr 0.6fr; }
-.panel .table .thead.inventory, .panel .table .row.inventory { grid-template-columns: 0.7fr 1.2fr 0.8fr 0.8fr; }
+.table .thead.gang, .table .row.gang { grid-template-columns: 0.8fr 1.4fr 1fr; }
+.table .row.gang { cursor: pointer; }
+.table .row.gang:hover { background: #f8fafc; }
+.table .thead.plan, .table .row.plan { grid-template-columns: 1.3fr 1fr 0.7fr 0.9fr; }
+.table .thead.param, .table .row.param { grid-template-columns: 0.7fr 1.3fr 0.7fr; }
 
-.alerts { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
-.alerts li { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 10px; background: #f8fafc; border: 1px dashed #e2e8f0; }
-.alerts li.warn { background: #fff7ed; border-color: #fed7aa; }
-.alerts li.danger { background: #fee2e2; border-color: #fecaca; }
-.alerts i { font-size: 16px; }
-.pos { color: #16a34a; }
-.neg { color: #dc2626; }
+.empty { padding: 16px 0; font-size: 13px; color: #94a3b8; text-align: center; }
 
 

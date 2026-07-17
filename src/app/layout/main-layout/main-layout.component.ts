@@ -107,13 +107,13 @@ export class MainLayoutComponent implements OnDestroy {
               id: 'dept',
               label: 'Quản lý loại quặng',
               path: '/loai-quang',
-              icon: 'graph-up',
+              icon: 'box',
             },
             {
               id: 'dept',
               label: 'Quản lý lô quặng',
               path: '/lo-quang',
-              icon: 'graph-up',
+              icon: 'stack',
             },
           ],
         },
@@ -139,26 +139,26 @@ export class MainLayoutComponent implements OnDestroy {
         // },
       ],
     },
-    {
-        id: 'sec-workflow',
-        label: 'QUẢN TRỊ NHÂN SỰ',
-        section: true,
-        children: [
-          {
-            id: 'org',
-            label: 'Tài khoản',
-            icon: 'person-circle',
-            path: '/management/departments',
-          },
-          {
-            id: 'org',
-            label: 'Phòng ban',
-            icon: 'buildings',
-            path: '/management/departments',
-          },
+    // {
+    //     id: 'sec-workflow',
+    //     label: 'QUẢN TRỊ NHÂN SỰ',
+    //     section: true,
+    //     children: [
+    //       {
+    //         id: 'org',
+    //         label: 'Tài khoản',
+    //         icon: 'person-circle',
+    //         path: '/management/departments',
+    //       },
+    //       {
+    //         id: 'org',
+    //         label: 'Phòng ban',
+    //         icon: 'buildings',
+    //         path: '/management/departments',
+    //       },
           
-        ]
-    }
+    //     ]
+    // }
     // {
     //   id: 'sec-workflow',
     //   label: 'QUY TRÌNH THỰC HIỆN',

@@ -20,8 +20,8 @@ export class RateService {
   }
 
   /**
-   * Lấy tỷ giá USD->VND theo ngày (yyyy-MM-dd) từ GrandTrunk.
-   * Nếu trả "N/A" sẽ tự lùi tối đa `maxLookbackDays` ngày.
+   * Lấy tỷ giá USD->VND theo ngày (yyyy-MM-dd) từ API chính thống của Vietcombank.
+   * Nếu ngày đó không có dữ liệu (cuối tuần/lễ) sẽ tự lùi tối đa `maxLookbackDays` ngày.
    */
   async getUsdVndByDate(
     isoDate: string,
@@ -31,35 +31,40 @@ export class RateService {
     const fallback = opts.fallback ?? true;
 
     let dateUsed = isoDate.slice(0, 10); // Ensure YYYY-MM-DD format
-    
+
     for (let i = 0; i <= maxLookbackDays; i++) {
-      const url = `http://currencies.apps.grandtrunk.net/getrate/${dateUsed}/USD/VND`;
-      
       try {
-        
-        // Simple fetch with text response
-        const response = await fetch(url);
-        const text = await response.text();
-        
-        
-        // Parse the rate
-        const rate = parseFloat(text.trim());
-        
-        if (!isNaN(rate) && rate > 0) {
-          console.log(`Valid rate found for ${dateUsed}:`, rate);
+        const rate = await this.getVcbRate(dateUsed, 'USD');
+
+        if (rate != null && !isNaN(rate) && rate > 0) {
+          console.log(`Valid VCB rate found for ${dateUsed}:`, rate);
           return { rate, dateUsed };
         } else {
-          console.log(`Invalid rate for ${dateUsed}:`, text);
+          console.log(`No VCB rate for ${dateUsed}`);
         }
       } catch (error) {
-        console.warn(`Failed to fetch rate for ${dateUsed}:`, error);
+        console.warn(`Failed to fetch VCB rate for ${dateUsed}:`, error);
       }
-      
+
       if (!fallback) break;
       dateUsed = this.minusOneDayUTC(dateUsed);
     }
-    
+
     throw new Error(`Không tìm thấy tỷ giá quanh ngày yêu cầu (đã lùi tối đa ${maxLookbackDays} ngày).`);
   }
-  
+
+  /**
+   * Gọi API tỷ giá chính thống của Vietcombank cho 1 ngày cụ thể,
+   * lấy tỷ giá "transfer" (chuyển khoản) của đồng tiền `code`.
+   */
+  private async getVcbRate(dateStr: string, code: string = 'USD'): Promise<number | null> {
+    const res = await fetch(`https://www.vietcombank.com.vn/api/exchangerates?date=${dateStr}`);
+    if (!res.ok) {
+      throw new Error(`VCB API trả về lỗi HTTP ${res.status}`);
+    }
+    const json = await res.json();
+    const item = (json?.Data ?? []).find((d: any) => d.currencyCode === code);
+    return item ? parseFloat(String(item.transfer).replace(/,/g, '')) : null;
+  }
+
 }
